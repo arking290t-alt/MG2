@@ -263,7 +263,7 @@
       if(filtered.length === 0) {
         expenseListEl.innerHTML = '<p style="text-align:center;color:#888;">No expenses found</p>';
       } else {
-        filtered.forEach(exp => {
+        filtered.forEach((exp, index) => {
           const div = document.createElement('div');
           div.className = 'expense-item';
           div.innerHTML = `
@@ -271,13 +271,25 @@
               <strong>${exp.name}</strong><br>
               <small>${exp.category} | ${exp.date}</small>
             </div>
-            <span class="amt">₹${exp.amount}</span>`;
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="amt">₹${exp.amount}</span>
+              <button onclick="deleteExpense(${index})" style="background:#ef4444;border:none;color:white;padding:5px 8px;border-radius:6px;cursor:pointer;">Delete</button>
+            </div>
+          `;
           expenseListEl.appendChild(div);
         });
       }
 
       const total = filtered.reduce((sum, e) => sum + e.amount, 0);
       summaryText.textContent = `Total: ₹${total}`;
+    }
+
+    function deleteExpense(index) {
+      if (confirm("Delete this expense?")) {
+        expenses.splice(index, 1);
+        saveAll();
+        renderExpenses();
+      }
     }
 
     document.getElementById('addExpenseBtn').onclick = () => {
