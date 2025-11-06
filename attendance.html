@@ -10,9 +10,17 @@
       --card: rgba(255, 255, 255, 0.05);
       --accent: #00b4ff;
       --text-light: #d4e1f0;
+      --present: #22c55e;
+      --half: #3b82f6;
+      --absent: #ef4444;
+      --leave: #f59e0b;
+      --ot: #8b5cf6;
     }
 
-    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
 
     body {
       background: var(--bg);
@@ -30,7 +38,11 @@
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    .logo { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .logo {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
 
     .btn {
       background: var(--accent);
@@ -112,7 +124,7 @@
       font-weight: 600;
     }
 
-    /* Modal styles */
+    /* Modal */
     .modal {
       display: none;
       position: fixed;
@@ -121,15 +133,18 @@
       background: rgba(0,0,0,0.6);
       justify-content: center;
       align-items: center;
+      z-index: 1000;
     }
 
     .modal-content {
       background: var(--card);
       border-radius: 12px;
       padding: 20px;
-      width: 400px;
+      width: 420px;
       color: var(--text-light);
       box-shadow: 0 0 20px rgba(0,180,255,0.2);
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     .modal h2 {
@@ -143,16 +158,40 @@
       cursor: pointer;
       color: #fff;
       font-weight: 700;
+      font-size: 1.2rem;
     }
 
     .status-box {
       margin: 8px 0;
-      padding: 6px 10px;
-      border-radius: 6px;
+      padding: 10px;
+      border-radius: 8px;
       background: rgba(255,255,255,0.08);
+    }
+
+    .status-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
     }
+
+    .status-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 2px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .present { background: var(--present); }
+    .half { background: var(--half); }
+    .absent { background: var(--absent); }
+    .leave { background: var(--leave); }
+    .ot { background: var(--ot); }
+    .clear { background: #64748b; }
   </style>
 </head>
 <body>
@@ -174,8 +213,7 @@
     </div>
 
     <div id="calendar" class="calendar"></div>
-
-    <div class="summary" id="summary">Click any date to view attendance details</div>
+    <div class="summary">Click any date to mark attendance</div>
   </div>
 
   <div id="attendanceModal" class="modal">
@@ -188,22 +226,19 @@
 
   <script>
     const calendar = document.getElementById("calendar");
-    const summary = document.getElementById("summary");
     const monthYear = document.getElementById("monthYear");
-
     const modal = document.getElementById("attendanceModal");
     const closeModal = document.getElementById("closeModal");
     const attendanceList = document.getElementById("attendanceList");
     const modalTitle = document.getElementById("modalTitle");
 
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-
     const STAFF_KEY = "staffList";
     const ATTEND_KEY = "attendanceData";
-
     const staffList = JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
     const attendanceData = JSON.parse(localStorage.getItem(ATTEND_KEY)) || {};
+
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
 
     function updateMonthYear() {
       const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -219,17 +254,14 @@
         const div = document.createElement("div");
         div.className = "day";
         div.textContent = i;
-        div.onclick = () => showAttendanceForDate(i);
+        div.onclick = () => openAttendanceModal(i);
         calendar.appendChild(div);
       }
     }
 
-    function showAttendanceForDate(day) {
-      const keyMonth = currentMonth;
-      const keyYear = currentYear;
-
+    function openAttendanceModal(day) {
       modal.style.display = "flex";
-      modalTitle.textContent = `Attendance for ${day}/${keyMonth + 1}/${keyYear}`;
+      modalTitle.textContent = `Mark Attendance: ${day}/${currentMonth + 1}/${currentYear}`;
       attendanceList.innerHTML = "";
 
       if (staffList.length === 0) {
@@ -238,34 +270,65 @@
       }
 
       staffList.forEach(staff => {
-        const key = `${staff.name}_${keyYear}_${keyMonth}_${day}`;
+        const key = `${staff.name}_${currentYear}_${currentMonth}_${day}`;
         const rec = attendanceData[key] || { status: "No", ot: 0 };
+
         const div = document.createElement("div");
         div.className = "status-box";
-        div.innerHTML = `<span>${staff.name}</span><span>${rec.status}${rec.ot ? " (₹" + rec.ot + ")" : ""}</span>`;
+        div.innerHTML = `
+          <div class="status-header">
+            <span>${staff.name}</span>
+            <strong>${rec.status}${rec.ot ? " (₹" + rec.ot + ")" : ""}</strong>
+          </div>
+          <div class="status-actions">
+            <button class="present" onclick="mark('${staff.name}',${day},'Present')">P</button>
+            <button class="half" onclick="mark('${staff.name}',${day},'Half')">½</button>
+            <button class="absent" onclick="mark('${staff.name}',${day},'Absent')">A</button>
+            <button class="leave" onclick="mark('${staff.name}',${day},'Leave')">L</button>
+            <button class="ot" onclick="markOT('${staff.name}',${day})">OT</button>
+            <button class="clear" onclick="clearStatus('${staff.name}',${day})">Clear</button>
+          </div>
+        `;
         attendanceList.appendChild(div);
       });
     }
 
+    function mark(staff, day, status) {
+      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+      attendanceData[key] = { status, ot: 0 };
+      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+      openAttendanceModal(day);
+    }
+
+    function markOT(staff, day) {
+      const rate = prompt("Enter OT amount:");
+      if (!rate || isNaN(rate)) return;
+      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+      attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
+      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+      openAttendanceModal(day);
+    }
+
+    function clearStatus(staff, day) {
+      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+      delete attendanceData[key];
+      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+      openAttendanceModal(day);
+    }
+
     document.getElementById("prevMonth").onclick = () => {
       currentMonth--;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      }
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       renderCalendar();
     };
 
     document.getElementById("nextMonth").onclick = () => {
       currentMonth++;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       renderCalendar();
     };
 
-    closeModal.onclick = () => { modal.style.display = "none"; };
+    closeModal.onclick = () => modal.style.display = "none";
     window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
     document.getElementById("logoutBtn").onclick = () => {
