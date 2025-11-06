@@ -324,3 +324,32 @@ body {
   cursor:pointer;
   margin-left:10px;
 }
+/* Add this to your <style> block */
+
+   .payment-list {
+      margin-top: 20px;
+      padding: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .payment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 5px;
+      background: rgba(0,180,255,0.05);
+      border-radius: 6px;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    .delete-payment-btn {
+      background: var(--absent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
