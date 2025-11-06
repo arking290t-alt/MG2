@@ -19,30 +19,24 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <main class="center-stage">
     <section class="staff-card-panel">
       <h2 class="panel-title">Daily Attendance</h2>
       <p class="panel-sub">Mark attendance once per staff per day</p>
 
-      <!-- Attendance List -->
       <div id="attendanceList" class="staff-list"></div>
     </section>
   </main>
 
   <script>
-    // -----------------------------
-    // 🔹 LOGOUT FUNCTIONALITY
-    // -----------------------------
-    const logoutBtn = document.getElementById("logoutBtn");
-    logoutBtn.addEventListener("click", () => {
+    // Logout button
+    document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("loggedInUser");
       window.location.href = "login.html";
     });
 
-    // -----------------------------
-    // 🔹 LOAD STAFF AND ATTENDANCE
-    // -----------------------------
+    // Load data
     const attendanceList = document.getElementById("attendanceList");
     const staff = JSON.parse(localStorage.getItem("staff")) || [];
     const attendance = JSON.parse(localStorage.getItem("attendance")) || {};
@@ -58,25 +52,23 @@
 
       staff.forEach((member) => {
         const key = `${member.name}_${today}`;
-        const status = attendance[key];
+        const marked = attendance[key];
 
         const div = document.createElement("div");
         div.classList.add("staff-item");
 
-        if (status) {
-          // Already marked
+        if (marked) {
           div.innerHTML = `
             <span><strong>${member.name}</strong></span>
-            <span class="badge ${status.toLowerCase()}">${status}</span>
+            <span class="badge ${marked.toLowerCase()}">${marked}</span>
           `;
         } else {
-          // Not yet marked
           div.innerHTML = `
             <span><strong>${member.name}</strong></span>
             <div style="display:flex;gap:10px;">
-              <button class="btn-login" onclick="mark('${member.name}', 'Present')">Present</button>
-              <button class="btn-login" style="background:#ef4444;" onclick="mark('${member.name}', 'Absent')">Absent</button>
-              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${member.name}', 'Leave')">Leave</button>
+              <button class="btn-login" onclick="mark('${member.name}','Present')">Present</button>
+              <button class="btn-login" style="background:#ef4444;" onclick="mark('${member.name}','Absent')">Absent</button>
+              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${member.name}','Leave')">Leave</button>
             </div>
           `;
         }
@@ -85,9 +77,6 @@
       });
     }
 
-    // -----------------------------
-    // 🔹 MARK ATTENDANCE
-    // -----------------------------
     function mark(name, status) {
       const key = `${name}_${today}`;
       const data = JSON.parse(localStorage.getItem("attendance")) || {};
@@ -102,13 +91,9 @@
       loadAttendance();
     }
 
-    // -----------------------------
-    // 🔹 INITIAL LOAD
-    // -----------------------------
     loadAttendance();
   </script>
 
-  <!-- INLINE STYLE BADGES -->
   <style>
     .badge {
       padding: 0.4rem 0.8rem;
@@ -118,23 +103,19 @@
       font-size: 0.85rem;
       color: #fff;
     }
-
     .badge.present {
       background: #22c55e;
       box-shadow: 0 0 8px #22c55e;
     }
-
     .badge.absent {
       background: #ef4444;
       box-shadow: 0 0 8px #ef4444;
     }
-
     .badge.leave {
       background: #eab308;
       color: #000;
       box-shadow: 0 0 8px #eab308;
     }
   </style>
-
 </body>
 </html>
