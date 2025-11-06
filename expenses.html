@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Expenses | MG</title>
   <style>
-    :root{
-      --bg:#0b111b; --card:rgba(255,255,255,0.03); --accent:#00b4ff; --panel:#0e1724;
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.03);
+      --accent:#00b4ff;
+      --panel:#0e1724;
     }
-    *{box-sizing:border-box}
+
+    * { box-sizing:border-box; }
+
     body {
       background: var(--bg);
       color: #fff;
@@ -43,7 +48,8 @@
       text-decoration: none;
       display:inline-block;
     }
-    .btn:hover{opacity:.92}
+
+    .btn:hover { opacity:.9; }
 
     .container {
       max-width: 980px;
@@ -71,9 +77,9 @@
       margin-bottom:18px;
     }
 
-    .controls label{font-size:0.9rem;color:#9fbcdff0;margin-right:6px}
+    label { font-size:0.9rem; color:#9fbcdff0; }
 
-    select, input[type="month"], input[type="text"], input[type="date"], input[type="number"] {
+    select, input[type="month"], input[type="text"], input[type="number"], input[type="date"] {
       background: var(--panel);
       border: 1px solid rgba(255,255,255,0.08);
       color: #fff;
@@ -84,17 +90,9 @@
       min-width:140px;
     }
 
-    .filter-group{display:flex;align-items:center;gap:8px}
+    .filter-group { display:flex; align-items:center; gap:8px; }
 
-    .filter-small {
-      display:flex;
-      gap:6px;
-      align-items:center;
-    }
-
-    .expense-list {
-      margin-top: 14px;
-    }
+    .expense-list { margin-top: 14px; }
 
     .expense-item {
       background: rgba(255,255,255,0.04);
@@ -127,15 +125,40 @@
       align-items:center;
     }
 
-    .add-row input, .add-row select { min-width:160px; }
-
-    .add-row .small {
-      width:120px;
-    }
-
     .muted { color:#9aa9b6; font-size:0.9rem; }
 
-    /* small responsive tweak */
+    .category-section {
+      margin-top: 35px;
+      text-align: center;
+    }
+
+    .category-list {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .category-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding:6px 10px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .category-item button {
+      background:#ef4444;
+      border:none;
+      color:white;
+      padding:3px 7px;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
     @media (max-width:720px){
       .controls{gap:8px;padding:0 8px}
       .add-row{gap:8px}
@@ -146,33 +169,30 @@
   <header>
     <div class="logo">MG</div>
     <div>
-      <a class="btn" href="dashboard.html">← Dashboard</a>
-      <button class="btn" id="logoutBtn">Logout</button>
+      <a href="dashboard.html" class="btn">← Dashboard</a>
+      <button id="logoutBtn" class="btn">Logout</button>
     </div>
   </header>
 
   <div class="container">
     <h1>Expense Tracker</h1>
 
-    <!-- filters: category + time (month-picker) -->
     <div class="controls">
       <div class="filter-group">
-        <label for="categoryFilter">Category</label>
+        <label>Category</label>
         <select id="categoryFilter">
           <option value="all">All Categories</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label for="timeFilter">Time</label>
-        <!-- input type month shows a tiny calendar popup in browsers that support it -->
-        <input id="timeFilter" type="month" placeholder="All time" />
-        <button id="clearTime" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:6px 8px;border-radius:8px;">Clear</button>
+        <label>Time</label>
+        <input type="month" id="timeFilter">
+        <button id="clearTime" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.08);padding:6px 10px;">Clear</button>
       </div>
     </div>
 
     <div id="expenseList" class="expense-list"></div>
-
     <div id="summaryText" class="summary">Total: ₹0</div>
 
     <div class="add-row">
@@ -183,156 +203,125 @@
       <button id="addExpenseBtn" class="btn">Add Expense</button>
     </div>
 
-    <div style="margin-top:12px;text-align:center" class="muted">
-      Add category below:
-      <input id="newCategory" type="text" placeholder="New category" style="min-width:180px;margin-left:8px"/>
+    <div style="margin-top:20px;text-align:center" class="muted">
+      Add category:
+      <input id="newCategory" type="text" placeholder="New Category name" style="min-width:180px;margin-left:8px"/>
       <button id="addCategoryBtn" class="btn">Add Category</button>
+    </div>
+
+    <div class="category-section">
+      <h3 style="color:#00b4ff;">Manage Categories</h3>
+      <div id="categoryList" class="category-list"></div>
     </div>
   </div>
 
   <script>
-    // keys and data
     const EXP_KEY = 'expenses';
     const CAT_KEY = 'categories';
 
     let expenses = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
-    let categories = JSON.parse(localStorage.getItem(CAT_KEY)) || ['Salary','Rent','Utilities','Other'];
+    let categories = JSON.parse(localStorage.getItem(CAT_KEY)) || ['Food','Travel','Bills','Other'];
 
-    // elements
     const expenseListEl = document.getElementById('expenseList');
     const categoryFilter = document.getElementById('categoryFilter');
     const timeFilter = document.getElementById('timeFilter');
-    const summaryText = document.getElementById('summaryText');
-    const expenseCategory = document.getElementById('expenseCategory');
-    const addExpenseBtn = document.getElementById('addExpenseBtn');
-    const addCategoryBtn = document.getElementById('addCategoryBtn');
-    const newCategory = document.getElementById('newCategory');
-    const expenseName = document.getElementById('expenseName');
-    const expenseAmount = document.getElementById('expenseAmount');
-    const expenseDate = document.getElementById('expenseDate');
     const clearTime = document.getElementById('clearTime');
+    const expenseCategory = document.getElementById('expenseCategory');
+    const summaryText = document.getElementById('summaryText');
+    const categoryListEl = document.getElementById('categoryList');
 
-    function saveAll(){
+    function saveAll() {
       localStorage.setItem(EXP_KEY, JSON.stringify(expenses));
       localStorage.setItem(CAT_KEY, JSON.stringify(categories));
     }
 
-    function renderCategoryOptions(){
+    function renderCategories() {
       categoryFilter.innerHTML = '<option value="all">All Categories</option>' +
-        categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-      expenseCategory.innerHTML = categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      expenseCategory.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      categoryListEl.innerHTML = '';
+      categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'category-item';
+        div.innerHTML = `${cat} <button onclick="deleteCategory('${cat}')">❌</button>`;
+        categoryListEl.appendChild(div);
+      });
     }
 
-    // helper: convert 'YYYY-MM-DD' or locale date to 'YYYY-MM'
-    function dateToYM(dStr){
-      if(!dStr) return '';
-      const d = new Date(dStr);
-      if (isNaN(d)) return '';
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,'0');
-      return `${y}-${m}`;
-    }
-
-    function renderExpenses(){
+    function renderExpenses() {
       expenseListEl.innerHTML = '';
       const cat = categoryFilter.value;
-      const time = timeFilter.value; // "" or e.g. "2025-11"
+      const time = timeFilter.value;
 
-      // filter
-      const filtered = expenses.filter(e=>{
+      const filtered = expenses.filter(e => {
         const matchesCat = (cat === 'all') || (e.category === cat);
-        const ym = dateToYM(e.date);
-        const matchesTime = (!time) || (ym === time);
+        const matchesTime = (!time) || e.date.startsWith(time.split('-')[1]);
         return matchesCat && matchesTime;
       });
 
-      if(filtered.length === 0){
-        expenseListEl.innerHTML = '<p style="text-align:center;color:#9aa9b6">No expenses found</p>';
+      if(filtered.length === 0) {
+        expenseListEl.innerHTML = '<p style="text-align:center;color:#888;">No expenses found</p>';
       } else {
-        filtered.forEach(exp=>{
-          const row = document.createElement('div');
-          row.className = 'expense-item';
-          row.innerHTML = `
+        filtered.forEach(exp => {
+          const div = document.createElement('div');
+          div.className = 'expense-item';
+          div.innerHTML = `
             <div>
-              <strong>${escapeHtml(exp.name)}</strong><br>
-              <small>${escapeHtml(exp.category)} • ${escapeHtml(exp.date)}</small>
+              <strong>${exp.name}</strong><br>
+              <small>${exp.category} | ${exp.date}</small>
             </div>
-            <div>
-              <div class="amt">₹${Number(exp.amount).toFixed(2)}</div>
-              <div style="margin-top:6px;">
-                <button style="background:#ef4444;border:none;padding:6px 8px;border-radius:6px;color:#fff;cursor:pointer" onclick="deleteExpense(${exp.id})">Delete</button>
-              </div>
-            </div>
-          `;
-          expenseListEl.appendChild(row);
+            <span class="amt">₹${exp.amount}</span>`;
+          expenseListEl.appendChild(div);
         });
       }
 
-      const total = filtered.reduce((s,e)=> s + Number(e.amount), 0);
-      summaryText.textContent = `Total: ₹${total.toFixed(2)}`;
+      const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+      summaryText.textContent = `Total: ₹${total}`;
     }
 
-    // add expense
-    addExpenseBtn.addEventListener('click', ()=>{
-      const name = expenseName.value.trim();
-      const amount = parseFloat(expenseAmount.value);
-      const category = expenseCategory.value;
-      const dateVal = expenseDate.value; // 'YYYY-MM-DD'
-      if(!name || isNaN(amount) || amount <= 0){
-        return alert('Enter valid name and amount');
-      }
-      const dateStr = dateVal ? new Date(dateVal).toLocaleDateString() : new Date().toLocaleDateString();
-      const id = Date.now(); // simple id
-
-      expenses.push({ id, name, amount: Number(amount), category, date: dateStr });
+    document.getElementById('addExpenseBtn').onclick = () => {
+      const name = document.getElementById('expenseName').value.trim();
+      const amt = parseFloat(document.getElementById('expenseAmount').value);
+      const cat = expenseCategory.value;
+      const date = document.getElementById('expenseDate').value || new Date().toISOString().slice(0,10);
+      if(!name || !amt) return alert('Enter valid details!');
+      expenses.push({ name, amount: amt, category: cat, date });
       saveAll();
-      expenseName.value = '';
-      expenseAmount.value = '';
-      expenseDate.value = '';
       renderExpenses();
-      renderCategoryOptions(); // categories unchanged but safe
-    });
+      document.getElementById('expenseName').value = '';
+      document.getElementById('expenseAmount').value = '';
+    };
 
-    // add category
-    addCategoryBtn.addEventListener('click', ()=>{
-      const val = newCategory.value.trim();
-      if(!val) return alert('Enter category name');
+    document.getElementById('addCategoryBtn').onclick = () => {
+      const val = document.getElementById('newCategory').value.trim();
+      if(!val) return alert('Enter category');
       if(categories.includes(val)) return alert('Category exists');
       categories.push(val);
       saveAll();
-      newCategory.value = '';
-      renderCategoryOptions();
-    });
+      document.getElementById('newCategory').value = '';
+      renderCategories();
+    };
 
-    // delete expense by id
-    window.deleteExpense = function(id){
-      if(!confirm('Delete this expense?')) return;
-      expenses = expenses.filter(e=> e.id !== id);
+    function deleteCategory(name) {
+      if(!confirm(`Delete category "${name}"?`)) return;
+      categories = categories.filter(c => c !== name);
       saveAll();
-      renderExpenses();
-    };
+      renderCategories();
+    }
 
-    // clear time filter
-    clearTime.addEventListener('click', ()=>{
-      timeFilter.value = '';
-      renderExpenses();
-    });
+    categoryFilter.onchange = renderExpenses;
+    timeFilter.onchange = renderExpenses;
+    clearTime.onclick = () => { timeFilter.value=''; renderExpenses(); };
 
-    // filters change
-    categoryFilter.addEventListener('change', renderExpenses);
-    timeFilter.addEventListener('change', renderExpenses);
-
-    document.getElementById('logoutBtn').onclick = ()=>{
+    document.getElementById('logoutBtn').onclick = () => {
       localStorage.removeItem('loggedInUser');
-      location.href = 'login.html';
+      location.href='login.html';
     };
 
-    // small helper to escape html
-    function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-
-    // initial render
-    renderCategoryOptions();
+    renderCategories();
     renderExpenses();
   </script>
 </body>
 </html>
+
