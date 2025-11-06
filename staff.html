@@ -1,115 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Staff | MG</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="staff-body">
 
   <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div class="header-buttons">
+    <div class="top-left">
+      <h1 class="logo">MG</h1>
+    </div>
+    <div class="top-right">
       <a href="dashboard.html" class="btn-back">← Dashboard</a>
       <button id="logoutBtn" class="btn-logout">Logout</button>
     </div>
   </header>
 
-  <main class="staff-container">
-    <h2 class="page-title">Staff Management</h2>
-    <p class="subtitle">Add, view, or delete staff members</p>
-
-    <div class="add-staff-form glass-box">
-      <h3>Add Staff</h3>
-      <form id="staffForm">
-        <div class="form-row">
-          <input type="text" id="staffName" placeholder="Staff Name" required />
-          <input type="tel" id="staffPhone" placeholder="Phone Number" required />
-          <input type="number" id="staffSalary" placeholder="Salary / month" required />
-          <button type="submit" class="btn-login">Add</button>
-        </div>
-      </form>
-    </div>
-
-    <div class="staff-list glass-box">
-      <h3>Staff List</h3>
-      <div id="staffContainer" class="staff-cards"></div>
-    </div>
-  </main>
-
-  <script src="script.js"></script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff | MG</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body class="staff-body">
-
-  <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div class="header-buttons">
-      <a href="dashboard.html" class="btn-back">← Dashboard</a>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
-    </div>
-  </header>
-
-  <main class="staff-center">
-    <div class="staff-box">
-      <h2 class="page-title">Staff Management</h2>
-      <p class="subtitle">Add, view, or delete staff members</p>
+  <!-- CENTERED WRAPPER -->
+  <main class="center-stage">
+    <section class="card-panel staff-card-panel">
+      <h2 class="panel-title">Staff Management</h2>
+      <p class="panel-sub">Add, view, or delete staff members</p>
 
       <form id="staffForm" class="staff-form">
-        <input type="text" id="staffName" placeholder="Staff Name" required />
-        <input type="tel" id="staffPhone" placeholder="Phone Number" required />
-        <input type="number" id="staffSalary" placeholder="Salary / month" required />
-        <button type="submit" class="btn-login add-btn">Add Staff</button>
+        <input id="staffName" type="text" placeholder="Staff name" required />
+        <input id="staffPhone" type="tel" placeholder="Phone number" required />
+        <input id="staffSalary" type="number" placeholder="Salary / month" required />
+        <button class="btn-login add-btn" type="submit">Add Staff</button>
       </form>
 
-      <div id="staffContainer" class="staff-list"></div>
-    </div>
-  </main>
-
-  <script src="script.js"></script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff | MG</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body class="staff-body">
-
-  <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div class="header-buttons">
-      <a href="dashboard.html" class="btn-back">← Dashboard</a>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
-    </div>
-  </header>
-
-  <main class="staff-wrapper">
-    <div class="staff-box">
-      <h2 class="page-title">Staff Management</h2>
-      <p class="subtitle">Add, view, or delete staff members</p>
-
-      <form id="staffForm" class="staff-form">
-        <input type="text" id="staffName" placeholder="Enter Staff Name" required />
-        <input type="tel" id="staffPhone" placeholder="Enter Phone Number" required />
-        <input type="number" id="staffSalary" placeholder="Enter Salary / Month" required />
-        <button type="submit" class="btn-login add-btn">Add Staff</button>
-      </form>
-
-      <div id="staffContainer" class="staff-list"></div>
-    </div>
+      <div id="staffContainer" class="staff-list">
+        <!-- staff cards injected here -->
+      </div>
+    </section>
   </main>
 
   <script src="script.js"></script>
