@@ -6,36 +6,38 @@
   <title>Attendance | MG</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    body { overflow-x:hidden; }
     .attendance-wrap { display:flex; gap:28px; align-items:flex-start; width:100%; max-width:1100px; margin:0 auto; }
-    .staff-list-col { width:260px; }
+    .staff-list-col { width:220px; }
     .staff-list-col h4 { color:var(--accent); margin-bottom:10px; text-align:left; }
     .staff-list { display:flex; flex-direction:column; gap:10px; }
-    .staff-quick { padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); cursor:pointer; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; }
-    .staff-quick.active { box-shadow:0 6px 20px rgba(0,180,255,0.12); background:rgba(0,180,255,0.04); }
+    .staff-quick { padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); cursor:pointer; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; }
+    .staff-quick.active { background:rgba(0,180,255,0.12); box-shadow:0 0 10px rgba(0,180,255,0.2); }
     .calendar-col { flex:1; }
-    .cal-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+    .cal-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px; }
     .cal-nav { display:flex; gap:8px; align-items:center; }
-    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
-    .cal-day { padding:12px; border-radius:8px; background:rgba(255,255,255,0.02); min-height:88px; position:relative; border:1px solid rgba(255,255,255,0.03); }
-    .cal-day .date-num { position:absolute; top:8px; right:8px; font-size:0.9rem; color:var(--text-muted); }
-    .cal-day .status { margin-top:22px; display:flex; justify-content:center; }
-    .badge-sm { padding:4px 8px; border-radius:8px; font-weight:600; font-size:0.8rem; color:#fff; }
-    .present { background:#16a34a; box-shadow:0 0 6px rgba(22,163,74,0.3); }
-    .halfday { background:#22d3ee; color:#000; box-shadow:0 0 6px rgba(34,211,238,0.3); }
-    .absent { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.3); }
-    .leave { background:#f59e0b; color:#000; box-shadow:0 0 6px rgba(245,158,11,0.25); }
-    .ot { background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.35); }
-    .notmarked { background:rgba(255,255,255,0.03); color:var(--text-muted); border:1px dashed rgba(255,255,255,0.04); }
-    .weekday { text-align:center; font-weight:700; color:var(--text-muted); margin-bottom:6px; }
-    .cal-controls button { border:none; padding:8px 12px; border-radius:8px; background:rgba(255,255,255,0.04); color:var(--text-main); cursor:pointer; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-top:10px; }
+    .cal-day { padding:14px; border-radius:10px; background:rgba(255,255,255,0.03); min-height:90px; position:relative; border:1px solid rgba(255,255,255,0.05); transition:0.2s; }
+    .cal-day:hover { background:rgba(0,180,255,0.08); }
+    .date-num { position:absolute; top:6px; right:10px; font-size:0.9rem; color:var(--text-muted); }
+    .status { margin-top:25px; display:flex; justify-content:center; }
+    .badge-sm { padding:5px 8px; border-radius:8px; font-weight:600; font-size:0.8rem; color:#fff; white-space:nowrap; }
+    .present { background:#16a34a; }
+    .halfday { background:#22d3ee; color:#000; }
+    .absent { background:#ef4444; }
+    .leave { background:#f59e0b; color:#000; }
+    .ot { background:#8b5cf6; }
+    .notmarked { background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px dashed rgba(255,255,255,0.1); }
+    .weekday { text-align:center; font-weight:700; color:var(--text-muted); }
     .month-title { font-weight:700; font-size:1.1rem; color:var(--accent); }
     .salary-bar { margin-top:20px; text-align:center; font-weight:600; color:var(--accent-light); font-size:1rem; }
     .popup { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--bg-panel); border:1px solid var(--border-glow); padding:16px; border-radius:12px; z-index:1000; box-shadow:0 20px 60px rgba(0,0,0,0.7); }
     .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:900; }
+    #otRow { display:none; margin-top:10px; gap:8px; }
+    #otAmountInput { padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); width:120px; }
   </style>
 </head>
 <body class="staff-body">
-
   <header class="top-bar">
     <div class="top-left"><h1 class="logo">MG</h1></div>
     <div class="top-right">
@@ -47,7 +49,7 @@
   <main class="center-stage" style="padding-top:30px;padding-bottom:60px;">
     <section class="staff-card-panel" style="width:100%;max-width:1200px;">
       <h2 class="panel-title">Attendance & Salary Calendar</h2>
-      <p class="panel-sub">Mark Present, Half Day, Absent, Leave or OT (with manual rate entry).</p>
+      <p class="panel-sub">Mark Present, Half Day, Absent, Leave or OT (manual entry).</p>
 
       <div class="attendance-wrap">
         <div class="staff-list-col">
@@ -62,7 +64,7 @@
               <div class="month-title" id="monthTitle"></div>
               <button id="nextMonth">→</button>
             </div>
-            <div><button id="todayBtn" class="btn-back">Today</button></div>
+            <button id="todayBtn" class="btn-back">Today</button>
           </div>
 
           <div class="cal-grid" id="weekdays">
@@ -70,17 +72,18 @@
             <div class="weekday">Wed</div><div class="weekday">Thu</div><div class="weekday">Fri</div><div class="weekday">Sat</div>
           </div>
 
-          <div class="cal-grid" id="calendarGrid" style="margin-top:10px;"></div>
+          <div class="cal-grid" id="calendarGrid"></div>
           <div id="salarySummary" class="salary-bar">Earnings this month: ₹0</div>
         </div>
       </div>
     </section>
   </main>
 
+  <!-- Popup -->
   <div id="overlay" class="overlay" style="display:none;"></div>
-  <div id="popup" class="popup" style="display:none;min-width:340px;">
+  <div id="popup" class="popup" style="display:none;min-width:350px;">
     <div id="popupTitle" style="font-weight:700;"></div>
-    <div class="row" id="popupBtns" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+    <div id="popupBtns" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
       <button class="btn-login" data-status="Present" style="background:#16a34a">Present</button>
       <button class="btn-login" data-status="Half Day" style="background:#22d3ee;color:#000;">Half Day</button>
       <button class="btn-login" data-status="Absent" style="background:#ef4444">Absent</button>
@@ -88,123 +91,119 @@
       <button class="btn-login" data-status="OT" style="background:#8b5cf6">OT</button>
       <button class="btn-back" data-status="Clear">Clear</button>
     </div>
+    <div id="otRow">
+      <label style="color:var(--text-main)">OT amount (₹):</label>
+      <input id="otAmountInput" type="number" min="0" step="1" />
+      <button id="otSaveBtn" class="btn-login">Save</button>
+    </div>
   </div>
 
-<script>
-const STAFF_KEY = "staff";
-const ATT_KEY = "attendance_by_staff";
-let selectedStaff = localStorage.getItem("selected_staff") || null;
-let viewDate = new Date();
-let attendanceData = JSON.parse(localStorage.getItem(ATT_KEY)) || {};
+  <script>
+  const STAFF_KEY="staff", ATT_KEY="attendance_by_staff";
+  let selectedStaff=localStorage.getItem("selected_staff")||null;
+  let viewDate=new Date();
+  let attendanceData=JSON.parse(localStorage.getItem(ATT_KEY))||{};
+  const staffList=document.getElementById("staffList"),calendar=document.getElementById("calendarGrid");
+  const overlay=document.getElementById("overlay"),popup=document.getElementById("popup");
+  const popupTitle=document.getElementById("popupTitle"),popupBtns=document.getElementById("popupBtns");
+  const otRow=document.getElementById("otRow"),otAmountInput=document.getElementById("otAmountInput"),otSaveBtn=document.getElementById("otSaveBtn");
 
-function getStaffList(){ return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; }
-function saveAttendance(){ localStorage.setItem(ATT_KEY, JSON.stringify(attendanceData)); localStorage.setItem("attendance_updated_at", Date.now()); }
+  function getStaff(){return JSON.parse(localStorage.getItem(STAFF_KEY))||[];}
+  function saveAttendance(){localStorage.setItem(ATT_KEY,JSON.stringify(attendanceData));}
+  function localISO(d){d=new Date(d);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().split("T")[0];}
 
-function localISO(date){
-  const d = new Date(date);
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().split("T")[0];
-}
-
-function renderStaff(){
-  const list = getStaffList();
-  const staffListEl = document.getElementById("staffList");
-  staffListEl.innerHTML="";
-  if(list.length===0){ staffListEl.innerHTML="<p style='text-align:center;color:#888;'>No staff added yet.</p>"; return; }
-  list.forEach(s=>{
-    const el=document.createElement("div");
-    el.className="staff-quick"+(selectedStaff===s.name?" active":"");
-    el.textContent=s.name;
-    el.onclick=()=>{selectedStaff=s.name;localStorage.setItem("selected_staff",s.name);renderStaff();renderCalendar();};
-    staffListEl.appendChild(el);
-  });
-}
-
-function renderCalendar(){
-  const grid=document.getElementById("calendarGrid");
-  grid.innerHTML="";
-  const year=viewDate.getFullYear(),month=viewDate.getMonth();
-  const first=new Date(year,month,1);
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const startDay=first.getDay();
-  document.getElementById("monthTitle").textContent=first.toLocaleString("en-US",{month:"long",year:"numeric"});
-  for(let i=0;i<startDay;i++){ const blank=document.createElement("div"); blank.className="cal-day"; blank.style.visibility="hidden"; grid.appendChild(blank); }
-  for(let d=1;d<=daysInMonth;d++){
-    const cell=document.createElement("div"); cell.className="cal-day";
-    const iso=localISO(new Date(year,month,d));
-    cell.innerHTML=`<div class='date-num'>${d}</div>`;
-    if(selectedStaff){
-      const status=(attendanceData[selectedStaff]&&attendanceData[selectedStaff][iso])||null;
-      const badge=document.createElement("div");
-      let display="No";
-      if(typeof status==="string") display=status;
-      if(typeof status==="object" && status.status==="OT") display=`OT ₹${status.amount}`;
-      badge.className="badge-sm "+(display==="No"?"notmarked":display.toLowerCase().split(" ")[0]);
-      badge.textContent=display;
-      const wrap=document.createElement("div"); wrap.className="status"; wrap.appendChild(badge);
-      cell.appendChild(wrap);
-      cell.onclick=()=>openPopup(selectedStaff,iso,new Date(year,month,d));
-    }
-    grid.appendChild(cell);
+  function renderStaff(){
+    const list=getStaff();staffList.innerHTML="";
+    if(!list.length){staffList.innerHTML="<p style='color:#999;text-align:center;'>No staff yet</p>";return;}
+    list.forEach(s=>{
+      const div=document.createElement("div");
+      div.className="staff-quick"+(s.name===selectedStaff?" active":"");
+      div.textContent=s.name;
+      div.onclick=()=>{selectedStaff=s.name;localStorage.setItem("selected_staff",s.name);renderStaff();renderCalendar();};
+      staffList.appendChild(div);
+    });
   }
-  updateSalarySummary();
-}
 
-function openPopup(staff,iso,dateObj){
-  document.getElementById("popupTitle").textContent=`${staff} — ${dateObj.toDateString()}`;
-  document.getElementById("overlay").style.display="block";
-  document.getElementById("popup").style.display="block";
-  document.getElementById("popupBtns").onclick=(e)=>{
-    const btn=e.target.closest("button"); if(!btn)return;
-    const status=btn.dataset.status;
-    if(!attendanceData[staff])attendanceData[staff]={};
-    if(status==="Clear"){ delete attendanceData[staff][iso]; }
-    else if(status==="OT"){
-      const amt=prompt("Enter OT amount for this day (₹):");
-      if(amt && !isNaN(amt)) attendanceData[staff][iso]={status:"OT",amount:parseFloat(amt)};
+  function renderCalendar(){
+    calendar.innerHTML="";
+    const year=viewDate.getFullYear(),month=viewDate.getMonth();
+    const first=new Date(year,month,1),daysInMonth=new Date(year,month+1,0).getDate();
+    document.getElementById("monthTitle").textContent=first.toLocaleString("en-US",{month:"long",year:"numeric"});
+    const start=first.getDay();
+    for(let i=0;i<start;i++){const blank=document.createElement("div");blank.className="cal-day";blank.style.visibility="hidden";calendar.appendChild(blank);}
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=localISO(new Date(year,month,d));
+      const div=document.createElement("div");div.className="cal-day";
+      div.innerHTML=`<div class='date-num'>${d}</div>`;
+      if(selectedStaff){
+        const rec=attendanceData[selectedStaff]?.[iso];
+        let text="No",cls="notmarked";
+        if(typeof rec==="string"){text=rec;cls=rec.toLowerCase().replace(" ","");}
+        if(typeof rec==="object"&&rec.status==="OT"){text=`OT ₹${rec.amount}`;cls="ot";}
+        const badge=document.createElement("div");
+        badge.className=`badge-sm ${cls}`;badge.textContent=text;
+        const st=document.createElement("div");st.className="status";st.appendChild(badge);
+        div.appendChild(st);
+        div.onclick=()=>openPopup(selectedStaff,iso,new Date(year,month,d));
+      }
+      calendar.appendChild(div);
     }
-    else{ attendanceData[staff][iso]=status; }
-    saveAttendance(); closePopup(); renderCalendar();
-  };
-}
+    updateSalary();
+  }
 
-function closePopup(){
-  document.getElementById("overlay").style.display="none";
-  document.getElementById("popup").style.display="none";
-}
+  function openPopup(staff,iso,date){
+    popupTitle.textContent=`${staff} — ${date.toDateString()}`;
+    overlay.style.display="block";popup.style.display="block";otRow.style.display="none";
+    popupBtns.onclick=e=>{
+      const btn=e.target.closest("button");if(!btn)return;
+      const s=btn.dataset.status;
+      if(!attendanceData[staff])attendanceData[staff]={};
+      if(s==="Clear"){delete attendanceData[staff][iso];saveAttendance();closePopup();renderCalendar();return;}
+      if(s==="OT"){
+        otRow.style.display="flex";
+        const prev=attendanceData[staff][iso];
+        otAmountInput.value=(prev&&typeof prev==="object"&&prev.status==="OT")?prev.amount:"";
+        otSaveBtn.onclick=()=>{
+          const amt=parseFloat(otAmountInput.value);
+          if(!isNaN(amt)){attendanceData[staff][iso]={status:"OT",amount:amt};saveAttendance();closePopup();renderCalendar();}
+        };return;
+      }
+      attendanceData[staff][iso]=s;saveAttendance();closePopup();renderCalendar();
+    };
+  }
 
-function updateSalarySummary(){
-  const summary=document.getElementById("salarySummary");
-  if(!selectedStaff){ summary.textContent="Earnings this month: ₹0"; return; }
-  const staff=getStaffList().find(s=>s.name===selectedStaff);
-  if(!staff||!staff.salary){ summary.textContent="Earnings this month: ₹0"; return; }
-  const salary=parseFloat(staff.salary)||0;
-  const year=viewDate.getFullYear(),month=viewDate.getMonth();
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const perDay=salary/daysInMonth;
-  const att=attendanceData[selectedStaff]||{};
-  let present=0,half=0,otTotal=0;
-  Object.keys(att).forEach(key=>{
-    const [y,m]=key.split("-").map(Number);
-    if(y===year && m===month+1){
-      const rec=att[key];
-      if(rec==="Present") present++;
-      if(rec==="Half Day") half++;
-      if(typeof rec==="object" && rec.status==="OT") otTotal+=rec.amount;
-    }
-  });
-  const earned=Math.round(present*perDay + half*(perDay/2) + otTotal);
-  summary.textContent=`Earnings this month: ₹${earned} (Full: ${present}, Half: ${half}, OT: ₹${otTotal}, ₹${perDay.toFixed(2)} / day)`;
-}
+  function closePopup(){overlay.style.display="none";popup.style.display="none";otRow.style.display="none";}
 
-document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("loggedInUser");window.location.href="login.html";};
-document.getElementById("prevMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()-1);renderCalendar();};
-document.getElementById("nextMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()+1);renderCalendar();};
-document.getElementById("todayBtn").onclick=()=>{viewDate=new Date();renderCalendar();};
-document.getElementById("overlay").onclick=closePopup;
+  function updateSalary(){
+    const el=document.getElementById("salarySummary");
+    if(!selectedStaff){el.textContent="Earnings this month: ₹0";return;}
+    const st=getStaff().find(s=>s.name===selectedStaff);
+    if(!st||!st.salary){el.textContent="Earnings this month: ₹0";return;}
+    const salary=parseFloat(st.salary)||0;
+    const y=viewDate.getFullYear(),m=viewDate.getMonth();
+    const daysInMonth=new Date(y,m+1,0).getDate(),perDay=salary/daysInMonth;
+    const recs=attendanceData[selectedStaff]||{};
+    let p=0,h=0,ot=0;
+    Object.keys(recs).forEach(k=>{
+      const [yy,mm]=k.split("-").map(Number);
+      if(yy===y&&mm===m+1){
+        const r=recs[k];
+        if(r==="Present")p++;
+        if(r==="Half Day")h++;
+        if(typeof r==="object"&&r.status==="OT")ot+=r.amount;
+      }
+    });
+    const total=Math.round(p*perDay+h*(perDay/2)+ot);
+    el.textContent=`Earnings this month: ₹${total} (Full: ${p}, Half: ${h}, OT: ₹${ot}, ₹${perDay.toFixed(2)}/day)`;
+  }
 
-renderStaff();
-renderCalendar();
-</script>
+  document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("loggedInUser");location="login.html";};
+  document.getElementById("prevMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()-1);renderCalendar();};
+  document.getElementById("nextMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()+1);renderCalendar();};
+  document.getElementById("todayBtn").onclick=()=>{viewDate=new Date();renderCalendar();};
+  overlay.onclick=closePopup;
+
+  renderStaff();renderCalendar();
+  </script>
 </body>
 </html>
