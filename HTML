@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factory Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-bg">
+  <div class="login-container animate-fade">
+    <h1 class="logo">🏭 Factory Manager</h1>
+    <input type="text" id="loginId" placeholder="Enter ID">
+    <input type="password" id="loginPass" placeholder="Enter Password">
+    <button class="btn-primary" id="loginBtn">Login</button>
+    <p id="loginMsg" class="msg"></p>
+  </div>
+  <footer>© 2025 Factory App</footer>
+  <script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Home</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-bg">
+  <header class="nav-top">
+    <h2>Welcome, Admin</h2>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </header>
+
+  <main class="home-container animate-slide">
+    <div class="home-card" onclick="window.location.href='staff.html'">
+      👷 <h3>Staff</h3>
+      <p>Manage staff, view details, mark attendance</p>
+    </div>
+
+    <div class="home-card" onclick="window.location.href='expenses.html'">
+      💰 <h3>Expenses</h3>
+      <p>Add and track factory expenses</p>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Management</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-bg">
+  <header class="nav-top">
+    <h2>Staff Management</h2>
+    <button class="btn-back" onclick="window.location.href='home.html'">← Home</button>
+  </header>
+
+  <div class="glass-card animate-slide">
+    <h3>Add Staff</h3>
+    <div class="flex-row">
+      <input type="text" id="staffName" placeholder="Name">
+      <input type="text" id="staffPhone" placeholder="Phone">
+      <input type="number" id="staffSalary" placeholder="Salary ₹">
+      <button class="btn-primary" onclick="addStaff()">Add</button>
+    </div>
+
+    <h3>Staff List</h3>
+    <ul id="staffList"></ul>
+
+    <h3>Mark Attendance</h3>
+    <select id="attendanceSelect"></select>
+    <button class="btn-success" onclick="markAttendance()">Mark</button>
+    <ul id="attendanceList"></ul>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-bg">
+  <header class="nav-top">
+    <h2>Expenses</h2>
+    <button class="btn-back" onclick="window.location.href='home.html'">← Home</button>
+  </header>
+
+  <div class="glass-card animate-slide">
+    <h3>Add Expense</h3>
+    <div class="flex-row">
+      <input type="text" id="expenseName" placeholder="Expense Name">
+      <input type="number" id="expenseAmount" placeholder="Amount ₹">
+      <button class="btn-primary" onclick="addExpense()">Add</button>
+    </div>
+
+    <h3>Expense List</h3>
+    <ul id="expenseList"></ul>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-bg">
+  <header class="nav-top">
+    <h2>Staff Attendance</h2>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </header>
+
+  <div class="glass-card animate-slide">
+    <h3>Hello, <span id="staffNameLabel"></span></h3>
+    <button class="btn-success" onclick="markAttendanceStaff()">Mark Attendance</button>
+    <ul id="myAttendanceList"></ul>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
