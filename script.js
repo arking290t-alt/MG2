@@ -1,189 +1,255 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("loginForm");
-  const errorMsg = document.getElementById("error");
+<script>
+  const staffSelect = document.getElementById("staffSelect");
+  const calendar = document.getElementById("calendar");
+  const modal = document.getElementById("attendanceModal");
+  const closeModal = document.getElementById("closeModal");
+  const actions = document.getElementById("actions");
+  const modalTitle = document.getElementById("modalTitle");
+  const salarySummary = document.getElementById("salarySummary");
+  const addPaymentBtn = document.getElementById("addPaymentBtn");
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  const STAFF_KEY = "staffList";
+  const ATTEND_KEY = "attendanceData";
+  const PAY_KEY = "paymentData";
+  const PAY_LIST_KEY = "paymentListData";
 
-    const user = document.getElementById("userid").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    const role = document.getElementById("role").value;
+  const staffList = JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
+  const attendanceData = JSON.parse(localStorage.getItem(ATTEND_KEY)) || {};
+  const paymentData = JSON.parse(localStorage.getItem(PAY_KEY)) || {};
+  const paymentListData = JSON.parse(localStorage.getItem(PAY_LIST_KEY)) || {};
 
-    if (role === "owner" && user === "pratham" && pass === "pratham0056") {
-      sessionStorage.setItem("loginRole", "owner");
-      window.location.href = "dashboard.html";
-    } else if (role === "staff") {
-      sessionStorage.setItem("loginRole", "staff");
-      window.location.href = "staff.html";
-    } else {
-      errorMsg.textContent = "Incorrect ID or Password!";
+  let currentMonth = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let currentDay = null;
+
+  function updateMonthYear() {
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
+  }
+
+  function loadStaffList() {
+    if (!staffList.length) {
+      staffSelect.innerHTML = "<option>No staff added</option>";
+      return;
     }
-  });
-});
-// Logout button (on dashboard)
-document.addEventListener("DOMContentLoaded", () => {
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    });
-  }
-});
-// Logout functionality
-document.addEventListener("DOMContentLoaded", () => {
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    });
-  }
-});
-// ================== STAFF PAGE FUNCTIONALITY ==================
-
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("staffForm");
-  const staffContainer = document.getElementById("staffContainer");
-  if (!form || !staffContainer) return; // Only run on staff.html
-
-  // Fetch staff list from localStorage
-  function getStaff() {
-    return JSON.parse(localStorage.getItem("staffList") || "[]");
+    staffSelect.innerHTML = `<option value="">Select Staff</option>` + staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
   }
 
-  // Save staff list
-  function saveStaff(list) {
-    localStorage.setItem("staffList", JSON.stringify(list));
+  function renderCalendar() {
+    calendar.innerHTML = "";
+    updateMonthYear();
+
+    const staffName = staffSelect.value;
+    if (!staffName) return;
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      const div = document.createElement("div");
+      div.className = "day";
+      div.textContent = i;
+
+      const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
+      const rec = attendanceData[key];
+      if (rec) {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.background = rec.status === "Present" ? "var(--present)" :
+                               rec.status === "Half" ? "var(--half)" :
+                               rec.status === "Absent" ? "var(--absent)" :
+                               rec.status === "Leave" ? "var(--leave)" :
+                               rec.status === "OT" ? "var(--ot)" : "#888";
+        div.appendChild(dot);
+      }
+
+      div.onclick = () => openAttendanceModal(i);
+      calendar.appendChild(div);
+    }
+
+    updateSalarySummary();
+    renderPaymentList();
   }
 
-  // Render all staff cards
-  function renderStaff() {
-    const staffList = getStaff();
-    staffContainer.innerHTML = "";
+  function openAttendanceModal(day) {
+    const staffName = staffSelect.value;
+    if (!staffName) return alert("Select a staff first!");
 
-    if (staffList.length === 0) {
-      staffContainer.innerHTML = `<p class="subtitle">No staff added yet.</p>`;
+    modal.style.display = "flex";
+    modalTitle.textContent = `${staffName} - ${day}/${currentMonth + 1}/${currentYear}`;
+    currentDay = day;
+
+    actions.innerHTML = `
+      <button class="present" onclick="mark('Present')">Present</button>
+      <button class="half" onclick="mark('Half')">Half</button>
+      <button class="absent" onclick="mark('Absent')">Absent</button>
+      <button class="leave" onclick="mark('Leave')">Leave</button>
+      <button class="ot" onclick="markOT()">OT</button>
+      <button class="clear" onclick="clearStatus()">Clear</button>
+    `;
+  }
+
+  function mark(status) {
+    const staffName = staffSelect.value;
+    const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
+    attendanceData[key] = { status, ot: 0 };
+    localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    renderCalendar();
+    updateSalarySummary();
+    modal.style.display = "none";
+  }
+
+  function markOT() {
+    const staffName = staffSelect.value;
+    const rate = prompt("Enter OT amount:");
+    if (!rate || isNaN(rate)) return;
+    const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
+    attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
+    localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    renderCalendar();
+    updateSalarySummary();
+    modal.style.display = "none";
+  }
+
+  function clearStatus() {
+    const staffName = staffSelect.value;
+    const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
+    delete attendanceData[key];
+    localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    renderCalendar();
+    updateSalarySummary();
+    modal.style.display = "none";
+  }
+
+  function addPayment() {
+    const staffName = staffSelect.value;
+    if (!staffName) return alert("Select a staff first!");
+
+    const amount = prompt("Enter payment amount:");
+    if (!amount || isNaN(amount)) return;
+
+    const key = `${staffName}_${currentYear}_${currentMonth}`;
+    const paymentId = Date.now();
+
+    // update totals
+    paymentData[key] = (paymentData[key] || 0) + parseFloat(amount);
+    localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+
+    // add to list
+    if (!paymentListData[key]) paymentListData[key] = [];
+    paymentListData[key].push({ id: paymentId, amount: parseFloat(amount) });
+    localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
+
+    updateSalarySummary();
+    renderPaymentList();
+  }
+
+  function deletePayment(paymentId) {
+    const staffName = staffSelect.value;
+    const key = `${staffName}_${currentYear}_${currentMonth}`;
+    const list = paymentListData[key] || [];
+
+    const item = list.find(p => p.id === paymentId);
+    if (!item) return;
+
+    if (!confirm("Delete this payment of ₹" + item.amount + "?")) return;
+
+    // remove payment
+    const newList = list.filter(p => p.id !== paymentId);
+    paymentListData[key] = newList;
+    localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
+
+    // adjust total (add back to remaining)
+    paymentData[key] = (paymentData[key] || 0) - item.amount;
+    if (paymentData[key] < 0) paymentData[key] = 0;
+    localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+
+    updateSalarySummary();
+    renderPaymentList();
+  }
+
+  function renderPaymentList() {
+    const staffName = staffSelect.value;
+    const key = `${staffName}_${currentYear}_${currentMonth}`;
+    const list = paymentListData[key] || [];
+
+    let listContainer = document.getElementById("paymentList");
+    if (!listContainer) {
+      listContainer = document.createElement("div");
+      listContainer.id = "paymentList";
+      listContainer.style.marginTop = "20px";
+      listContainer.style.textAlign = "center";
+      document.querySelector(".container").appendChild(listContainer);
+    }
+
+    if (!staffName) {
+      listContainer.innerHTML = "";
       return;
     }
 
-    staffList.forEach((staff, index) => {
-      const card = document.createElement("div");
-      card.classList.add("staff-card");
+    if (list.length === 0) {
+      listContainer.innerHTML = `<p style="color:#aaa;">No payments added yet.</p>`;
+      return;
+    }
 
-      card.innerHTML = `
-        <div class="staff-info">
-          <h4>${staff.name}</h4>
-          <p>${staff.phone} | ₹${staff.salary}/month</p>
+    listContainer.innerHTML = `
+      <h3 style="color:var(--accent);">Payments This Month</h3>
+      ${list.map(p => `
+        <div style="margin:6px auto; width:240px; background:rgba(255,255,255,0.07); padding:6px 10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>₹${p.amount.toFixed(2)}</span>
+          <button onclick="deletePayment(${p.id})" style="background:#ef4444; border:none; color:white; border-radius:6px; padding:3px 8px; cursor:pointer;">Delete</button>
         </div>
-        <button class="btn-delete" data-index="${index}">Delete</button>
-      `;
-
-      staffContainer.appendChild(card);
-    });
-
-    // Delete button actions
-    document.querySelectorAll(".btn-delete").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const i = e.target.getAttribute("data-index");
-        const confirmDelete = confirm("Are you sure you want to delete this staff member?");
-        if (confirmDelete) {
-          const staffList = getStaff();
-          staffList.splice(i, 1);
-          saveStaff(staffList);
-          renderStaff();
-        }
-      });
-    });
+      `).join("")}
+    `;
   }
 
-  // Handle form submit
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  function updateSalarySummary() {
+    const staffName = staffSelect.value;
+    const staff = staffList.find(s => s.name === staffName);
+    if (!staff) return;
 
-    const name = document.getElementById("staffName").value.trim();
-    const phone = document.getElementById("staffPhone").value.trim();
-    const salary = document.getElementById("staffSalary").value.trim();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const perDay = staff.salary / daysInMonth;
+    let full = 0, half = 0, totalOT = 0;
 
-    if (!name || !phone || !salary) {
-      alert("Please fill all fields.");
-      return;
+    for (let i = 1; i <= daysInMonth; i++) {
+      const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
+      const rec = attendanceData[key];
+      if (!rec) continue;
+      if (rec.status === "Present") full++;
+      if (rec.status === "Half") half += 0.5;
+      if (rec.status === "OT") totalOT += rec.ot;
     }
 
-    const staffList = getStaff();
-    staffList.push({ name, phone, salary });
-    saveStaff(staffList);
+    const total = (full + half) * perDay + totalOT;
+    const payKey = `${staffName}_${currentYear}_${currentMonth}`;
+    const paid = paymentData[payKey] || 0;
+    const remaining = total - paid;
 
-    form.reset();
-    renderStaff();
-  });
+    salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${total.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
+  }
 
-  renderStaff();
-});
-attendance = {
-  "vikas": { Present: 3, Absent: 1, Leave: 0 }
-}
-// ===== Paid Amount System =====
-const PAY_KEY = "payments_by_staff";
-let paymentData = JSON.parse(localStorage.getItem(PAY_KEY)) || {};
+  document.getElementById("prevMonth").onclick = () => {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar();
+  };
 
-function updatePaidSection(total) {
-  if (!selectedStaff) return;
-  const y = viewDate.getFullYear(), m = viewDate.getMonth() + 1;
-  const monthKey = `${y}-${m}`;
-  const list = (paymentData[selectedStaff]?.[monthKey]) || [];
-  const totalPaid = list.reduce((a, b) => a + b, 0);
-  paidList.textContent = list.length ? list.map(x => "₹" + x).join(" | ") : "None";
-  paidTotal.textContent = totalPaid;
-  remaining.textContent = Math.max(0, total - totalPaid);
-}
+  document.getElementById("nextMonth").onclick = () => {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+  };
 
-document.getElementById("addPaid").onclick = () => {
-  if (!selectedStaff) return alert("Select a staff first!");
-  const val = parseFloat(prompt("Enter paid amount: ₹"));
-  if (isNaN(val) || val <= 0) return;
-  const y = viewDate.getFullYear(), m = viewDate.getMonth() + 1;
-  const monthKey = `${y}-${m}`;
-  if (!paymentData[selectedStaff]) paymentData[selectedStaff] = {};
-  if (!paymentData[selectedStaff][monthKey]) paymentData[selectedStaff][monthKey] = [];
-  paymentData[selectedStaff][monthKey].push(val);
-  localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
-  renderCalendar();
-};
-updatePaidSection(total);
-function addPayment() {
-  const staffName = staffSelect.value;
-  if (!staffName) return alert("Select a staff first!");
+  closeModal.onclick = () => modal.style.display = "none";
+  window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
-  const amount = prompt("Enter payment amount:");
-  if (!amount || isNaN(amount)) return;
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("loggedInUser");
+    location.href = "login.html";
+  };
 
-  const note = prompt("Enter note (optional):") || "Salary Payment";
-  const payAmount = parseFloat(amount);
-  const payDate = new Date().toLocaleDateString();
+  staffSelect.onchange = renderCalendar;
+  addPaymentBtn.onclick = addPayment;
 
-  // Store in attendance paymentData
-  const payKey = `${staffName}_${currentYear}_${currentMonth}`;
-  if (!paymentData[payKey]) paymentData[payKey] = [];
-  paymentData[payKey].push({ amount: payAmount, note, date: payDate });
-  localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
-
-  // ✅ Also save to expenses automatically
-  const EXP_KEY = "expensesData";
-  let expensesData = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
-
-  expensesData.push({
-    category: "Salary",
-    description: `${note} - ${staffName}`,
-    amount: payAmount,
-    date: payDate,
-    month: currentMonth,
-    year: currentYear
-  });
-
-  localStorage.setItem(EXP_KEY, JSON.stringify(expensesData));
-
-  // Update the display
-  alert(`₹${payAmount.toFixed(2)} added for ${staffName} and logged in Expenses.`);
-  updateSalarySummary();
-}
+  loadStaffList();
+</script>
