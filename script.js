@@ -253,3 +253,11 @@
 
   loadStaffList();
 </script>
+// At the top of your <script>
+    const salarySummary = document.getElementById("salarySummary");
+    const addPaymentBtn = document.getElementById("addPaymentBtn");
+    
+    // ADD THIS LINE
+    const paymentList = document.getElementById("paymentList");
+
+    const STAFF_KEY = "staffList";
