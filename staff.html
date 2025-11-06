@@ -19,13 +19,12 @@
     </div>
   </header>
 
-  <!-- CENTERED WRAPPER -->
+  <!-- MAIN CONTENT -->
   <main class="center-stage">
     <section class="staff-card-panel">
       <h2 class="panel-title">Staff Management</h2>
       <p class="panel-sub">Add, view, or delete staff members</p>
 
-      <!-- ADD STAFF FORM -->
       <form id="staffForm" class="staff-form" autocomplete="off">
         <input id="staffName" type="text" placeholder="Staff name" required />
         <input id="staffPhone" type="tel" placeholder="Phone number (optional)" />
@@ -33,186 +32,172 @@
         <button class="btn-login add-btn" type="submit">Add Staff</button>
       </form>
 
-      <!-- STAFF LIST -->
-      <div id="staffContainer" class="staff-list" aria-live="polite"></div>
+      <div id="staffContainer" class="staff-list"></div>
 
-      <!-- ATTENDANCE SUMMARY (simple) -->
-      <h3 style="margin-top:2rem; text-align:center; color:var(--accent);">Attendance Summary (Last 7 days)</h3>
-      <div id="attendanceStats" style="margin-top:1rem; text-align:center; color:var(--text-muted);"></div>
+      <h3 style="margin-top:2rem; text-align:center; color:var(--accent);">
+        Attendance Summary (Last 7 days)
+      </h3>
+      <div id="attendanceStats" style="margin-top:1rem; text-align:center; color:#ccc;"></div>
     </section>
   </main>
 
   <script>
-    // -------------- LOGOUT --------------
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('loggedInUser');
-      window.location.href = 'login.html';
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "login.html";
     });
 
-    // -------------- HELPERS --------------
-    const staffForm = document.getElementById('staffForm');
-    const staffNameInput = document.getElementById('staffName');
-    const staffPhoneInput = document.getElementById('staffPhone');
-    const staffSalaryInput = document.getElementById('staffSalary');
-    const staffContainer = document.getElementById('staffContainer');
-    const attendanceStatsEl = document.getElementById('attendanceStats');
-
+    // Helpers
     function getStaff() {
-      return JSON.parse(localStorage.getItem('staff')) || [];
+      return JSON.parse(localStorage.getItem("staff")) || [];
     }
-    function saveStaff(list){
-      localStorage.setItem('staff', JSON.stringify(list));
-      // some browsers/tabs listen to 'storage' events, but in same tab we reload UI:
-      // Also write a "ping" value to trigger storage events in other tabs if needed.
-      localStorage.setItem('staff_updated_at', Date.now());
+    function saveStaff(list) {
+      localStorage.setItem("staff", JSON.stringify(list));
+      localStorage.setItem("staff_updated_at", Date.now());
     }
 
-    // -------------- RENDER STAFF LIST --------------
+    const staffForm = document.getElementById("staffForm");
+    const staffContainer = document.getElementById("staffContainer");
+    const attendanceStatsEl = document.getElementById("attendanceStats");
+
+    // Render staff
     function renderStaff() {
       const staff = getStaff();
-      staffContainer.innerHTML = '';
+      staffContainer.innerHTML = "";
 
       if (staff.length === 0) {
         staffContainer.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
-        renderAttendanceStats(); // clear stats
+        attendanceStatsEl.innerHTML = "";
         return;
       }
 
       staff.forEach((s, idx) => {
-        const item = document.createElement('div');
-        item.className = 'staff-item';
-        item.style.display = 'flex';
-        item.style.flexDirection = 'column';
-        item.style.gap = '6px';
-
-        const topRow = document.createElement('div');
-        topRow.style.display = 'flex';
-        topRow.style.justifyContent = 'space-between';
-        topRow.style.alignItems = 'center';
-
-        const left = document.createElement('div');
-        left.innerHTML = `<strong style="font-size:1rem">${escapeHtml(s.name)}</strong>
-                          <div style="color:var(--text-muted);font-size:0.9rem">${s.phone ? escapeHtml(s.phone) + ' | ' : ''}${s.salary ? '₹' + escapeHtml(s.salary) + '/month' : ''}</div>`;
-
-        const right = document.createElement('div');
-        right.style.display = 'flex';
-        right.style.gap = '8px';
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-login';
-        delBtn.style.background = '#ef4444';
-        delBtn.textContent = 'Delete';
-        delBtn.addEventListener('click', () => {
-          if (!confirm('Delete ' + s.name + ' ?')) return;
-          const arr = getStaff();
-          arr.splice(idx, 1);
-          saveStaff(arr);
-          renderStaff();
-        });
-
-        right.appendChild(delBtn);
-        topRow.appendChild(left);
-        topRow.appendChild(right);
-
-        item.appendChild(topRow);
-        staffContainer.appendChild(item);
+        const div = document.createElement("div");
+        div.className = "staff-item";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>${s.name}</strong><br>
+              <small style="color:#aaa;">${s.phone || ""} ${
+          s.salary ? "| ₹" + s.salary + "/month" : ""
+        }</small>
+            </div>
+            <button class="btn-login" style="background:#ef4444;" onclick="deleteStaff(${idx})">Delete</button>
+          </div>
+        `;
+        staffContainer.appendChild(div);
       });
 
       renderAttendanceStats();
     }
 
-    // -------------- ADD STAFF --------------
-    staffForm.addEventListener('submit', (e) => {
+    // Add staff
+    staffForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = staffNameInput.value.trim();
-      const phone = staffPhoneInput.value.trim();
-      const salary = staffSalaryInput.value.trim();
+      const name = document.getElementById("staffName").value.trim();
+      const phone = document.getElementById("staffPhone").value.trim();
+      const salary = document.getElementById("staffSalary").value.trim();
 
-      if (!name) return alert('Please enter staff name.');
-
-      // Prevent duplicate names (case-insensitive)
+      if (!name) return alert("Please enter staff name.");
       const staff = getStaff();
-      const exists = staff.some(s => s.name.toLowerCase() === name.toLowerCase());
-      if (exists) return alert('Staff with this name already exists.');
+      if (staff.some((x) => x.name.toLowerCase() === name.toLowerCase()))
+        return alert("Staff already exists!");
 
       staff.push({ name, phone, salary });
       saveStaff(staff);
       staffForm.reset();
-      staffNameInput.focus();
       renderStaff();
     });
 
-    // -------------- ATTENDANCE STATS (last 7 days) --------------
+    // Delete staff
+    function deleteStaff(index) {
+      const staff = getStaff();
+      if (!confirm(`Delete ${staff[index].name}?`)) return;
+      staff.splice(index, 1);
+      saveStaff(staff);
+      renderStaff();
+    }
+
+    // Attendance Summary
     function renderAttendanceStats() {
       const staff = getStaff();
-      if (staff.length === 0) {
-        attendanceStatsEl.innerHTML = '';
-        return;
-      }
+      const attendance = JSON.parse(localStorage.getItem("attendance")) || {};
+      const today = new Date();
+      const cutoff = new Date(today);
+      cutoff.setDate(today.getDate() - 6);
 
-      const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-      const days = 7;
-      const counts = {}; // { name: {Present: n, Absent: n, Leave: n} }
+      // initialize counts
+      const counts = {};
+      staff.forEach((s) => (counts[s.name] = { Present: 0, Absent: 0, Leave: 0 }));
 
-      // init
-      staff.forEach(s => counts[s.name] = { Present: 0, Absent: 0, Leave: 0 });
-
-      for (let k in attendance) {
-        // attendance keys are expected to be "Name_dd/mm/yyyy" or similar from attendance page
-        const [name, dateStr] = k.split('_');
-        if (!name || !attendance[k]) continue;
-        const recordDate = parseDate(dateStr);
-        if (!recordDate) continue;
-        const diffDays = diffInDays(recordDate, new Date());
-        if (diffDays >= 0 && diffDays < days) {
-          if (counts[name]) counts[name][attendance[k]] = (counts[name][attendance[k]] || 0) + 1;
+      // count attendance
+      Object.keys(attendance).forEach((key) => {
+        const [name, dateString] = key.split("_");
+        const date = parseDate(dateString);
+        if (!date || !counts[name]) return;
+        if (date >= cutoff && date <= today) {
+          const status = attendance[key];
+          if (counts[name][status] !== undefined) {
+            counts[name][status]++;
+          }
         }
-      }
-
-      // build html
-      let html = '<div style="display:flex;flex-direction:column;gap:10px;align-items:center;">';
-      staff.forEach(s => {
-        const c = counts[s.name] || { Present: 0, Absent: 0, Leave: 0 };
-        html += `<div style="width:100%;max-width:520px;display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);">
-          <div style="font-weight:600">${escapeHtml(s.name)}</div>
-          <div style="color:var(--text-muted)">${c.Present} ✅ &nbsp; ${c.Absent} ❌ &nbsp; ${c.Leave} 🕐</div>
-        </div>`;
       });
-      html += '</div>';
+
+      // build summary
+      let html = "";
+      staff.forEach((s) => {
+        const c = counts[s.name] || { Present: 0, Absent: 0, Leave: 0 };
+        html += `
+          <div style="width:100%;max-width:520px;display:flex;justify-content:space-between;
+          padding:8px 12px;margin:6px auto;border-radius:8px;background:rgba(255,255,255,0.04);">
+            <div style="font-weight:600;">${s.name}</div>
+            <div>
+              <span style="color:#22c55e;">${c.Present} ✅</span>
+              <span style="color:#ef4444;margin-left:8px;">${c.Absent} ❌</span>
+              <span style="color:#eab308;margin-left:8px;">${c.Leave} 🕐</span>
+            </div>
+          </div>
+        `;
+      });
+
       attendanceStatsEl.innerHTML = html;
     }
 
-    // -------------- UTILITIES --------------
-    function parseDate(d) {
-      // expecting locale 'en-IN' format like "06/Nov/2025" or "06/11/2025" — try Date parse fallback
-      const dt = new Date(d);
-      return isNaN(dt.getTime()) ? null : dt;
-    }
-    function diffInDays(a, b) {
-      const _ms = 24*60*60*1000;
-      return Math.floor((b.setHours(0,0,0,0) - a.setHours(0,0,0,0)) / _ms);
-    }
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+    // Parse dates like "6/11/2025" or "06/11/2025"
+    function parseDate(str) {
+      const parts = str.split("/");
+      if (parts.length < 3) return null;
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
     }
 
-    // -------------- WATCH FOR CHANGES FROM OTHER TABS --------------
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'staff' || e.key === 'attendance' || e.key === 'staff_updated_at') {
+    // Listen for attendance updates
+    window.addEventListener("storage", (e) => {
+      if (e.key === "attendance" || e.key === "staff" || e.key === "staff_updated_at") {
         renderStaff();
       }
     });
 
-    // initial render
     renderStaff();
   </script>
 
-  <!-- Inline tweaks for badges & staff-item style (matches your theme) -->
   <style>
-    .staff-item { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); }
-    .staff-list { display:flex; flex-direction:column; gap:12px; margin-top:1.2rem; }
-    .staff-form input { width:100%; }
-    .panel-title { margin-bottom: 6px; color: var(--accent); text-shadow: 0 0 8px var(--accent-light); }
+    .staff-item {
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .staff-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 1rem;
+    }
   </style>
 </body>
 </html>
