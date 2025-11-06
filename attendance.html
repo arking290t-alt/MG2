@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance | MG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="staff-body">
+  <header class="top-bar">
+    <div class="top-left">
+      <h1 class="logo">MG</h1>
+    </div>
+    <div class="top-right">
+      <a href="dashboard.html" class="btn-back">← Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </div>
+  </header>
+
+  <main class="center-stage">
+    <section class="staff-card-panel">
+      <h2 class="panel-title">Daily Attendance</h2>
+      <p class="panel-sub">Mark attendance once per staff per day</p>
+
+      <div id="attendanceList" class="staff-list"></div>
+    </section>
+  </main>
+
+  <script>
+    // Load staff list and attendance data
+    const attendanceList = document.getElementById("attendanceList");
+    const staff = JSON.parse(localStorage.getItem("staff")) || [];
+    const attendance = JSON.parse(localStorage.getItem("attendance")) || {};
+    const today = new Date().toLocaleDateString("en-IN");
+
+    if (staff.length === 0) {
+      attendanceList.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
+    } else {
+      staff.forEach(member => {
+        const key = `${member.name}_${today}`;
+        const alreadyMarked = attendance[key];
+
+        const div = document.createElement("div");
+        div.classList.add("staff-item");
+        div.innerHTML = `
+          <span><strong>${member.name}</strong></span>
+          ${
+            alreadyMarked
+              ? `<span>${alreadyMarked}</span>`
+              : `
+                <div style="display:flex;gap:10px;">
+                  <button class="btn-login" onclick="mark('${member.name}', 'Present')">Present</button>
+                  <button class="btn-login" style="background:#f87171;" onclick="mark('${member.name}', 'Absent')">Absent</button>
+                  <button class="btn-login" style="background:#facc15;color:#000;" onclick="mark('${member.name}', 'Leave')">Leave</button>
+                </div>
+              `
+          }
+        `;
+        attendanceList.appendChild(div);
+      });
+    }
+
+    function mark(name, status) {
+      const key = `${name}_${today}`;
+      const data = JSON.parse(localStorage.getItem("attendance")) || {};
+      if (data[key]) {
+        alert("Attendance already marked for today!");
+        return;
+      }
+      data[key] = status;
+      localStorage.setItem("attendance", JSON.stringify(data));
+      location.reload();
+    }
+  </script>
+</body>
+</html>
