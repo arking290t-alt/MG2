@@ -1,16 +1,18 @@
 /* ==========================================================
-   ⚡ MG SYSTEM - SLEEK BRIGHT TECH THEME
+   ⚡ MG SYSTEM - MODERN TECH DARK SILVER THEME
    ========================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
-  --blue: #007bff;
-  --cyan: #00e0ff;
-  --white-glass: rgba(255, 255, 255, 0.65);
-  --text-dark: #0a0a0a;
-  --border-light: rgba(255, 255, 255, 0.4);
-  --shadow: rgba(0, 0, 0, 0.08);
+  --bg-dark: #0e141b;
+  --bg-panel: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(0, 180, 255, 0.3);
+  --accent: #00b4ff;
+  --accent-light: #39c8ff;
+  --text-main: #e5eaf0;
+  --text-muted: #a1acba;
+  --shadow: rgba(0, 0, 0, 0.4);
 }
 
 /* 🌐 RESET */
@@ -22,30 +24,30 @@
 }
 
 body {
-  background: linear-gradient(135deg, #f6f8fc, #e6f2ff, #ffffff);
-  color: var(--text-dark);
+  background: radial-gradient(circle at 20% 30%, #101821, #070c12);
+  color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* 🔝 HEADER */
+/* HEADER */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: var(--white-glass);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-light);
-  box-shadow: 0 8px 30px var(--shadow);
-  border-radius: 0 0 18px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--blue);
+  color: var(--accent);
   letter-spacing: 1px;
+  text-shadow: 0 0 12px var(--accent-light);
 }
 
 /* BUTTONS */
@@ -60,8 +62,8 @@ body {
   cursor: pointer;
   font-size: 0.95rem;
   color: #fff;
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.2);
   transition: all 0.3s ease;
 }
 
@@ -69,50 +71,51 @@ body {
 .btn-back:hover,
 .btn-login:hover,
 .add-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 30px rgba(0, 123, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 180, 255, 0.4);
 }
 
 .btn-back {
   background: transparent;
-  border: 1.5px solid var(--blue);
-  color: var(--blue);
+  border: 1px solid var(--accent);
+  color: var(--accent);
 }
 
 .btn-back:hover {
-  background: var(--blue);
+  background: var(--accent);
   color: #fff;
 }
 
-/* ==================== LOGIN PAGE ==================== */
+/* LOGIN PAGE */
 .login-body {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #eaf3ff, #f8fcff);
+  background: radial-gradient(circle at 30% 20%, #0b1118, #0f1924);
 }
 
 .login-container {
-  background: var(--white-glass);
-  border: 1px solid var(--border-light);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glow);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  padding: 3rem 3.5rem;
+  padding: 3rem;
   text-align: center;
-  box-shadow: 0 0 30px var(--shadow);
-  animation: fadeUp 0.8s ease-out;
+  box-shadow: 0 0 40px rgba(0, 180, 255, 0.15);
+  animation: fadeUp 1s ease-out;
 }
 
 .login-container .logo {
   font-size: 2rem;
-  color: var(--blue);
-  margin-bottom: 0.5rem;
+  color: var(--accent);
+  text-shadow: 0 0 18px var(--accent);
+  margin-bottom: 0.8rem;
 }
 
 .subtitle {
   font-size: 1rem;
-  color: #444;
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
@@ -126,50 +129,51 @@ body {
 .login-form select {
   padding: 0.8rem;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.9);
-  color: #111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-main);
   outline: none;
   transition: 0.3s;
 }
 
 .login-form input:focus,
 .login-form select:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
 }
 
-/* ==================== DASHBOARD ==================== */
+/* DASHBOARD */
 .dashboard-body {
-  background: linear-gradient(135deg, #eef5ff, #ffffff);
+  background: radial-gradient(circle at top right, #0b1118, #0e141b, #080b10);
 }
 
 .dashboard-center {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 90px);
 }
 
 .dashboard-box {
-  background: var(--white-glass);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glow);
   border-radius: 20px;
-  border: 1px solid var(--border-light);
   padding: 3rem;
   text-align: center;
-  box-shadow: 0 10px 40px var(--shadow);
+  box-shadow: 0 0 40px rgba(0, 180, 255, 0.15);
   backdrop-filter: blur(20px);
-  animation: fadeUp 0.8s ease-out;
+  animation: fadeUp 1s ease-out;
 }
 
 .welcome {
   font-size: 1.8rem;
-  color: var(--blue);
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-light);
   margin-bottom: 0.4rem;
 }
 
 .subtitle {
-  color: #555;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 
@@ -180,20 +184,20 @@ body {
 }
 
 .dashboard-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.8rem;
   border-radius: 15px;
-  padding: 2rem;
   transition: all 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 6px 20px var(--shadow);
+  color: var(--text-main);
   text-decoration: none;
-  color: #111;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .dashboard-card:hover {
   transform: translateY(-5px);
-  background: #ffffff;
-  box-shadow: 0 12px 40px rgba(0, 123, 255, 0.2);
+  background: rgba(0, 180, 255, 0.08);
+  box-shadow: 0 0 25px rgba(0, 180, 255, 0.3);
 }
 
 .inactive {
@@ -201,9 +205,9 @@ body {
   cursor: not-allowed;
 }
 
-/* ==================== STAFF PAGE ==================== */
+/* STAFF PAGE */
 .staff-body {
-  background: linear-gradient(135deg, #f3f9ff, #ffffff);
+  background: radial-gradient(circle at bottom right, #0a1118, #0e141b);
 }
 
 .center-stage {
@@ -214,26 +218,27 @@ body {
 }
 
 .staff-card-panel {
-  background: var(--white-glass);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glow);
   border-radius: 20px;
-  border: 1px solid var(--border-light);
   padding: 3rem;
   width: 90%;
   max-width: 650px;
   backdrop-filter: blur(20px);
-  box-shadow: 0 10px 40px var(--shadow);
-  animation: fadeUp 0.8s ease-out;
+  box-shadow: 0 0 40px rgba(0, 180, 255, 0.15);
+  animation: fadeUp 1s ease-out;
 }
 
 .panel-title {
-  color: var(--blue);
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-light);
   text-align: center;
   font-size: 1.8rem;
 }
 
 .panel-sub {
   text-align: center;
-  color: #444;
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
@@ -245,16 +250,16 @@ body {
 
 .staff-form input {
   padding: 0.8rem;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #fff;
-  color: #000;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
   outline: none;
 }
 
 .staff-form input:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .staff-list {
@@ -265,20 +270,21 @@ body {
 }
 
 .staff-item {
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1rem 1.2rem;
-  box-shadow: 0 4px 12px var(--shadow);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   transition: 0.3s;
 }
 
 .staff-item:hover {
+  background: rgba(0, 180, 255, 0.08);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 123, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 180, 255, 0.2);
 }
 
 /* ✨ Animations */
