@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance | MG</title>
   <style>
     :root {
@@ -11,29 +11,27 @@
       --accent: #00b4ff;
       --text-light: #d4e1f0;
     }
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
+
+    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
     body {
       background: var(--bg);
       color: var(--text-light);
       margin: 0;
       padding: 0;
     }
+
     header {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255,255,255,0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px 25px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-    .logo {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
+
+    .logo { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+
     .btn {
       background: var(--accent);
       border: none;
@@ -44,83 +42,116 @@
       cursor: pointer;
       text-decoration: none;
     }
+
     .container {
       max-width: 1100px;
       margin: 30px auto;
       padding: 25px;
       background: var(--card);
       border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0, 180, 255, 0.1);
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
     }
+
     h1 {
       text-align: center;
       color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 25px;
     }
-    select {
-      display: block;
-      margin: 0 auto 25px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 8px;
-      width: 260px;
+
+    .month-nav button {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.6rem;
+      cursor: pointer;
+      transition: 0.2s;
     }
+
+    .month-nav button:hover {
+      color: #fff;
+      transform: scale(1.2);
+    }
+
     .calendar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
       justify-items: center;
     }
+
     .day {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
       padding: 10px;
       text-align: center;
       width: 100%;
-      transition: all 0.2s ease;
-    }
-    .status {
-      margin-top: 6px;
-      padding: 4px 8px;
-      border-radius: 8px;
-      display: inline-block;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .present { background: #22c55e; color: #fff; }
-    .half { background: #3b82f6; color: #fff; }
-    .absent { background: #ef4444; color: #fff; }
-    .leave { background: #f59e0b; color: #fff; }
-    .ot { background: #8b5cf6; color: #fff; }
-    .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .buttons button {
-      border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #fff;
+      height: 90px;
       cursor: pointer;
+      transition: 0.2s;
     }
-    .buttons .p { background: #22c55e; }
-    .buttons .h { background: #3b82f6; }
-    .buttons .a { background: #ef4444; }
-    .buttons .l { background: #f59e0b; }
-    .buttons .o { background: #8b5cf6; }
+
+    .day:hover {
+      background: rgba(0,180,255,0.1);
+      transform: scale(1.02);
+    }
+
     .summary {
       margin-top: 25px;
       text-align: center;
       font-size: 1.1rem;
       color: var(--accent);
       font-weight: 600;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      width: 400px;
+      color: var(--text-light);
+      box-shadow: 0 0 20px rgba(0,180,255,0.2);
+    }
+
+    .modal h2 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 15px;
+    }
+
+    .close-btn {
+      float: right;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .status-box {
+      margin: 8px 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
     }
   </style>
 </head>
@@ -136,117 +167,113 @@
   <div class="container">
     <h1>Attendance Calendar</h1>
 
-    <select id="staffSelect">
-      <option value="">Select Staff</option>
-    </select>
+    <div class="month-nav">
+      <button id="prevMonth">⟨</button>
+      <h2 id="monthYear"></h2>
+      <button id="nextMonth">⟩</button>
+    </div>
 
     <div id="calendar" class="calendar"></div>
 
-    <div class="summary" id="summary">Earnings this month: ₹0</div>
+    <div class="summary" id="summary">Click any date to view attendance details</div>
+  </div>
+
+  <div id="attendanceModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closeModal">&times;</span>
+      <h2 id="modalTitle">Date</h2>
+      <div id="attendanceList"></div>
+    </div>
   </div>
 
   <script>
-    const staffSelect = document.getElementById("staffSelect");
     const calendar = document.getElementById("calendar");
     const summary = document.getElementById("summary");
+    const monthYear = document.getElementById("monthYear");
 
-    const STORAGE_KEY = "attendanceData";
+    const modal = document.getElementById("attendanceModal");
+    const closeModal = document.getElementById("closeModal");
+    const attendanceList = document.getElementById("attendanceList");
+    const modalTitle = document.getElementById("modalTitle");
+
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
     const STAFF_KEY = "staffList";
-    const attendanceData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    const ATTEND_KEY = "attendanceData";
+
     const staffList = JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
+    const attendanceData = JSON.parse(localStorage.getItem(ATTEND_KEY)) || {};
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    // Load staff dropdown from saved data
-    function loadStaffList() {
-      if (!staffList.length) {
-        staffSelect.innerHTML = '<option value="">No staff added</option>';
-        return;
-      }
-      staffSelect.innerHTML =
-        '<option value="">Select Staff</option>' +
-        staffList.map((s) => `<option value="${s.name}">${s.name}</option>`).join("");
+    function updateMonthYear() {
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
     }
 
     function renderCalendar() {
-      const staff = staffSelect.value;
-      if (!staff) {
-        calendar.innerHTML = "<p style='text-align:center;color:#999;'>Select a staff to view attendance.</p>";
+      calendar.innerHTML = "";
+      updateMonthYear();
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const div = document.createElement("div");
+        div.className = "day";
+        div.textContent = i;
+        div.onclick = () => showAttendanceForDate(i);
+        calendar.appendChild(div);
+      }
+    }
+
+    function showAttendanceForDate(day) {
+      const keyMonth = currentMonth;
+      const keyYear = currentYear;
+
+      modal.style.display = "flex";
+      modalTitle.textContent = `Attendance for ${day}/${keyMonth + 1}/${keyYear}`;
+      attendanceList.innerHTML = "";
+
+      if (staffList.length === 0) {
+        attendanceList.innerHTML = "<p>No staff added yet.</p>";
         return;
       }
 
-      calendar.innerHTML = "";
-      for (let i = 1; i <= daysInMonth; i++) {
-        const key = `${staff}_${year}_${month}_${i}`;
+      staffList.forEach(staff => {
+        const key = `${staff.name}_${keyYear}_${keyMonth}_${day}`;
         const rec = attendanceData[key] || { status: "No", ot: 0 };
-
         const div = document.createElement("div");
-        div.className = "day";
-        div.innerHTML = `
-          <div><strong>${i}</strong></div>
-          <div class="status ${rec.status.toLowerCase()}">${rec.status}</div>
-          <div class="buttons">
-            <button class="p" onclick="mark('${staff}',${i},'Present')">P</button>
-            <button class="h" onclick="mark('${staff}',${i},'Half')">½</button>
-            <button class="a" onclick="mark('${staff}',${i},'Absent')">A</button>
-            <button class="l" onclick="mark('${staff}',${i},'Leave')">L</button>
-            <button class="o" onclick="markOT('${staff}',${i})">OT</button>
-          </div>`;
-        calendar.appendChild(div);
+        div.className = "status-box";
+        div.innerHTML = `<span>${staff.name}</span><span>${rec.status}${rec.ot ? " (₹" + rec.ot + ")" : ""}</span>`;
+        attendanceList.appendChild(div);
+      });
+    }
+
+    document.getElementById("prevMonth").onclick = () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
       }
-
-      calcSalary(staff);
-    }
-
-    function mark(staff, day, status) {
-      const key = `${staff}_${year}_${month}_${day}`;
-      attendanceData[key] = { status, ot: 0 };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceData));
       renderCalendar();
-    }
+    };
 
-    function markOT(staff, day) {
-      const rate = prompt("Enter OT amount for this day:");
-      if (!rate || isNaN(rate)) return;
-      const key = `${staff}_${year}_${month}_${day}`;
-      attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-    }
-
-    function calcSalary(staff) {
-      const staffInfo = staffList.find((s) => s.name === staff);
-      if (!staffInfo) return;
-
-      const salary = parseFloat(staffInfo.salary);
-      const perDay = salary / daysInMonth;
-      let full = 0,
-        half = 0,
-        ot = 0;
-
-      for (let i = 1; i <= daysInMonth; i++) {
-        const key = `${staff}_${year}_${month}_${i}`;
-        const rec = attendanceData[key];
-        if (!rec) continue;
-        if (rec.status === "Present") full++;
-        if (rec.status === "Half") half += 0.5;
-        if (rec.status === "OT") ot += rec.ot;
+    document.getElementById("nextMonth").onclick = () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
       }
+      renderCalendar();
+    };
 
-      const total = (full + half) * perDay + ot;
-      summary.textContent = `Earnings this month: ₹${total.toFixed(2)} (Full: ${full}, Half: ${half}, OT: ₹${ot.toFixed(2)})`;
-    }
+    closeModal.onclick = () => { modal.style.display = "none"; };
+    window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
-    staffSelect.addEventListener("change", renderCalendar);
-    document.getElementById("logoutBtn").addEventListener("click", () => {
+    document.getElementById("logoutBtn").onclick = () => {
       localStorage.removeItem("loggedInUser");
       location.href = "login.html";
-    });
+    };
 
-    loadStaffList();
+    renderCalendar();
   </script>
 </body>
 </html>
