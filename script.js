@@ -150,3 +150,4 @@ document.getElementById("addPaid").onclick = () => {
   localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
   renderCalendar();
 };
+updatePaidSection(total);
