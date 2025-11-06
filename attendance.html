@@ -10,7 +10,6 @@
       color: #fff;
       font-family: 'Poppins', sans-serif;
       margin: 0;
-      overflow-x: hidden;
     }
 
     header {
@@ -39,9 +38,7 @@
       transition: 0.2s;
     }
 
-    .btn:hover {
-      opacity: 0.85;
-    }
+    .btn:hover { opacity: 0.85; }
 
     .container {
       max-width: 1000px;
@@ -51,20 +48,18 @@
       border-radius: 15px;
       padding: 25px;
       box-shadow: 0 0 25px rgba(0,180,255,0.07);
-      text-align: center;
     }
 
     h1 {
       color: #00b4ff;
-      margin-bottom: 10px;
+      text-align: center;
+      margin-bottom: 25px;
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 8px;
-      justify-content: center;
-      align-items: center;
     }
 
     .day {
@@ -77,17 +72,24 @@
       transition: all 0.2s ease;
     }
 
-    .day:hover {
-      background: rgba(0,180,255,0.15);
-      transform: scale(1.05);
+    .day:hover { background: rgba(0,180,255,0.1); }
+
+    .status {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
     }
 
-    .day span {
-      display: block;
-      font-size: 0.8rem;
-      margin-top: 5px;
+    .status button {
+      border: none;
+      padding: 4px 6px;
       border-radius: 6px;
-      padding: 4px;
+      font-size: 0.7rem;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.2s;
     }
 
     .present { background: #16a34a; }
@@ -97,25 +99,18 @@
     .ot { background: #8b5cf6; }
 
     .salary-bar {
-      margin-top: 20px;
-      font-weight: 600;
+      margin-top: 25px;
+      text-align: center;
       color: #00b4ff;
+      font-weight: 600;
     }
 
     .paid-section {
-      margin-top: 20px;
+      margin-top: 25px;
+      text-align: center;
       background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
       border-radius: 10px;
-      padding: 10px;
-      text-align: right;
-    }
-
-    .paid-input {
-      margin-top: 8px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
+      padding: 15px;
     }
 
     input {
@@ -128,18 +123,11 @@
     }
 
     @media (max-width: 768px) {
-      .calendar {
-        grid-template-columns: repeat(5, 1fr);
-      }
+      .calendar { grid-template-columns: repeat(5, 1fr); }
     }
 
     @media (max-width: 500px) {
-      .calendar {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .day {
-        font-size: 0.75rem;
-      }
+      .calendar { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -159,11 +147,9 @@
 
     <div class="paid-section">
       <div><strong>Paid Records:</strong></div>
-      <div id="paidList">No payments yet</div>
-      <div class="paid-input">
-        <input type="number" id="paidInput" placeholder="Amount ₹" />
-        <button class="btn" id="addPaidBtn">Add Payment</button>
-      </div>
+      <div id="paidList">No payments yet</div><br>
+      <input type="number" id="paidInput" placeholder="Amount ₹" />
+      <button class="btn" id="addPaidBtn">Add Payment</button>
     </div>
   </div>
 
@@ -174,7 +160,7 @@
     const paidInput = document.getElementById("paidInput");
     const addPaidBtn = document.getElementById("addPaidBtn");
 
-    const daysInMonth = new Date(2025, 11, 0).getDate();
+    const daysInMonth = new Date().getDate() > 28 ? 30 : new Date().getDate();
     let attendance = JSON.parse(localStorage.getItem("attendance")) || {};
     let paidRecords = JSON.parse(localStorage.getItem("paidRecords")) || [];
 
@@ -183,76 +169,61 @@
       localStorage.setItem("paidRecords", JSON.stringify(paidRecords));
     }
 
-    function markDay(day, status) {
-      attendance[day] = status;
+    function markDay(day, status, otValue = 0) {
+      if (status === "OT" && otValue) attendance[day] = "OT ₹" + otValue;
+      else attendance[day] = status;
       saveAll();
       renderCalendar();
     }
 
     function renderCalendar() {
       calendarEl.innerHTML = "";
+      const monthDays = 30;
       let fullDays = 0, halfDays = 0, totalOT = 0;
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const status = attendance[d] || "No";
+      for (let d = 1; d <= monthDays; d++) {
         const div = document.createElement("div");
         div.classList.add("day");
+        const dayStatus = attendance[d] || "No";
+        let color = "";
+        if (dayStatus.startsWith("OT")) color = "ot";
+        else if (dayStatus === "Present") color = "present";
+        else if (dayStatus === "Half Day") color = "halfday";
+        else if (dayStatus === "Absent") color = "absent";
+        else if (dayStatus === "Leave") color = "leave";
 
-        let badge = "";
-        if (status.startsWith("OT")) {
-          const amount = parseInt(status.split("₹")[1] || 0);
-          totalOT += amount;
-          badge = `<span class="ot">${status}</span>`;
-        } else if (status === "Present") {
-          badge = `<span class="present">${status}</span>`;
-        } else if (status === "Half Day") {
-          badge = `<span class="halfday">${status}</span>`;
-        } else if (status === "Absent") {
-          badge = `<span class="absent">${status}</span>`;
-        } else if (status === "Leave") {
-          badge = `<span class="leave">${status}</span>`;
-        } else {
-          badge = `<span>${status}</span>`;
-        }
+        div.innerHTML = `<strong>${d}</strong><br><span class="${color}">${dayStatus}</span>
+          <div class="status">
+            <button class="present" onclick="markDay(${d}, 'Present')">P</button>
+            <button class="halfday" onclick="markDay(${d}, 'Half Day')">½</button>
+            <button class="absent" onclick="markDay(${d}, 'Absent')">A</button>
+            <button class="leave" onclick="markDay(${d}, 'Leave')">L</button>
+            <button class="ot" onclick="setOT(${d})">OT</button>
+          </div>`;
 
-        div.innerHTML = `${d}${badge}`;
-        div.onclick = () => {
-          const choice = prompt(
-            "Mark Attendance:\n1. Present\n2. Half Day\n3. Absent\n4. Leave\n5. OT (manual rate)\n6. Clear"
-          );
-          if (choice === "1") markDay(d, "Present");
-          else if (choice === "2") markDay(d, "Half Day");
-          else if (choice === "3") markDay(d, "Absent");
-          else if (choice === "4") markDay(d, "Leave");
-          else if (choice === "5") {
-            const rate = prompt("Enter OT Amount ₹:");
-            if (rate && !isNaN(rate)) markDay(d, "OT ₹" + rate);
-          } else if (choice === "6") {
-            delete attendance[d];
-            saveAll();
-            renderCalendar();
-          }
-        };
+        if (dayStatus === "Present") fullDays++;
+        if (dayStatus === "Half Day") halfDays++;
+        if (dayStatus.startsWith("OT")) totalOT += parseFloat(dayStatus.split("₹")[1] || 0);
 
         calendarEl.appendChild(div);
-
-        if (status === "Present") fullDays++;
-        if (status === "Half Day") halfDays++;
       }
 
       const monthlySalary = 30000;
-      const perDay = monthlySalary / daysInMonth;
+      const perDay = monthlySalary / monthDays;
       const earnings = fullDays * perDay + halfDays * (perDay / 2) + totalOT;
-      salaryBar.textContent = `Earnings this month: ₹${earnings.toFixed(0)} (Full: ${fullDays}, Half: ${halfDays}) + OT ₹${totalOT}`;
+      salaryBar.innerHTML = `Earnings this month: ₹${earnings.toFixed(0)}<br>Per Day: ₹${perDay.toFixed(0)} (Full: ${fullDays}, Half: ${halfDays}, OT: ₹${totalOT})`;
+
       renderPayments(earnings);
     }
 
+    function setOT(day) {
+      const rate = prompt("Enter OT rate ₹:");
+      if (rate && !isNaN(rate)) markDay(day, "OT", rate);
+    }
+
     function renderPayments(total) {
-      if (paidRecords.length === 0) {
-        paidListEl.textContent = "No payments yet";
-      } else {
-        paidListEl.innerHTML = paidRecords.map(p => `₹${p.amount} on ${p.date}`).join("<br>");
-      }
+      if (paidRecords.length === 0) paidListEl.textContent = "No payments yet";
+      else paidListEl.innerHTML = paidRecords.map(p => `₹${p.amount} on ${p.date}`).join("<br>");
 
       const paidSum = paidRecords.reduce((a,b) => a + b.amount, 0);
       if (paidSum > 0)
