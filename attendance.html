@@ -244,6 +244,7 @@
 
     <div class="summary" id="salarySummary">Select a staff to view attendance</div>
 
+    <!-- Deduct Payment will appear automatically -->
     <button class="add-payment-btn" id="addPaymentBtn">Add Payment</button>
   </div>
 
@@ -269,13 +270,25 @@
     const STAFF_KEY = "staffList";
     const ATTEND_KEY = "attendanceData";
     const PAY_KEY = "paymentData";
+    const PAY_LIST_KEY = "paymentListData";
+
     const staffList = JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
     const attendanceData = JSON.parse(localStorage.getItem(ATTEND_KEY)) || {};
     const paymentData = JSON.parse(localStorage.getItem(PAY_KEY)) || {};
+    const paymentListData = JSON.parse(localStorage.getItem(PAY_LIST_KEY)) || {};
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
     let currentDay = null;
+
+    // Create Deduct Payment button
+    const deductPaymentBtn = document.createElement("button");
+    deductPaymentBtn.textContent = "Deduct Payment";
+    deductPaymentBtn.className = "add-payment-btn";
+    deductPaymentBtn.style.background = "#ef4444";
+    deductPaymentBtn.style.bottom = "65px";
+    deductPaymentBtn.style.right = "25px";
+    document.querySelector(".container").appendChild(deductPaymentBtn);
 
     function updateMonthYear() {
       const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -322,24 +335,22 @@
       }
 
       updateSalarySummary();
+      renderPaymentList();
     }
 
     function openAttendanceModal(day) {
       const staffName = staffSelect.value;
       if (!staffName) return alert("Select a staff first!");
-
       modal.style.display = "flex";
       modalTitle.textContent = `${staffName} - ${day}/${currentMonth + 1}/${currentYear}`;
       currentDay = day;
-
       actions.innerHTML = `
         <button class="present" onclick="mark('Present')">Present</button>
         <button class="half" onclick="mark('Half')">Half</button>
         <button class="absent" onclick="mark('Absent')">Absent</button>
         <button class="leave" onclick="mark('Leave')">Leave</button>
         <button class="ot" onclick="markOT()">OT</button>
-        <button class="clear" onclick="clearStatus()">Clear</button>
-      `;
+        <button class="clear" onclick="clearStatus()">Clear</button>`;
     }
 
     function mark(status) {
@@ -347,9 +358,7 @@
       const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       attendanceData[key] = { status, ot: 0 };
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
+      renderCalendar(); updateSalarySummary(); modal.style.display = "none";
     }
 
     function markOT() {
@@ -359,9 +368,7 @@
       const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
+      renderCalendar(); updateSalarySummary(); modal.style.display = "none";
     }
 
     function clearStatus() {
@@ -369,34 +376,88 @@
       const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       delete attendanceData[key];
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
+      renderCalendar(); updateSalarySummary(); modal.style.display = "none";
     }
 
+    // Add Payment
     function addPayment() {
       const staffName = staffSelect.value;
       if (!staffName) return alert("Select a staff first!");
-
       const amount = prompt("Enter payment amount:");
       if (!amount || isNaN(amount)) return;
-
       const key = `${staffName}_${currentYear}_${currentMonth}`;
+      const id = Date.now();
       paymentData[key] = (paymentData[key] || 0) + parseFloat(amount);
       localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
-      updateSalarySummary();
+      if (!paymentListData[key]) paymentListData[key] = [];
+      paymentListData[key].push({ id, amount: parseFloat(amount), type: "add" });
+      localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
+      updateSalarySummary(); renderPaymentList();
+    }
+
+    // Deduct Payment
+    function deductPayment() {
+      const staffName = staffSelect.value;
+      if (!staffName) return alert("Select a staff first!");
+      const amount = prompt("Enter deduction amount:");
+      if (!amount || isNaN(amount)) return;
+      const key = `${staffName}_${currentYear}_${currentMonth}`;
+      const id = Date.now();
+      paymentData[key] = (paymentData[key] || 0) - parseFloat(amount);
+      if (paymentData[key] < 0) paymentData[key] = 0;
+      localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+      if (!paymentListData[key]) paymentListData[key] = [];
+      paymentListData[key].push({ id, amount: -parseFloat(amount), type: "deduct" });
+      localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
+      updateSalarySummary(); renderPaymentList();
+    }
+
+    function deletePayment(id) {
+      const staffName = staffSelect.value;
+      const key = `${staffName}_${currentYear}_${currentMonth}`;
+      const list = paymentListData[key] || [];
+      const item = list.find(p => p.id === id);
+      if (!item) return;
+      if (!confirm(`Delete this payment of ₹${item.amount}?`)) return;
+      paymentListData[key] = list.filter(p => p.id !== id);
+      localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
+      if (item.type === "add") paymentData[key] -= Math.abs(item.amount);
+      else paymentData[key] += Math.abs(item.amount);
+      if (paymentData[key] < 0) paymentData[key] = 0;
+      localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+      updateSalarySummary(); renderPaymentList();
+    }
+
+    function renderPaymentList() {
+      const staffName = staffSelect.value;
+      const key = `${staffName}_${currentYear}_${currentMonth}`;
+      const list = paymentListData[key] || [];
+      let box = document.getElementById("paymentList");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "paymentList";
+        box.style.marginTop = "20px";
+        box.style.textAlign = "center";
+        document.querySelector(".container").appendChild(box);
+      }
+      if (!staffName) { box.innerHTML = ""; return; }
+      if (list.length === 0) { box.innerHTML = `<p style="color:#aaa;">No payments added yet.</p>`; return; }
+      box.innerHTML = `<h3 style="color:var(--accent);">Payments This Month</h3>` +
+      list.map(p => `
+        <div style="margin:6px auto; width:260px; background:rgba(255,255,255,0.07); padding:6px 10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:${p.amount < 0 ? '#ef4444' : '#22c55e'};">${p.amount < 0 ? '- ₹' + Math.abs(p.amount) + ' (Deducted)' : '₹' + p.amount}</span>
+          <button onclick="deletePayment(${p.id})" style="background:#64748b; border:none; color:white; border-radius:6px; padding:3px 8px; cursor:pointer;">Delete</button>
+        </div>`).join("");
     }
 
     function updateSalarySummary() {
       const staffName = staffSelect.value;
       const staff = staffList.find(s => s.name === staffName);
       if (!staff) return;
-
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const perDay = staff.salary / daysInMonth;
+      const days = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const perDay = staff.salary / days;
       let full = 0, half = 0, totalOT = 0;
-
-      for (let i = 1; i <= daysInMonth; i++) {
+      for (let i = 1; i <= days; i++) {
         const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
         const rec = attendanceData[key];
         if (!rec) continue;
@@ -404,38 +465,21 @@
         if (rec.status === "Half") half += 0.5;
         if (rec.status === "OT") totalOT += rec.ot;
       }
-
       const total = (full + half) * perDay + totalOT;
-      const payKey = `${staffName}_${currentYear}_${currentMonth}`;
-      const paid = paymentData[payKey] || 0;
+      const key = `${staffName}_${currentYear}_${currentMonth}`;
+      const paid = paymentData[key] || 0;
       const remaining = total - paid;
-
       salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${total.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
     }
 
-    document.getElementById("prevMonth").onclick = () => {
-      currentMonth--;
-      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-      renderCalendar();
-    };
-
-    document.getElementById("nextMonth").onclick = () => {
-      currentMonth++;
-      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-      renderCalendar();
-    };
-
+    document.getElementById("prevMonth").onclick = () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
+    document.getElementById("nextMonth").onclick = () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
     closeModal.onclick = () => modal.style.display = "none";
     window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
-
-    document.getElementById("logoutBtn").onclick = () => {
-      localStorage.removeItem("loggedInUser");
-      location.href = "login.html";
-    };
-
+    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("loggedInUser"); location.href = "login.html"; };
     staffSelect.onchange = renderCalendar;
     addPaymentBtn.onclick = addPayment;
-
+    deductPaymentBtn.onclick = deductPayment;
     loadStaffList();
   </script>
 </body>
