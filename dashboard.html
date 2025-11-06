@@ -8,24 +8,32 @@
 </head>
 <body class="dashboard-body">
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="top-bar">
     <h1 class="logo">MG</h1>
     <button id="logoutBtn" class="btn-logout">Logout</button>
   </header>
 
-  <!-- Main Dashboard (Single Instance) -->
+  <!-- MAIN CONTENT -->
   <main class="dashboard-center">
     <div class="dashboard-box">
       <h2 class="welcome">Welcome, Owner</h2>
       <p class="subtitle">Choose an option below</p>
 
       <div class="dashboard-grid">
+        <!-- STAFF -->
         <a href="staff.html" class="dashboard-card">
           <h3>Staff</h3>
           <p>Manage and add staff members</p>
         </a>
 
+        <!-- ATTENDANCE -->
+        <a href="attendance.html" class="dashboard-card">
+          <h3>Attendance</h3>
+          <p>Mark and view staff attendance</p>
+        </a>
+
+        <!-- EXPENSES -->
         <div class="dashboard-card inactive">
           <h3>Expenses</h3>
           <p>Track your business expenses (Coming soon)</p>
@@ -34,49 +42,18 @@
     </div>
   </main>
 
-  <script src="script.js"></script>
+  <!-- FOOTER -->
+  <footer style="text-align:center; padding:1rem; color:#888; font-size:0.85rem;">
+    © 2025 MG Management System
+  </footer>
+
+  <script>
+    // Logout Functionality
+    const logoutBtn = document.getElementById("logoutBtn");
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "login.html";
+    });
+  </script>
 </body>
 </html>
-<div class="dashboard-grid">
-  <a href="staff.html" class="dashboard-card">
-    <h3>Staff</h3>
-    <p>Manage and add staff members</p>
-  </a>
-
-  <a href="attendance.html" class="dashboard-card">
-    <h3>Attendance</h3>
-    <p>Mark and view staff attendance</p>
-  </a>
-
-  <div class="dashboard-card inactive">
-    <h3>Expenses</h3>
-    <p>Track your business expenses (Coming soon)</p>
-  </div>
-</div>
-<div class="dashboard-grid">
-  <a href="staff.html" class="dashboard-card">
-    <h3>Staff</h3>
-    <p>Manage and add staff members</p>
-  </a>
-
-  <a href="attendance.html" class="dashboard-card">
-    <h3>Attendance</h3>
-    <p>Mark staff attendance (once per day)</p>
-  </a>
-
-  <div class="dashboard-card inactive">
-    <h3>Expenses</h3>
-    <p>Track your business expenses (Coming soon)</p>
-  </div>
-</div>
-<div class="dashboard-grid">
-  <a href="staff.html" class="dashboard-card">
-    <h3>Staff</h3>
-    <p>Manage and add staff members</p>
-  </a>
-
-  <div class="dashboard-card inactive">
-    <h3>Expenses</h3>
-    <p>Track your business expenses (Coming soon)</p>
-  </div>
-</div>
