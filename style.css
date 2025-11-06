@@ -1,16 +1,17 @@
 /* ==========================================================
-   🚀 MG SYSTEM - ULTRA MODERN 3D NEON GLASS DASHBOARD
-   Created for Login | Dashboard | Staff Pages
+   🌟 MG SYSTEM - BRIGHT FUTURISTIC NEON DASHBOARD
    ========================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
-  --neon-blue: #00ffff;
-  --neon-pink: #ff2d95;
-  --dark-bg: #050714;
-  --glass-bg: rgba(255, 255, 255, 0.08);
+  --neon-blue: #00e0ff;
+  --neon-pink: #ff6ac1;
+  --neon-purple: #9b5fff;
+  --light-bg: linear-gradient(135deg, #e0f7ff, #e5d9ff, #fff3ff);
+  --glass-bg: rgba(255, 255, 255, 0.25);
   --blur: blur(25px);
+  --text-dark: #0a0a0a;
 }
 
 /* 🌐 RESET */
@@ -23,8 +24,8 @@
 }
 
 body {
-  background: radial-gradient(circle at 30% 20%, #06091f, #000);
-  color: #e5e7eb;
+  background: var(--light-bg);
+  color: var(--text-dark);
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -35,52 +36,54 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  animation: glowHeader 3s infinite alternate ease-in-out;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  border-radius: 0 0 20px 20px;
 }
 
 .logo {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--neon-blue);
-  text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
-  letter-spacing: 1.5px;
+  color: var(--neon-purple);
+  text-shadow: 0 0 12px var(--neon-purple);
 }
 
-/* BUTTONS */
-.btn-logout, .btn-back, .btn-login, .add-btn {
+/* Buttons */
+.btn-logout,
+.btn-back,
+.btn-login,
+.add-btn {
   border: none;
   border-radius: 12px;
   padding: 0.8rem 1.6rem;
   font-weight: 600;
   cursor: pointer;
-  color: #fff;
+  color: white;
   font-size: 1rem;
   background: linear-gradient(135deg, var(--neon-blue), var(--neon-pink));
-  box-shadow: 0 0 15px var(--neon-blue);
-  transition: 0.3s ease;
+  box-shadow: 0 0 12px rgba(255, 100, 255, 0.5);
+  transition: all 0.3s ease;
 }
 
-.btn-logout:hover, .btn-back:hover, .btn-login:hover, .add-btn:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 0 25px var(--neon-pink), 0 0 50px var(--neon-blue);
+.btn-logout:hover,
+.btn-back:hover,
+.btn-login:hover,
+.add-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px var(--neon-pink), 0 0 30px var(--neon-blue);
 }
 
 .btn-back {
   background: transparent;
-  border: 1px solid var(--neon-blue);
+  border: 2px solid var(--neon-blue);
   color: var(--neon-blue);
 }
 
 .btn-back:hover {
   background: var(--neon-blue);
-  color: #000;
+  color: #fff;
 }
 
 /* ==================== LOGIN PAGE ==================== */
@@ -89,111 +92,89 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: radial-gradient(circle at 10% 20%, #010a1f, #000);
-  overflow: hidden;
+  background: linear-gradient(135deg, #f0faff, #fff2ff, #fdf4ff);
 }
 
 .login-container {
   background: var(--glass-bg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: var(--blur);
   border-radius: 25px;
-  padding: 3rem 3.5rem;
+  padding: 3rem;
   text-align: center;
-  box-shadow: 0 0 80px rgba(0, 255, 255, 0.15);
+  box-shadow: 0 0 40px rgba(155, 90, 255, 0.3);
   animation: fadeUp 1s ease-out;
-  position: relative;
-}
-
-.login-container::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 25px;
-  background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-  z-index: -1;
-  filter: blur(30px);
-  opacity: 0.3;
+  color: var(--text-dark);
 }
 
 .login-container .logo {
-  font-size: 2.5rem;
-  color: var(--neon-blue);
-  text-shadow: 0 0 25px var(--neon-blue), 0 0 50px var(--neon-pink);
+  font-size: 2.2rem;
+  color: var(--neon-purple);
+  text-shadow: 0 0 20px var(--neon-purple);
   margin-bottom: 0.8rem;
 }
 
 .subtitle {
-  color: #94a3b8;
-  margin-bottom: 1.8rem;
   font-size: 1rem;
+  color: #333;
+  margin-bottom: 1.8rem;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
-.login-form input, .login-form select {
-  padding: 0.9rem;
+.login-form input,
+.login-form select {
+  padding: 0.8rem;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.05);
-  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.5);
+  color: #111;
   outline: none;
   transition: 0.3s;
 }
 
-.login-form input:focus, .login-form select:focus {
+.login-form input:focus,
+.login-form select:focus {
   border-color: var(--neon-blue);
-  box-shadow: 0 0 20px var(--neon-blue);
+  box-shadow: 0 0 15px var(--neon-blue);
 }
 
 /* ==================== DASHBOARD ==================== */
 .dashboard-body {
-  background: radial-gradient(circle at bottom right, #000, #0a0f1f);
+  background: linear-gradient(120deg, #f4faff, #fff2ff, #f9f0ff);
 }
 
 .dashboard-center {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 90px);
 }
 
 .dashboard-box {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 25px;
   padding: 3rem 3.5rem;
   text-align: center;
-  box-shadow: 0 0 60px rgba(0,255,255,0.1);
   backdrop-filter: var(--blur);
+  box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
   animation: fadeUp 1s ease-out;
-  position: relative;
-}
-
-.dashboard-box::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 25px;
-  background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-  opacity: 0.3;
-  z-index: -1;
-  filter: blur(30px);
 }
 
 .welcome {
-  color: var(--neon-blue);
-  text-shadow: 0 0 20px var(--neon-blue);
   font-size: 2rem;
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px var(--neon-purple);
   margin-bottom: 0.4rem;
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: #333;
   margin-bottom: 2rem;
 }
 
@@ -204,88 +185,62 @@ body {
 }
 
 .dashboard-card {
-  background: rgba(255,255,255,0.05);
-  padding: 2rem 1.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 1.8rem;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.1);
   transition: all 0.4s ease;
-  position: relative;
-  overflow: hidden;
   text-decoration: none;
-  color: #fff;
+  color: #000;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
 }
 
 .dashboard-card:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 0 0 25px rgba(0,255,255,0.3);
-  background: rgba(255,255,255,0.1);
-}
-
-.dashboard-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--neon-blue), var(--neon-pink));
-  opacity: 0;
-  transition: opacity 0.4s;
-  filter: blur(40px);
-}
-
-.dashboard-card:hover::after {
-  opacity: 0.25;
+  transform: translateY(-8px);
+  box-shadow: 0 0 40px rgba(0, 224, 255, 0.4);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .inactive {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* ==================== STAFF PAGE ==================== */
 .staff-body {
-  background: radial-gradient(circle at top left, #000, #0a0f1f);
+  background: linear-gradient(120deg, #f0faff, #fff2ff, #fdf4ff);
 }
 
 .center-stage {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 90px);
 }
 
 .staff-card-panel {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 25px;
   padding: 3rem;
   width: 90%;
   max-width: 650px;
   backdrop-filter: var(--blur);
-  box-shadow: 0 0 60px rgba(0,255,255,0.1);
+  box-shadow: 0 0 40px rgba(155, 90, 255, 0.2);
   animation: fadeUp 1s ease-out;
-  position: relative;
-}
-
-.staff-card-panel::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 25px;
-  background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-  filter: blur(30px);
-  opacity: 0.3;
-  z-index: -1;
 }
 
 .panel-title {
-  color: var(--neon-blue);
-  text-shadow: 0 0 20px var(--neon-blue);
+  color: var(--neon-purple);
+  text-shadow: 0 0 12px var(--neon-purple);
   text-align: center;
   font-size: 1.8rem;
 }
 
 .panel-sub {
   text-align: center;
-  color: #9ca3af;
+  color: #444;
   margin-bottom: 2rem;
 }
 
@@ -298,9 +253,9 @@ body {
 .staff-form input {
   padding: 0.8rem;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.07);
-  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  color: #000;
 }
 
 .staff-form input:focus {
@@ -319,27 +274,22 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(0,255,255,0.05);
-  border: 1px solid rgba(0,255,255,0.2);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   padding: 1rem 1.2rem;
   border-radius: 12px;
-  transition: 0.3s;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
 .staff-item:hover {
-  background: rgba(0,255,255,0.1);
-  box-shadow: 0 0 20px rgba(0,255,255,0.3);
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.02);
 }
 
-/* 🌀 Animations */
+/* ✨ Animations */
 @keyframes fadeUp {
   from {opacity: 0; transform: translateY(40px);}
   to {opacity: 1; transform: translateY(0);}
-}
-
-@keyframes glowHeader {
-  from { box-shadow: 0 0 10px var(--neon-blue); }
-  to { box-shadow: 0 0 30px var(--neon-pink); }
 }
 
 /* 📱 Responsive */
