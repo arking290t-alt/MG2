@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance | MG</title>
   <style>
     :root {
@@ -16,19 +16,13 @@
       --leave: #f59e0b;
       --ot: #8b5cf6;
     }
-
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
+    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
     body {
       background: var(--bg);
       color: var(--text-light);
       margin: 0;
       padding: 0;
     }
-
     header {
       background: rgba(255,255,255,0.05);
       display: flex;
@@ -37,13 +31,7 @@
       padding: 10px 25px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-
-    .logo {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
+    .logo { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
     .btn {
       background: var(--accent);
       border: none;
@@ -54,7 +42,6 @@
       cursor: pointer;
       text-decoration: none;
     }
-
     .container {
       max-width: 1100px;
       margin: 30px auto;
@@ -64,13 +51,11 @@
       box-shadow: 0 8px 30px rgba(0,180,255,0.1);
       position: relative;
     }
-
     h1 {
       text-align: center;
       color: var(--accent);
       margin-bottom: 10px;
     }
-
     .month-nav {
       display: flex;
       justify-content: center;
@@ -78,7 +63,6 @@
       gap: 10px;
       margin-bottom: 25px;
     }
-
     .month-nav button {
       background: none;
       border: none;
@@ -87,12 +71,6 @@
       cursor: pointer;
       transition: 0.2s;
     }
-
-    .month-nav button:hover {
-      color: #fff;
-      transform: scale(1.2);
-    }
-
     #staffSelect {
       display: block;
       margin: 0 auto 20px;
@@ -104,14 +82,12 @@
       width: 250px;
       text-align: center;
     }
-
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 10px;
       justify-items: center;
     }
-
     .day {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
@@ -124,12 +100,6 @@
       transition: 0.2s;
       position: relative;
     }
-
-    .day:hover {
-      background: rgba(0,180,255,0.1);
-      transform: scale(1.02);
-    }
-
     .dot {
       width: 10px;
       height: 10px;
@@ -139,19 +109,29 @@
       left: 50%;
       transform: translateX(-50%);
     }
-
     .summary {
       margin-top: 25px;
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: var(--accent);
       font-weight: 600;
+      line-height: 1.6rem;
     }
-
+    .payment-section {
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 15px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .payment-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.9rem;
+    }
     .add-payment-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 25px;
       background: var(--accent);
       color: white;
       border: none;
@@ -160,80 +140,14 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
+      display: block;
+      margin: 20px auto 0 auto;
     }
-
-    /* Payment List */
-    .payment-list {
-      margin-top: 15px;
-      background: rgba(255,255,255,0.03);
-      border-radius: 8px;
-      padding: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .payment-item {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      padding: 5px 0;
-      font-size: 0.9rem;
-    }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      width: 420px;
-      color: var(--text-light);
-      box-shadow: 0 0 20px rgba(0,180,255,0.2);
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal h2 {
-      text-align: center;
-      color: var(--accent);
-      margin-bottom: 15px;
-    }
-
-    .close-btn {
-      float: right;
-      cursor: pointer;
-      color: #fff;
-      font-weight: 700;
-      font-size: 1.2rem;
-    }
-
-    .status-actions button {
-      border: none;
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin: 2px;
-      color: #fff;
-      cursor: pointer;
-    }
-
     .present { background: var(--present); }
     .half { background: var(--half); }
     .absent { background: var(--absent); }
     .leave { background: var(--leave); }
     .ot { background: var(--ot); }
-    .clear { background: #64748b; }
-
   </style>
 </head>
 <body>
@@ -247,10 +161,7 @@
 
   <div class="container">
     <h1>Attendance Calendar</h1>
-
-    <select id="staffSelect">
-      <option value="">Select Staff</option>
-    </select>
+    <select id="staffSelect"><option value="">Select Staff</option></select>
 
     <div class="month-nav">
       <button id="prevMonth">⟨</button>
@@ -259,33 +170,23 @@
     </div>
 
     <div id="calendar" class="calendar"></div>
+    <div id="salarySummary" class="summary">Select a staff to view attendance</div>
 
-    <div class="summary" id="salarySummary">Select a staff to view attendance</div>
-
-    <div id="paymentList" class="payment-list"></div>
-
-    <button class="add-payment-btn" id="addPaymentBtn">Add Payment</button>
-  </div>
-
-  <!-- Attendance Modal -->
-  <div id="attendanceModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeModal">&times;</span>
-      <h2 id="modalTitle">Date</h2>
-      <div class="status-actions" id="actions"></div>
+    <div id="paymentSection" class="payment-section" style="display:none;">
+      <h3 style="color:#00b4ff;text-align:center;margin-bottom:5px;">Payment History (Monthly)</h3>
+      <div id="paymentList"></div>
     </div>
+
+    <button id="addPaymentBtn" class="add-payment-btn">Add Payment</button>
   </div>
 
   <script>
     const staffSelect = document.getElementById("staffSelect");
     const calendar = document.getElementById("calendar");
-    const modal = document.getElementById("attendanceModal");
-    const closeModal = document.getElementById("closeModal");
-    const actions = document.getElementById("actions");
-    const modalTitle = document.getElementById("modalTitle");
+    const monthYear = document.getElementById("monthYear");
     const salarySummary = document.getElementById("salarySummary");
-    const addPaymentBtn = document.getElementById("addPaymentBtn");
     const paymentList = document.getElementById("paymentList");
+    const paymentSection = document.getElementById("paymentSection");
 
     const STAFF_KEY = "staffList";
     const ATTEND_KEY = "attendanceData";
@@ -296,11 +197,10 @@
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
-    let currentDay = null;
 
     function updateMonthYear() {
       const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
+      monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
     }
 
     function loadStaffList() {
@@ -314,7 +214,6 @@
     function renderCalendar() {
       calendar.innerHTML = "";
       updateMonthYear();
-
       const staffName = staffSelect.value;
       if (!staffName) return;
 
@@ -338,75 +237,46 @@
           div.appendChild(dot);
         }
 
-        div.onclick = () => openAttendanceModal(i);
+        div.onclick = () => markAttendance(i);
         calendar.appendChild(div);
       }
 
       updateSalarySummary();
     }
 
-    function openAttendanceModal(day) {
+    function markAttendance(day) {
       const staffName = staffSelect.value;
       if (!staffName) return alert("Select a staff first!");
 
-      modal.style.display = "flex";
-      modalTitle.textContent = `${staffName} - ${day}/${currentMonth + 1}/${currentYear}`;
-      currentDay = day;
+      const action = prompt("Mark: 1.Present 2.Half 3.Absent 4.Leave 5.OT 6.Clear");
+      const key = `${staffName}_${currentYear}_${currentMonth}_${day}`;
 
-      actions.innerHTML = `
-        <button class="present" onclick="mark('Present')">Present</button>
-        <button class="half" onclick="mark('Half')">Half</button>
-        <button class="absent" onclick="mark('Absent')">Absent</button>
-        <button class="leave" onclick="mark('Leave')">Leave</button>
-        <button class="ot" onclick="markOT()">OT</button>
-        <button class="clear" onclick="clearStatus()">Clear</button>
-      `;
-    }
+      switch(action) {
+        case "1": attendanceData[key] = { status: "Present", ot: 0 }; break;
+        case "2": attendanceData[key] = { status: "Half", ot: 0 }; break;
+        case "3": attendanceData[key] = { status: "Absent", ot: 0 }; break;
+        case "4": attendanceData[key] = { status: "Leave", ot: 0 }; break;
+        case "5":
+          const rate = parseFloat(prompt("Enter OT amount:"));
+          if (!isNaN(rate)) attendanceData[key] = { status: "OT", ot: rate };
+          break;
+        case "6": delete attendanceData[key]; break;
+        default: return;
+      }
 
-    function mark(status) {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
-      attendanceData[key] = { status, ot: 0 };
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
       renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
-    }
-
-    function markOT() {
-      const staffName = staffSelect.value;
-      const rate = prompt("Enter OT amount:");
-      if (!rate || isNaN(rate)) return;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
-      attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
-      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
-    }
-
-    function clearStatus() {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
-      delete attendanceData[key];
-      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      renderCalendar();
-      updateSalarySummary();
-      modal.style.display = "none";
     }
 
     function addPayment() {
       const staffName = staffSelect.value;
       if (!staffName) return alert("Select a staff first!");
-
-      const amount = prompt("Enter payment amount:");
-      if (!amount || isNaN(amount)) return;
-
+      const amount = parseFloat(prompt("Enter payment amount:"));
+      if (isNaN(amount) || amount <= 0) return;
       const note = prompt("Enter note (optional):") || "Payment";
       const key = `${staffName}_${currentYear}_${currentMonth}`;
       if (!paymentData[key]) paymentData[key] = [];
-      paymentData[key].push({ amount: parseFloat(amount), note, date: new Date().toLocaleDateString() });
-
+      paymentData[key].push({ amount, note, date: new Date().toLocaleDateString() });
       localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
       updateSalarySummary();
     }
@@ -414,7 +284,7 @@
     function updateSalarySummary() {
       const staffName = staffSelect.value;
       const staff = staffList.find(s => s.name === staffName);
-      if (!staff) return;
+      if (!staff) { salarySummary.textContent = "Select a staff to view attendance"; return; }
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const perDay = staff.salary / daysInMonth;
@@ -435,36 +305,32 @@
       const paid = payments.reduce((sum, p) => sum + p.amount, 0);
       const remaining = total - paid;
 
-      salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${total.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
+      salarySummary.innerHTML = `
+        <strong>Per Day:</strong> ₹${perDay.toFixed(2)} |
+        <strong>Total Earned:</strong> ₹${total.toFixed(2)} |
+        <strong>Paid:</strong> ₹${paid.toFixed(2)} |
+        <strong>Remaining:</strong> ₹${remaining.toFixed(2)}
+      `;
 
       paymentList.innerHTML = payments.length
-        ? `<h3 style='color:#00b4ff;'>Payments</h3>` +
-          payments.map(p => `<div class='payment-item'><span>${p.date} - ${p.note}</span><strong>₹${p.amount}</strong></div>`).join("")
-        : "<p style='text-align:center;color:#999;'>No payments yet</p>";
+        ? payments.map(p => `<div class="payment-item"><span>${p.date} - ${p.note}</span><strong>₹${p.amount}</strong></div>`).join("")
+        : `<p style="text-align:center;color:#888;">No payments yet</p>`;
+
+      paymentSection.style.display = "block";
     }
 
     document.getElementById("prevMonth").onclick = () => {
-      currentMonth--;
-      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-      renderCalendar();
+      currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar();
     };
-
     document.getElementById("nextMonth").onclick = () => {
-      currentMonth++;
-      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-      renderCalendar();
+      currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar();
     };
-
-    closeModal.onclick = () => modal.style.display = "none";
-    window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
-
     document.getElementById("logoutBtn").onclick = () => {
       localStorage.removeItem("loggedInUser");
       location.href = "login.html";
     };
-
     staffSelect.onchange = renderCalendar;
-    addPaymentBtn.onclick = addPayment;
+    document.getElementById("addPaymentBtn").onclick = addPayment;
 
     loadStaffList();
   </script>
