@@ -1,18 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Attendance | MG</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Calendar specific tweaks (keeps theme) */
+    .attendance-wrap { display:flex; gap:28px; align-items:flex-start; width:100%; max-width:1100px; margin:0 auto; }
+    .staff-list-col { width:260px; }
+    .staff-list-col h4 { color:var(--accent); margin-bottom:10px; text-align:left; }
+    .staff-list { display:flex; flex-direction:column; gap:10px; }
+    .staff-quick { padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); cursor:pointer; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; }
+    .staff-quick.active { box-shadow:0 6px 20px rgba(0,180,255,0.12); background:rgba(0,180,255,0.04); }
+    .staff-quick .name { font-weight:600; }
+    .calendar-col { flex:1; }
+    .cal-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .cal-nav { display:flex; gap:8px; align-items:center; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+    .cal-day { padding:12px; border-radius:8px; background:rgba(255,255,255,0.02); min-height:88px; position:relative; border:1px solid rgba(255,255,255,0.03); }
+    .cal-day .date-num { position:absolute; top:8px; right:8px; font-size:0.9rem; color:var(--text-muted); }
+    .cal-day .status { margin-top:22px; display:flex; gap:8px; flex-wrap:wrap; }
+    .badge-sm { padding:4px 8px; border-radius:8px; font-weight:600; font-size:0.8rem; color:#fff; }
+    .present { background:#16a34a; box-shadow:0 0 6px rgba(22,163,74,0.3); }
+    .absent { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.3); }
+    .leave { background:#f59e0b; color:#000; box-shadow:0 0 6px rgba(245,158,11,0.25); }
+    .notmarked { background:rgba(255,255,255,0.03); color:var(--text-muted); border:1px dashed rgba(255,255,255,0.04); }
+    .weekday { text-align:center; font-weight:700; color:var(--text-muted); margin-bottom:6px; }
+    .cal-controls button { border:none; padding:8px 12px; border-radius:8px; background:rgba(255,255,255,0.04); color:var(--text-main); cursor:pointer; }
+    .cal-controls .month-title { font-weight:700; font-size:1.1rem; color:var(--accent); }
+    /* popup */
+    .popup { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--bg-panel); border:1px solid var(--border-glow); padding:16px; border-radius:12px; z-index:1000; box-shadow:0 20px 60px rgba(0,0,0,0.7); }
+    .popup .row { display:flex; gap:8px; margin-top:10px; }
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:900; }
+    /* responsive */
+    @media (max-width:900px) {
+      .attendance-wrap { flex-direction:column; padding:0 18px; }
+      .staff-list-col { width:100%; order:2; }
+      .calendar-col { order:1; }
+    }
+  </style>
 </head>
 <body class="staff-body">
 
   <!-- HEADER -->
   <header class="top-bar">
-    <div class="top-left">
-      <h1 class="logo">MG</h1>
-    </div>
+    <div class="top-left"><h1 class="logo">MG</h1></div>
     <div class="top-right">
       <a href="dashboard.html" class="btn-back">← Dashboard</a>
       <button id="logoutBtn" class="btn-logout">Logout</button>
@@ -20,128 +53,321 @@
   </header>
 
   <!-- MAIN -->
-  <main class="center-stage">
-    <section class="staff-card-panel">
-      <h2 class="panel-title">Daily Attendance</h2>
-      <p class="panel-sub">Mark attendance once per staff per day</p>
+  <main class="center-stage" style="padding-top:30px;padding-bottom:60px;">
+    <section class="staff-card-panel" style="width:100%;max-width:1200px;">
+      <h2 class="panel-title">Attendance Calendar</h2>
+      <p class="panel-sub">Select a staff on the left, then click any day to mark Present / Absent / Leave. Use arrows to change months.</p>
 
-      <div id="attendanceList" class="staff-list"></div>
+      <div class="attendance-wrap" id="attendanceWrap">
+        <!-- Staff column -->
+        <div class="staff-list-col">
+          <h4>Staff</h4>
+          <div id="staffList" class="staff-list"></div>
+        </div>
+
+        <!-- Calendar column -->
+        <div class="calendar-col">
+          <div class="cal-top">
+            <div class="cal-nav">
+              <div class="cal-controls">
+                <button id="prevMonth">&larr;</button>
+                <button id="nextMonth">&rarr;</button>
+              </div>
+              <div style="width:18px"></div>
+              <div class="month-title" id="monthTitle"></div>
+            </div>
+            <div>
+              <button id="todayBtn" class="btn-back">Today</button>
+            </div>
+          </div>
+
+          <!-- weekdays -->
+          <div class="cal-grid" id="weekdays">
+            <div class="weekday">Sun</div><div class="weekday">Mon</div><div class="weekday">Tue</div>
+            <div class="weekday">Wed</div><div class="weekday">Thu</div><div class="weekday">Fri</div><div class="weekday">Sat</div>
+          </div>
+
+          <!-- days -->
+          <div class="cal-grid" id="calendarGrid" style="margin-top:10px;"></div>
+
+          <!-- legend -->
+          <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+            <div class="badge-sm present">Present</div>
+            <div class="badge-sm absent">Absent</div>
+            <div class="badge-sm leave">Leave</div>
+            <div class="badge-sm notmarked">Not marked</div>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <script>
-    // 🔹 Logout
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      localStorage.removeItem("loggedInUser");
-      window.location.href = "login.html";
+  <!-- popup templates -->
+  <div id="overlay" class="overlay" style="display:none;"></div>
+  <div id="popup" class="popup" style="display:none;min-width:320px;">
+    <div id="popupTitle" style="font-weight:700;"></div>
+    <div class="row" id="popupBtns" style="margin-top:12px;">
+      <button class="btn-login" data-status="Present" style="background:#16a34a">Present</button>
+      <button class="btn-login" data-status="Absent" style="background:#ef4444">Absent</button>
+      <button class="btn-login" data-status="Leave" style="background:#f59e0b;color:#000">Leave</button>
+      <button class="btn-back" data-status="Clear">Clear</button>
+    </div>
+  </div>
+
+<script>
+/* ============================
+   Attendance Calendar Script
+   - Uses localStorage.staff (array of {name,...})
+   - Uses localStorage.attendance_by_staff: { name: { "YYYY-MM-DD": "Present" } }
+   - Writes localStorage.attendance_updated_at on change
+   - Clears attendance when staff list is changed (resets)
+   ============================ */
+
+const logoutBtn = document.getElementById('logoutBtn');
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('loggedInUser');
+  window.location.href = 'login.html';
+});
+
+const staffListEl = document.getElementById('staffList');
+const calendarGrid = document.getElementById('calendarGrid');
+const monthTitle = document.getElementById('monthTitle');
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
+const todayBtn = document.getElementById('todayBtn');
+const overlay = document.getElementById('overlay');
+const popup = document.getElementById('popup');
+const popupTitle = document.getElementById('popupTitle');
+const popupBtns = document.getElementById('popupBtns');
+
+let selectedStaff = null;
+let viewDate = new Date(); // current month view
+let attendanceData = {}; // loaded from storage
+const STORAGE_KEY = 'attendance_by_staff';
+
+function loadFromStorage() {
+  attendanceData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  // If staff was just updated (we'll handle reset in storage event), nothing else here
+}
+
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceData));
+  localStorage.setItem('attendance_updated_at', Date.now());
+}
+
+// when staff list changes we must reset attendance (as requested)
+function resetAttendanceOnStaffChange() {
+  attendanceData = {}; // fully reset
+  saveToStorage();
+}
+
+// helper to get staff list
+function getStaffList() {
+  return JSON.parse(localStorage.getItem('staff')) || [];
+}
+
+// render staff column
+function renderStaffColumn() {
+  const list = getStaffList();
+  staffListEl.innerHTML = '';
+  if (list.length === 0) {
+    staffListEl.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:8px">No staff added yet.</div>';
+    selectedStaff = null;
+    renderCalendar(); // blank calendar
+    return;
+  }
+  list.forEach((s, idx) => {
+    const el = document.createElement('div');
+    el.className = 'staff-quick' + (selectedStaff === s.name ? ' active' : '');
+    el.innerHTML = `<div class="name">${escapeHtml(s.name)}</div>`;
+    el.addEventListener('click', () => {
+      selectedStaff = s.name;
+      renderStaffColumnActive();
+      renderCalendar();
     });
+    staffListEl.appendChild(el);
+  });
+  // if no selected staff, auto-select first
+  if (!selectedStaff && list.length > 0) {
+    selectedStaff = list[0].name;
+  }
+  renderStaffColumnActive();
+}
 
-    // 🔹 Load attendance and staff
-    const attendanceList = document.getElementById("attendanceList");
-    const today = new Date().toLocaleDateString("en-IN");
+// re-add active class to selected staff
+function renderStaffColumnActive() {
+  Array.from(staffListEl.children).forEach(child => {
+    if (!child) return;
+    const name = child.querySelector('.name')?.textContent || '';
+    if (name === selectedStaff) child.classList.add('active'); else child.classList.remove('active');
+  });
+}
 
-    // Helper: Get staff from localStorage
-    function getStaffList() {
-      return JSON.parse(localStorage.getItem("staff")) || [];
-    }
+// render calendar grid for viewDate
+function renderCalendar() {
+  calendarGrid.innerHTML = '';
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startWeekDay = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  monthTitle.textContent = firstDay.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
-    // Helper: Get attendance data
-    function getAttendanceData() {
-      return JSON.parse(localStorage.getItem("attendance")) || {};
-    }
+  // add blank slots for starting weekday
+  for (let i = 0; i < startWeekDay; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'cal-day';
+    blank.style.background = 'transparent';
+    blank.style.border = 'none';
+    calendarGrid.appendChild(blank);
+  }
 
-    // Helper: Save attendance data
-    function saveAttendanceData(data) {
-      localStorage.setItem("attendance", JSON.stringify(data));
-    }
+  // render each day
+  for (let d = 1; d <= daysInMonth; d++) {
+    const day = document.createElement('div');
+    day.className = 'cal-day';
+    const dateObj = new Date(year, month, d);
+    const iso = toISO(dateObj); // YYYY-MM-DD
+    const displayNum = d;
+    day.innerHTML = `<div class="date-num">${displayNum}</div>`;
 
-    // 🔹 Main loader
-    function loadAttendance() {
-      const staffList = getStaffList();
-      const attendanceData = getAttendanceData();
-
-      attendanceList.innerHTML = "";
-
-      if (staffList.length === 0) {
-        attendanceList.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
-        return;
+    // if staff selected, show status
+    if (selectedStaff) {
+      const status = (attendanceData[selectedStaff] && attendanceData[selectedStaff][iso]) || null;
+      const statusWrap = document.createElement('div');
+      statusWrap.className = 'status';
+      if (status === 'Present') {
+        const b = document.createElement('div'); b.className = 'badge-sm present'; b.textContent = 'Present'; statusWrap.appendChild(b);
+      } else if (status === 'Absent') {
+        const b = document.createElement('div'); b.className = 'badge-sm absent'; b.textContent = 'Absent'; statusWrap.appendChild(b);
+      } else if (status === 'Leave') {
+        const b = document.createElement('div'); b.className = 'badge-sm leave'; b.textContent = 'Leave'; statusWrap.appendChild(b);
+      } else {
+        const b = document.createElement('div'); b.className = 'badge-sm notmarked'; b.textContent = 'No';
+        statusWrap.appendChild(b);
       }
+      day.appendChild(statusWrap);
 
-      staffList.forEach((staff) => {
-        const key = `${staff.name}_${today}`;
-        const status = attendanceData[key];
-
-        const div = document.createElement("div");
-        div.classList.add("staff-item");
-
-        if (status) {
-          div.innerHTML = `
-            <span><strong>${staff.name}</strong></span>
-            <span class="badge ${status.toLowerCase()}">${status}</span>
-          `;
-        } else {
-          div.innerHTML = `
-            <span><strong>${staff.name}</strong></span>
-            <div style="display:flex;gap:10px;">
-              <button class="btn-login" onclick="mark('${staff.name}', 'Present')">Present</button>
-              <button class="btn-login" style="background:#ef4444;" onclick="mark('${staff.name}', 'Absent')">Absent</button>
-              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${staff.name}', 'Leave')">Leave</button>
-            </div>
-          `;
-        }
-
-        attendanceList.appendChild(div);
+      // clicking a day opens popup to set status
+      day.addEventListener('click', (e) => {
+        openPopup(selectedStaff, iso, dateObj);
       });
+    } else {
+      // no staff selected - show placeholder
+      const p = document.createElement('div');
+      p.style.color = 'var(--text-muted)'; p.style.marginTop = '18px'; p.style.textAlign='center';
+      p.textContent = 'Select staff';
+      day.appendChild(p);
     }
 
-    // 🔹 Mark attendance
-    function mark(name, status) {
-      const key = `${name}_${today}`;
-      const data = getAttendanceData();
-
-      if (data[key]) {
-        alert("Attendance already marked for today!");
-        return;
-      }
-
-      data[key] = status;
-      saveAttendanceData(data);
-      loadAttendance();
+    // highlight today
+    const todayISO = toISO(new Date());
+    if (iso === todayISO) {
+      day.style.boxShadow = '0 6px 18px rgba(0,180,255,0.12)';
     }
 
-    // 🔹 Auto-refresh attendance when new staff is added
-    window.addEventListener("storage", (event) => {
-      if (event.key === "staff") {
-        loadAttendance();
-      }
-    });
+    calendarGrid.appendChild(day);
+  }
+}
 
-    // Initial load
-    loadAttendance();
-  </script>
+// popup logic
+let popupTarget = null; // { staff, iso, dateObj }
+function openPopup(staff, iso, dateObj) {
+  popupTarget = { staff, iso, dateObj };
+  popupTitle.textContent = `${staff} — ${dateObj.toDateString()}`;
+  overlay.style.display = 'block';
+  popup.style.display = 'block';
+}
 
-  <style>
-    .badge {
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      color: #fff;
+function closePopup() {
+  popupTarget = null;
+  overlay.style.display = 'none';
+  popup.style.display = 'none';
+}
+
+popupBtns.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn || !popupTarget) return;
+  const status = btn.getAttribute('data-status');
+  const { staff, iso } = popupTarget;
+
+  if (status === 'Clear') {
+    if (attendanceData[staff]) {
+      delete attendanceData[staff][iso];
+      // if empty object left, remove staff key
+      if (Object.keys(attendanceData[staff]).length === 0) delete attendanceData[staff];
     }
-    .badge.present {
-      background: #22c55e;
-      box-shadow: 0 0 8px #22c55e;
+  } else {
+    attendanceData[staff] = attendanceData[staff] || {};
+    attendanceData[staff][iso] = status;
+  }
+
+  saveToStorage();
+  closePopup();
+  renderCalendar();
+});
+
+// close popup when clicking outside
+overlay.addEventListener('click', closePopup);
+
+// helpers
+function toISO(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function prevMonth() { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); }
+function nextMonth() { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); }
+function goToday() { viewDate = new Date(); renderCalendar(); }
+
+prevMonthBtn.addEventListener('click', prevMonth);
+nextMonthBtn.addEventListener('click', nextMonth);
+todayBtn.addEventListener('click', () => { selectedStaff = selectedStaff || (getStaffList()[0] && getStaffList()[0].name); goToday(); renderStaffColumnActive(); });
+
+// initial load
+loadFromStorage();
+renderStaffColumn();
+renderCalendar();
+
+/* ============================
+   Handle external staff changes
+   - If staff list changes we CLEAR attendance_data (reset) as requested.
+   - We also reload staff column.
+   ============================ */
+window.addEventListener('storage', (e) => {
+  if (e.key === 'staff' || e.key === 'staff_updated_at') {
+    // Reset attendance on staff change (explicit request)
+    resetAttendanceOnStaffChange();
+    loadFromStorage();
+    // re-render staff column and calendar
+    renderStaffColumn();
+    renderCalendar();
+  }
+});
+
+// also when page loads, if staff and attendance keys mismatch (e.g. new staff added), we reset attendance
+(function reconcileOnLoad() {
+  const staffNames = (getStaffList() || []).map(s => s.name);
+  const attendanceNames = Object.keys(attendanceData || {});
+  // if attendance contains any names not present or staff added since last save, reset all attendance (per request)
+  if (attendanceNames.length > 0) {
+    const allMatch = attendanceNames.every(n => staffNames.includes(n));
+    if (!allMatch) {
+      // reset to empty
+      attendanceData = {};
+      saveToStorage();
     }
-    .badge.absent {
-      background: #ef4444;
-      box-shadow: 0 0 8px #ef4444;
-    }
-    .badge.leave {
-      background: #eab308;
-      color: #000;
-      box-shadow: 0 0 8px #eab308;
-    }
-  </style>
+  }
+})();
+
+/* ============================
+   Utility: escape HTML
+   ============================ */
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+</script>
 </body>
 </html>
