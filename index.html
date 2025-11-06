@@ -35,3 +35,40 @@
   <script src="script.js"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | MG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-body">
+
+  <div class="login-container">
+    <h1 class="logo">MG</h1>
+    <p class="subtitle">Sign in to continue</p>
+
+    <form id="loginForm" class="login-form">
+      <label for="userid">User ID</label>
+      <input type="text" id="userid" placeholder="pratham" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="pratham0056" required />
+
+      <label for="role">Role</label>
+      <select id="role" required>
+        <option value="owner">Owner</option>
+        <option value="staff">Staff</option>
+      </select>
+
+      <button type="submit" class="btn-login">Login</button>
+      <p id="error" class="error"></p>
+    </form>
+
+    <p class="hint">Owner Login → ID: <b>pratham</b> | Password: <b>pratham0056</b></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
