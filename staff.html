@@ -34,7 +34,6 @@
       <h2 class="panel-title">Staff Management</h2>
       <p class="panel-sub">Add, view, or delete staff members</p>
 
-      <!-- Add Staff Form -->
       <form id="staffForm" class="staff-form" autocomplete="off">
         <input id="staffName" type="text" placeholder="Staff name" required />
         <input id="staffPhone" type="tel" placeholder="Phone number (optional)" />
@@ -42,7 +41,6 @@
         <button class="btn-login add-btn" type="submit">Add Staff</button>
       </form>
 
-      <!-- Staff List -->
       <div id="staffContainer" class="staff-list"></div>
     </section>
   </main>
@@ -51,13 +49,14 @@
     const STAFF_KEY = "staff";
     const ATT_KEY = "attendance_by_staff";
 
-    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("loggedInUser");
       window.location.href = "login.html";
     });
 
-    // Helpers
+    const staffForm = document.getElementById("staffForm");
+    const staffContainer = document.getElementById("staffContainer");
+
     function getStaff() {
       return JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
     }
@@ -71,10 +70,6 @@
       return JSON.parse(localStorage.getItem(ATT_KEY)) || {};
     }
 
-    // Add Staff
-    const staffForm = document.getElementById("staffForm");
-    const staffContainer = document.getElementById("staffContainer");
-
     staffForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("staffName").value.trim();
@@ -84,7 +79,6 @@
       if (!name) return alert("Enter staff name");
       const staff = getStaff();
 
-      // Prevent duplicate names
       if (staff.some(s => s.name.toLowerCase() === name.toLowerCase())) {
         alert("Staff already exists!");
         return;
@@ -92,16 +86,10 @@
 
       staff.push({ name, phone, salary });
       saveStaff(staff);
-
-      // Reset attendance when new staff is added
-      localStorage.setItem(ATT_KEY, JSON.stringify({}));
-      localStorage.setItem("attendance_updated_at", Date.now());
-
       staffForm.reset();
       renderStaff();
     });
 
-    // Delete Staff
     function deleteStaff(index) {
       const staff = getStaff();
       const name = staff[index].name;
@@ -109,7 +97,6 @@
       staff.splice(index, 1);
       saveStaff(staff);
 
-      // Remove their attendance record too
       const att = getAttendance();
       delete att[name];
       localStorage.setItem(ATT_KEY, JSON.stringify(att));
@@ -118,14 +105,11 @@
       renderStaff();
     }
 
-    // View Calendar
     function viewCalendar(name) {
-      // Save selected staff in localStorage so attendance.html opens it
       localStorage.setItem("selected_staff", name);
       window.location.href = "attendance.html";
     }
 
-    // Render Staff List with Stats
     function renderStaff() {
       const staff = getStaff();
       const attendance = getAttendance();
@@ -136,22 +120,30 @@
         return;
       }
 
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
       staff.forEach((s, i) => {
         const div = document.createElement("div");
         div.className = "staff-item";
 
         const attData = attendance[s.name] || {};
-        let counts = { Present: 0, Absent: 0, Leave: 0 };
+        let counts = { Present: 0, "Half Day": 0, Absent: 0, Leave: 0 };
 
-        Object.values(attData).forEach(status => {
-          if (counts[status] !== undefined) counts[status]++;
+        Object.keys(attData).forEach(key => {
+          const date = new Date(key);
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            const status = attData[key];
+            if (counts[status] !== undefined) counts[status]++;
+          }
         });
 
         div.innerHTML = `
           <div class="staff-info">
             <strong>${s.name}</strong>
             <div class="staff-stats">
-              ✅ ${counts.Present} &nbsp;&nbsp; ❌ ${counts.Absent} &nbsp;&nbsp; 🕐 ${counts.Leave}
+              ✅ ${counts.Present} | 🌗 ${counts["Half Day"]} | ❌ ${counts.Absent} | 🕐 ${counts.Leave}
             </div>
           </div>
           <div class="staff-actions">
@@ -159,12 +151,10 @@
             <button class="btn-small btn-del" onclick="deleteStaff(${i})">Delete</button>
           </div>
         `;
-
         staffContainer.appendChild(div);
       });
     }
 
-    // Sync updates when attendance changes
     window.addEventListener("storage", (e) => {
       if (e.key === ATT_KEY || e.key === "attendance_updated_at" || e.key === "staff_updated_at") {
         renderStaff();
