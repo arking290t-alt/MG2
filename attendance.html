@@ -83,5 +83,93 @@
 
   <script>
     const calendar = document.getElementById('calendar');
-    const staffSelect = document.getElementById('staffSelect')
-  
+    const staffSelect = document.getElementById('staffSelect');
+    const summary = document.getElementById('summary');
+    const STORAGE_KEY = 'attendanceData';
+    const staffKey = 'staffList';
+    const attendanceData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    const staffList = JSON.parse(localStorage.getItem(staffKey)) || [];
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    function loadStaff() {
+      if (staffList.length === 0) {
+        staffSelect.innerHTML = '<option>No staff added</option>';
+        calendar.innerHTML = '<p style="text-align:center;color:#aaa;">No staff found</p>';
+        return;
+      }
+      staffSelect.innerHTML = staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const staff = staffSelect.value;
+      if (!staff) return;
+      calendar.innerHTML = '';
+      for (let i = 1; i <= daysInMonth; i++) {
+        const key = `${staff}_${year}_${month}_${i}`;
+        const rec = attendanceData[key] || { status: 'No', ot: 0 };
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.innerHTML = `
+          <div><strong>${i}</strong></div>
+          <div class="status ${rec.status.toLowerCase()}">${rec.status}</div>
+          <div class="buttons">
+            <button class="p" onclick="mark('${staff}',${i},'Present')">P</button>
+            <button class="h" onclick="mark('${staff}',${i},'Half')">½</button>
+            <button class="a" onclick="mark('${staff}',${i},'Absent')">A</button>
+            <button class="l" onclick="mark('${staff}',${i},'Leave')">L</button>
+            <button class="o" onclick="markOT('${staff}',${i})">OT</button>
+          </div>
+        `;
+        calendar.appendChild(div);
+      }
+      calcSalary(staff);
+    }
+
+    function mark(staff, day, status) {
+      const key = `${staff}_${year}_${month}_${day}`;
+      attendanceData[key] = { status, ot: 0 };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceData));
+      renderCalendar();
+    }
+
+    function markOT(staff, day) {
+      const amount = prompt('Enter OT amount:');
+      if (!amount || isNaN(amount)) return;
+      const key = `${staff}_${year}_${month}_${day}`;
+      attendanceData[key] = { status: 'OT', ot: parseFloat(amount) };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceData));
+      renderCalendar();
+    }
+
+    function calcSalary(staff) {
+      const info = staffList.find(s => s.name === staff);
+      if (!info) return;
+      const perDay = info.salary / daysInMonth;
+      let full = 0, half = 0, ot = 0;
+      for (let i = 1; i <= daysInMonth; i++) {
+        const key = `${staff}_${year}_${month}_${i}`;
+        const r = attendanceData[key];
+        if (!r) continue;
+        if (r.status === 'Present') full++;
+        if (r.status === 'Half') half += 0.5;
+        if (r.status === 'OT') ot += r.ot;
+      }
+      const total = (full + half) * perDay + ot;
+      summary.textContent = `Earnings this month: ₹${total.toFixed(2)} (Full: ${full}, Half: ${half}, OT: ₹${ot.toFixed(2)})`;
+    }
+
+    staffSelect.onchange = renderCalendar;
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('loggedInUser');
+      location.href = 'login.html';
+    };
+
+    loadStaff();
+  </script>
+</body>
+</html>
