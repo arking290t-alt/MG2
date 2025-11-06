@@ -1,36 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Expenses | MG</title>
   <style>
     :root {
-      --bg: #0b111b;
-      --card: rgba(255, 255, 255, 0.05);
-      --accent: #00b4ff;
-      --text: #d4e1f0;
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.03);
+      --accent:#00b4ff;
+      --panel:#0e1724;
     }
 
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
+    * { box-sizing:border-box; }
 
     body {
       background: var(--bg);
-      color: var(--text);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
       margin: 0;
-      padding: 0;
     }
 
     header {
-      background: rgba(255, 255, 255, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255,255,255,0.04);
+      padding: 14px 26px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
     .logo {
@@ -43,91 +40,129 @@
       background: var(--accent);
       border: none;
       color: #fff;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
       font-weight: 600;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: 0.15s;
+      text-decoration: none;
+      display:inline-block;
     }
 
+    .btn:hover { opacity:.9; }
+
     .container {
-      max-width: 900px;
-      margin: 30px auto;
+      max-width: 980px;
+      margin: 36px auto;
       background: var(--card);
-      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
-      box-shadow: 0 0 30px rgba(0, 180, 255, 0.1);
+      padding: 22px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.04);
     }
 
     h1 {
-      text-align: center;
       color: var(--accent);
-      margin-bottom: 20px;
+      text-align: center;
+      margin: 6px 0 18px;
+      font-size: 1.7rem;
     }
 
-    form {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 20px;
+    .controls {
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:18px;
     }
 
-    input, select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.08);
+    label { font-size:0.9rem; color:#9fbcdff0; }
+
+    select, input[type="month"], input[type="text"], input[type="number"], input[type="date"] {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
       color: #fff;
+      padding:8px 10px;
+      border-radius:8px;
+      font-size:0.95rem;
+      outline: none;
+      min-width:140px;
     }
 
-    button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
+    .filter-group { display:flex; align-items:center; gap:8px; }
 
-    .expense-list {
-      margin-top: 20px;
-    }
+    .expense-list { margin-top: 14px; }
 
     .expense-item {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 10px 14px;
+      background: rgba(255,255,255,0.04);
+      padding: 12px;
+      border-radius: 10px;
       margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-left: 4px solid var(--accent);
+      font-size: 0.95rem;
+      border: 1px solid rgba(255,255,255,0.04);
     }
 
-    .expense-info {
-      display: flex;
-      flex-direction: column;
+    .expense-item small { color:#98cbe6; }
+    .expense-item .amt { color:var(--accent); font-weight:700; }
+
+    .summary {
+      margin-top: 14px;
+      text-align: center;
+      color: var(--accent);
+      font-weight: 700;
     }
 
-    .expense-info span {
-      font-size: 0.9rem;
+    .add-row {
+      margin-top: 22px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
-    .delete-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: 0.2s;
+    .muted { color:#9aa9b6; font-size:0.9rem; }
+
+    .category-section {
+      margin-top: 35px;
+      text-align: center;
     }
 
-    .delete-btn:hover {
-      background: #dc2626;
+    .category-list {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:8px;
+      margin-top:12px;
     }
 
+    .category-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding:6px 10px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .category-item button {
+      background:#ef4444;
+      border:none;
+      color:white;
+      padding:3px 7px;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
+    @media (max-width:720px){
+      .controls{gap:8px;padding:0 8px}
+      .add-row{gap:8px}
+    }
   </style>
 </head>
 <body>
@@ -140,87 +175,151 @@
   </header>
 
   <div class="container">
-    <h1>Expenses Tracker</h1>
+    <h1>Expense Tracker</h1>
 
-    <form id="expenseForm">
-      <input type="text" id="description" placeholder="Expense Description" required />
-      <input type="number" id="amount" placeholder="Amount (₹)" required />
-      <select id="category" required>
-        <option value="">Select Category</option>
-        <option value="Salary">Salary</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Maintenance">Maintenance</option>
-        <option value="Others">Others</option>
-      </select>
-      <button type="submit">Add Expense</button>
-    </form>
+    <div class="controls">
+      <div class="filter-group">
+        <label>Category</label>
+        <select id="categoryFilter">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Time</label>
+        <input type="month" id="timeFilter">
+        <button id="clearTime" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.08);padding:6px 10px;">Clear</button>
+      </div>
+    </div>
 
     <div id="expenseList" class="expense-list"></div>
+    <div id="summaryText" class="summary">Total: ₹0</div>
+
+    <div class="add-row">
+      <input id="expenseName" type="text" placeholder="Expense name" />
+      <input id="expenseAmount" type="number" placeholder="Amount ₹" />
+      <select id="expenseCategory"></select>
+      <input id="expenseDate" type="date" />
+      <button id="addExpenseBtn" class="btn">Add Expense</button>
+    </div>
+
+    <div style="margin-top:20px;text-align:center" class="muted">
+      Add category:
+      <input id="newCategory" type="text" placeholder="New Category name" style="min-width:180px;margin-left:8px"/>
+      <button id="addCategoryBtn" class="btn">Add Category</button>
+    </div>
+
+    <div class="category-section">
+      <h3 style="color:#00b4ff;">Manage Categories</h3>
+      <div id="categoryList" class="category-list"></div>
+    </div>
   </div>
 
   <script>
-    const EXP_KEY = "expensesData";
-    let expensesData = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
+    const EXP_KEY = 'expenses';
+    const CAT_KEY = 'categories';
 
-    const expenseList = document.getElementById("expenseList");
-    const expenseForm = document.getElementById("expenseForm");
+    let expenses = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
+    let categories = JSON.parse(localStorage.getItem(CAT_KEY)) || ['Food','Travel','Bills','Other'];
 
-    function renderExpenses() {
-      expenseList.innerHTML = "";
-      if (expensesData.length === 0) {
-        expenseList.innerHTML = `<p style="text-align:center;color:#999;">No expenses yet.</p>`;
-        return;
-      }
+    const expenseListEl = document.getElementById('expenseList');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const timeFilter = document.getElementById('timeFilter');
+    const clearTime = document.getElementById('clearTime');
+    const expenseCategory = document.getElementById('expenseCategory');
+    const summaryText = document.getElementById('summaryText');
+    const categoryListEl = document.getElementById('categoryList');
 
-      expensesData.forEach((e, index) => {
-        const div = document.createElement("div");
-        div.className = "expense-item";
-        div.innerHTML = `
-          <div class="expense-info">
-            <strong>${e.category}</strong>
-            <span>${e.description}</span>
-            <span>₹${parseFloat(e.amount).toFixed(2)} • ${e.date}</span>
-          </div>
-          <button class="delete-btn" onclick="deleteExpense(${index})">Delete</button>
-        `;
-        expenseList.appendChild(div);
+    function saveAll() {
+      localStorage.setItem(EXP_KEY, JSON.stringify(expenses));
+      localStorage.setItem(CAT_KEY, JSON.stringify(categories));
+    }
+
+    function renderCategories() {
+      categoryFilter.innerHTML = '<option value="all">All Categories</option>' +
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      expenseCategory.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      categoryListEl.innerHTML = '';
+      categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'category-item';
+        div.innerHTML = `${cat} <button onclick="deleteCategory('${cat}')">❌</button>`;
+        categoryListEl.appendChild(div);
       });
     }
 
-    function deleteExpense(index) {
-      if (confirm("Delete this expense?")) {
-        expensesData.splice(index, 1);
-        localStorage.setItem(EXP_KEY, JSON.stringify(expensesData));
-        renderExpenses();
+    function renderExpenses() {
+      expenseListEl.innerHTML = '';
+      const cat = categoryFilter.value;
+      const time = timeFilter.value;
+
+      const filtered = expenses.filter(e => {
+        const matchesCat = (cat === 'all') || (e.category === cat);
+        const matchesTime = (!time) || e.date.startsWith(time.split('-')[1]);
+        return matchesCat && matchesTime;
+      });
+
+      if(filtered.length === 0) {
+        expenseListEl.innerHTML = '<p style="text-align:center;color:#888;">No expenses found</p>';
+      } else {
+        filtered.forEach(exp => {
+          const div = document.createElement('div');
+          div.className = 'expense-item';
+          div.innerHTML = `
+            <div>
+              <strong>${exp.name}</strong><br>
+              <small>${exp.category} | ${exp.date}</small>
+            </div>
+            <span class="amt">₹${exp.amount}</span>`;
+          expenseListEl.appendChild(div);
+        });
       }
+
+      const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+      summaryText.textContent = `Total: ₹${total}`;
     }
 
-    expenseForm.addEventListener("submit", e => {
-      e.preventDefault();
-      const desc = document.getElementById("description").value;
-      const amt = parseFloat(document.getElementById("amount").value);
-      const cat = document.getElementById("category").value;
-
-      if (!desc || isNaN(amt) || !cat) return alert("Please fill all fields");
-
-      const newExpense = {
-        category: cat,
-        description: desc,
-        amount: amt,
-        date: new Date().toLocaleDateString()
-      };
-
-      expensesData.push(newExpense);
-      localStorage.setItem(EXP_KEY, JSON.stringify(expensesData));
-      expenseForm.reset();
+    document.getElementById('addExpenseBtn').onclick = () => {
+      const name = document.getElementById('expenseName').value.trim();
+      const amt = parseFloat(document.getElementById('expenseAmount').value);
+      const cat = expenseCategory.value;
+      const date = document.getElementById('expenseDate').value || new Date().toISOString().slice(0,10);
+      if(!name || !amt) return alert('Enter valid details!');
+      expenses.push({ name, amount: amt, category: cat, date });
+      saveAll();
       renderExpenses();
-    });
-
-    document.getElementById("logoutBtn").onclick = () => {
-      localStorage.removeItem("loggedInUser");
-      location.href = "login.html";
+      document.getElementById('expenseName').value = '';
+      document.getElementById('expenseAmount').value = '';
     };
 
+    document.getElementById('addCategoryBtn').onclick = () => {
+      const val = document.getElementById('newCategory').value.trim();
+      if(!val) return alert('Enter category');
+      if(categories.includes(val)) return alert('Category exists');
+      categories.push(val);
+      saveAll();
+      document.getElementById('newCategory').value = '';
+      renderCategories();
+    };
+
+    function deleteCategory(name) {
+      if(!confirm(`Delete category "${name}"?`)) return;
+      categories = categories.filter(c => c !== name);
+      saveAll();
+      renderCategories();
+    }
+
+    categoryFilter.onchange = renderExpenses;
+    timeFilter.onchange = renderExpenses;
+    clearTime.onclick = () => { timeFilter.value=''; renderExpenses(); };
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('loggedInUser');
+      location.href='login.html';
+    };
+
+    renderCategories();
     renderExpenses();
   </script>
 </body>
