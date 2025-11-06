@@ -141,6 +141,10 @@
         <option value="11">November</option>
         <option value="12">December</option>
       </select>
+
+      <select id="yearFilter">
+        <option value="all">All Years</option>
+      </select>
     </div>
 
     <div class="expense-list" id="expenseList"></div>
@@ -162,6 +166,7 @@
     const expenseListEl = document.getElementById('expenseList');
     const categoryFilter = document.getElementById('categoryFilter');
     const monthFilter = document.getElementById('monthFilter');
+    const yearFilter = document.getElementById('yearFilter');
     const summaryText = document.getElementById('summaryText');
     const expenseCategory = document.getElementById('expenseCategory');
 
@@ -171,6 +176,12 @@
     function saveAll() {
       localStorage.setItem('expenses', JSON.stringify(expenses));
       localStorage.setItem('categories', JSON.stringify(categories));
+    }
+
+    function renderYears() {
+      const years = [...new Set(expenses.map(e => e.year))];
+      yearFilter.innerHTML = `<option value="all">All Years</option>` +
+        years.map(y => `<option value="${y}">${y}</option>`).join('');
     }
 
     function renderCategories() {
@@ -183,11 +194,13 @@
       expenseListEl.innerHTML = '';
       const catFilter = categoryFilter.value;
       const monthFilterValue = monthFilter.value;
+      const yearFilterValue = yearFilter.value;
 
       const filtered = expenses.filter(exp => {
         const matchesCategory = catFilter === 'all' || exp.category === catFilter;
         const matchesMonth = monthFilterValue === 'all' || exp.month == monthFilterValue;
-        return matchesCategory && matchesMonth;
+        const matchesYear = yearFilterValue === 'all' || exp.year == yearFilterValue;
+        return matchesCategory && matchesMonth && matchesYear;
       });
 
       if (filtered.length === 0) {
@@ -217,6 +230,7 @@
       const category = expenseCategory.value;
       const date = new Date();
       const month = date.getMonth() + 1;
+      const year = date.getFullYear();
 
       if (!name || isNaN(amount) || amount <= 0) return alert('Enter valid details!');
 
@@ -225,13 +239,16 @@
         amount,
         category,
         date: date.toLocaleDateString(),
-        month
+        month,
+        year
       });
 
       saveAll();
+      renderYears();
+      renderExpenses();
+
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
-      renderExpenses();
     });
 
     document.getElementById('addCategoryBtn').addEventListener('click', () => {
@@ -246,6 +263,7 @@
 
     categoryFilter.addEventListener('change', renderExpenses);
     monthFilter.addEventListener('change', renderExpenses);
+    yearFilter.addEventListener('change', renderExpenses);
 
     document.getElementById('logoutBtn').onclick = () => {
       localStorage.removeItem('loggedInUser');
@@ -253,6 +271,7 @@
     };
 
     renderCategories();
+    renderYears();
     renderExpenses();
   </script>
 </body>
