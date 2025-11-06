@@ -30,45 +30,62 @@
   </main>
 
   <script>
-    // Logout button
+    // 🔹 Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("loggedInUser");
       window.location.href = "login.html";
     });
 
-    // Load data
+    // 🔹 Load attendance and staff
     const attendanceList = document.getElementById("attendanceList");
-    const staff = JSON.parse(localStorage.getItem("staff")) || [];
-    const attendance = JSON.parse(localStorage.getItem("attendance")) || {};
     const today = new Date().toLocaleDateString("en-IN");
 
+    // Helper: Get staff from localStorage
+    function getStaffList() {
+      return JSON.parse(localStorage.getItem("staff")) || [];
+    }
+
+    // Helper: Get attendance data
+    function getAttendanceData() {
+      return JSON.parse(localStorage.getItem("attendance")) || {};
+    }
+
+    // Helper: Save attendance data
+    function saveAttendanceData(data) {
+      localStorage.setItem("attendance", JSON.stringify(data));
+    }
+
+    // 🔹 Main loader
     function loadAttendance() {
+      const staffList = getStaffList();
+      const attendanceData = getAttendanceData();
+
       attendanceList.innerHTML = "";
 
-      if (staff.length === 0) {
+      if (staffList.length === 0) {
         attendanceList.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
         return;
       }
 
-      staff.forEach((member) => {
-        const key = `${member.name}_${today}`;
-        const marked = attendance[key];
+      staffList.forEach((staff) => {
+        const key = `${staff.name}_${today}`;
+        const status = attendanceData[key];
 
         const div = document.createElement("div");
         div.classList.add("staff-item");
 
-        if (marked) {
+        if (status) {
           div.innerHTML = `
-            <span><strong>${member.name}</strong></span>
-            <span class="badge ${marked.toLowerCase()}">${marked}</span>
+            <span><strong>${staff.name}</strong></span>
+            <span class="badge ${status.toLowerCase()}">${status}</span>
           `;
         } else {
           div.innerHTML = `
-            <span><strong>${member.name}</strong></span>
+            <span><strong>${staff.name}</strong></span>
             <div style="display:flex;gap:10px;">
-              <button class="btn-login" onclick="mark('${member.name}','Present')">Present</button>
-              <button class="btn-login" style="background:#ef4444;" onclick="mark('${member.name}','Absent')">Absent</button>
-              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${member.name}','Leave')">Leave</button>
+              <button class="btn-login" onclick="mark('${staff.name}', 'Present')">Present</button>
+              <button class="btn-login" style="background:#ef4444;" onclick="mark('${staff.name}', 'Absent')">Absent</button>
+              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${staff.name}', 'Leave')">Leave</button>
             </div>
           `;
         }
@@ -77,9 +94,10 @@
       });
     }
 
+    // 🔹 Mark attendance
     function mark(name, status) {
       const key = `${name}_${today}`;
-      const data = JSON.parse(localStorage.getItem("attendance")) || {};
+      const data = getAttendanceData();
 
       if (data[key]) {
         alert("Attendance already marked for today!");
@@ -87,10 +105,18 @@
       }
 
       data[key] = status;
-      localStorage.setItem("attendance", JSON.stringify(data));
+      saveAttendanceData(data);
       loadAttendance();
     }
 
+    // 🔹 Auto-refresh attendance when new staff is added
+    window.addEventListener("storage", (event) => {
+      if (event.key === "staff") {
+        loadAttendance();
+      }
+    });
+
+    // Initial load
     loadAttendance();
   </script>
 
