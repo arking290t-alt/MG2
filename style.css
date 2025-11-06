@@ -14,7 +14,6 @@ body {
   color: #f2f6ff;
 }
 
-/* ---- Login Page ---- */
 .login-container {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(18px);
@@ -93,10 +92,4 @@ input:focus, select:focus {
   font-size: 0.9rem;
   min-height: 20px;
   text-align: center;
-}
-
-.hint {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: #7b8bad;
 }
