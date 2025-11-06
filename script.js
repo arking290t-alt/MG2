@@ -120,3 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderStaff();
 });
+attendance = {
+  "vikas": { Present: 3, Absent: 1, Leave: 0 }
+}
