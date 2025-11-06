@@ -40,3 +40,44 @@
   <script src="script.js"></script>
 </body>
 </html>
+<h3 style="text-align:center;margin-top:2rem;color:#38bdf8;">Attendance Summary</h3>
+<div id="attendanceStats" style="margin-top:1rem;text-align:center;color:#ccc;"></div>
+
+<script>
+  // Attendance stats summary
+  const attendanceData = JSON.parse(localStorage.getItem("attendance")) || {};
+  const staffData = JSON.parse(localStorage.getItem("staff")) || [];
+  const now = new Date();
+
+  function countStats(periodDays) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - periodDays);
+
+    let stats = {};
+    Object.keys(attendanceData).forEach(key => {
+      const [name, date] = key.split("_");
+      const recordDate = new Date(date);
+      if (recordDate >= cutoff) {
+        stats[name] = stats[name] || { Present: 0, Absent: 0, Leave: 0 };
+        stats[name][attendanceData[key]]++;
+      }
+    });
+    return stats;
+  }
+
+  function displayStats() {
+    const week = countStats(7);
+    const month = countStats(30);
+    const year = countStats(365);
+    let html = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <p><strong>Last 7 Days:</strong> ${JSON.stringify(week)}</p>
+        <p><strong>Last 30 Days:</strong> ${JSON.stringify(month)}</p>
+        <p><strong>This Year:</strong> ${JSON.stringify(year)}</p>
+      </div>
+    `;
+    document.getElementById("attendanceStats").innerHTML = html;
+  }
+
+  displayStats();
+</script>
