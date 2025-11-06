@@ -24,6 +24,7 @@
     .halfday { background:#22d3ee; color:#000; box-shadow:0 0 6px rgba(34,211,238,0.3); }
     .absent { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.3); }
     .leave { background:#f59e0b; color:#000; box-shadow:0 0 6px rgba(245,158,11,0.25); }
+    .ot { background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.35); }
     .notmarked { background:rgba(255,255,255,0.03); color:var(--text-muted); border:1px dashed rgba(255,255,255,0.04); }
     .weekday { text-align:center; font-weight:700; color:var(--text-muted); margin-bottom:6px; }
     .cal-controls button { border:none; padding:8px 12px; border-radius:8px; background:rgba(255,255,255,0.04); color:var(--text-main); cursor:pointer; }
@@ -46,7 +47,7 @@
   <main class="center-stage" style="padding-top:30px;padding-bottom:60px;">
     <section class="staff-card-panel" style="width:100%;max-width:1200px;">
       <h2 class="panel-title">Attendance & Salary Calendar</h2>
-      <p class="panel-sub">Mark Present, Half Day, Absent, or Leave — auto salary updates below.</p>
+      <p class="panel-sub">Mark Present, Half Day, Absent, Leave or OT (with manual rate entry).</p>
 
       <div class="attendance-wrap">
         <div class="staff-list-col">
@@ -84,6 +85,7 @@
       <button class="btn-login" data-status="Half Day" style="background:#22d3ee;color:#000;">Half Day</button>
       <button class="btn-login" data-status="Absent" style="background:#ef4444">Absent</button>
       <button class="btn-login" data-status="Leave" style="background:#f59e0b;color:#000">Leave</button>
+      <button class="btn-login" data-status="OT" style="background:#8b5cf6">OT</button>
       <button class="btn-back" data-status="Clear">Clear</button>
     </div>
   </div>
@@ -98,18 +100,18 @@ let attendanceData = JSON.parse(localStorage.getItem(ATT_KEY)) || {};
 function getStaffList(){ return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; }
 function saveAttendance(){ localStorage.setItem(ATT_KEY, JSON.stringify(attendanceData)); localStorage.setItem("attendance_updated_at", Date.now()); }
 
-function localISODate(date){
+function localISO(date){
   const d = new Date(date);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().split("T")[0];
 }
 
 function renderStaff(){
-  const staffList=getStaffList();
-  const staffListEl=document.getElementById("staffList");
+  const list = getStaffList();
+  const staffListEl = document.getElementById("staffList");
   staffListEl.innerHTML="";
-  if(staffList.length===0){ staffListEl.innerHTML="<p style='text-align:center;color:#888;'>No staff added yet.</p>"; return;}
-  staffList.forEach(s=>{
+  if(list.length===0){ staffListEl.innerHTML="<p style='text-align:center;color:#888;'>No staff added yet.</p>"; return; }
+  list.forEach(s=>{
     const el=document.createElement("div");
     el.className="staff-quick"+(selectedStaff===s.name?" active":"");
     el.textContent=s.name;
@@ -126,18 +128,22 @@ function renderCalendar(){
   const daysInMonth=new Date(year,month+1,0).getDate();
   const startDay=first.getDay();
   document.getElementById("monthTitle").textContent=first.toLocaleString("en-US",{month:"long",year:"numeric"});
-  for(let i=0;i<startDay;i++){ const b=document.createElement("div"); b.className="cal-day"; b.style.visibility="hidden"; grid.appendChild(b);}
+  for(let i=0;i<startDay;i++){ const blank=document.createElement("div"); blank.className="cal-day"; blank.style.visibility="hidden"; grid.appendChild(blank); }
   for(let d=1;d<=daysInMonth;d++){
     const cell=document.createElement("div"); cell.className="cal-day";
-    const dateObj=new Date(year,month,d);
-    const iso=localISODate(dateObj);
+    const iso=localISO(new Date(year,month,d));
     cell.innerHTML=`<div class='date-num'>${d}</div>`;
     if(selectedStaff){
       const status=(attendanceData[selectedStaff]&&attendanceData[selectedStaff][iso])||null;
-      const badge=document.createElement("div"); badge.className="badge-sm "+(status?status.toLowerCase().replace(" ",""):"notmarked"); badge.textContent=status||"No";
-      const statusDiv=document.createElement("div"); statusDiv.className="status"; statusDiv.appendChild(badge);
-      cell.appendChild(statusDiv);
-      cell.onclick=()=>openPopup(selectedStaff,iso,dateObj);
+      const badge=document.createElement("div");
+      let display="No";
+      if(typeof status==="string") display=status;
+      if(typeof status==="object" && status.status==="OT") display=`OT ₹${status.amount}`;
+      badge.className="badge-sm "+(display==="No"?"notmarked":display.toLowerCase().split(" ")[0]);
+      badge.textContent=display;
+      const wrap=document.createElement("div"); wrap.className="status"; wrap.appendChild(badge);
+      cell.appendChild(wrap);
+      cell.onclick=()=>openPopup(selectedStaff,iso,new Date(year,month,d));
     }
     grid.appendChild(cell);
   }
@@ -153,32 +159,42 @@ function openPopup(staff,iso,dateObj){
     const status=btn.dataset.status;
     if(!attendanceData[staff])attendanceData[staff]={};
     if(status==="Clear"){ delete attendanceData[staff][iso]; }
+    else if(status==="OT"){
+      const amt=prompt("Enter OT amount for this day (₹):");
+      if(amt && !isNaN(amt)) attendanceData[staff][iso]={status:"OT",amount:parseFloat(amt)};
+    }
     else{ attendanceData[staff][iso]=status; }
     saveAttendance(); closePopup(); renderCalendar();
   };
 }
-function closePopup(){ document.getElementById("overlay").style.display="none"; document.getElementById("popup").style.display="none"; }
+
+function closePopup(){
+  document.getElementById("overlay").style.display="none";
+  document.getElementById("popup").style.display="none";
+}
 
 function updateSalarySummary(){
   const summary=document.getElementById("salarySummary");
-  if(!selectedStaff){ summary.textContent="Earnings this month: ₹0"; return;}
+  if(!selectedStaff){ summary.textContent="Earnings this month: ₹0"; return; }
   const staff=getStaffList().find(s=>s.name===selectedStaff);
-  if(!staff||!staff.salary){ summary.textContent="Earnings this month: ₹0"; return;}
+  if(!staff||!staff.salary){ summary.textContent="Earnings this month: ₹0"; return; }
   const salary=parseFloat(staff.salary)||0;
   const year=viewDate.getFullYear(),month=viewDate.getMonth();
   const daysInMonth=new Date(year,month+1,0).getDate();
-  const att=attendanceData[selectedStaff]||{};
-  let present=0,half=0;
-  for(const date in att){
-    const d=new Date(date+"T00:00:00");
-    if(d.getFullYear()===year&&d.getMonth()===month){
-      if(att[date]==="Present")present++;
-      if(att[date]==="Half Day")half++;
-    }
-  }
   const perDay=salary/daysInMonth;
-  const earned=Math.round(present*perDay + half*(perDay/2));
-  summary.textContent=`Earnings this month: ₹${earned} (Full: ${present}, Half: ${half}, ₹${perDay.toFixed(2)} / day)`;
+  const att=attendanceData[selectedStaff]||{};
+  let present=0,half=0,otTotal=0;
+  Object.keys(att).forEach(key=>{
+    const [y,m]=key.split("-").map(Number);
+    if(y===year && m===month+1){
+      const rec=att[key];
+      if(rec==="Present") present++;
+      if(rec==="Half Day") half++;
+      if(typeof rec==="object" && rec.status==="OT") otTotal+=rec.amount;
+    }
+  });
+  const earned=Math.round(present*perDay + half*(perDay/2) + otTotal);
+  summary.textContent=`Earnings this month: ₹${earned} (Full: ${present}, Half: ${half}, OT: ₹${otTotal}, ₹${perDay.toFixed(2)} / day)`;
 }
 
 document.getElementById("logoutBtn").onclick=()=>{localStorage.removeItem("loggedInUser");window.location.href="login.html";};
@@ -186,10 +202,6 @@ document.getElementById("prevMonth").onclick=()=>{viewDate.setMonth(viewDate.get
 document.getElementById("nextMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()+1);renderCalendar();};
 document.getElementById("todayBtn").onclick=()=>{viewDate=new Date();renderCalendar();};
 document.getElementById("overlay").onclick=closePopup;
-
-window.addEventListener("storage",e=>{
-  if(e.key===ATT_KEY||e.key==="attendance_updated_at"||e.key===STAFF_KEY)renderCalendar();
-});
 
 renderStaff();
 renderCalendar();
