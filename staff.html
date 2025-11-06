@@ -4,164 +4,148 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Staff | MG</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
-    .staff-list { display:flex; flex-direction:column; gap:12px; margin-top:1.2rem; }
-    .staff-item { background:rgba(255,255,255,0.03); padding:14px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-    .staff-info { flex:1; }
-    .staff-info strong { font-size:1.05rem; color:var(--text-main); }
-    .staff-stats { font-size:0.9rem; color:var(--text-muted); margin-top:4px; }
-    .staff-actions { display:flex; gap:8px; }
-    .btn-small { padding:6px 10px; font-size:0.85rem; border-radius:6px; border:none; cursor:pointer; }
-    .btn-del { background:#ef4444; color:#fff; }
-    .btn-view { background:#0ea5e9; color:#fff; }
+    :root {
+      --bg: #0b111b;
+      --card: rgba(255,255,255,0.05);
+      --accent: #00b4ff;
+      --text: #e2e8f0;
+    }
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      margin:0;
+    }
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:15px 25px;
+      background:rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
+    .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;}
+    .container{
+      max-width:700px;
+      margin:40px auto;
+      background:var(--card);
+      padding:25px;
+      border-radius:14px;
+      box-shadow:0 8px 30px rgba(0,180,255,0.1);
+    }
+    h1{text-align:center;color:var(--accent);}
+    form{display:flex;flex-direction:column;gap:12px;margin-top:15px;}
+    input{
+      background:rgba(255,255,255,0.08);
+      border:none;
+      padding:10px;
+      border-radius:8px;
+      color:white;
+      font-size:1rem;
+    }
+    button{
+      background:var(--accent);
+      border:none;
+      padding:10px;
+      color:white;
+      border-radius:8px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .staff-list{margin-top:20px;}
+    .staff-item{
+      background:rgba(255,255,255,0.08);
+      border-radius:8px;
+      padding:10px 15px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .staff-item button{
+      background:#ef4444;
+      border:none;
+      padding:6px 10px;
+      color:white;
+      border-radius:5px;
+      cursor:pointer;
+    }
   </style>
 </head>
-<body class="staff-body">
-
-  <header class="top-bar">
-    <div class="top-left">
-      <h1 class="logo">MG</h1>
-    </div>
-    <div class="top-right">
-      <a href="dashboard.html" class="btn-back">← Dashboard</a>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
+<body>
+  <header>
+    <div class="logo">MG</div>
+    <div>
+      <a href="dashboard.html" class="btn">← Dashboard</a>
+      <button id="logoutBtn" class="btn">Logout</button>
     </div>
   </header>
 
-  <main class="center-stage">
-    <section class="staff-card-panel">
-      <h2 class="panel-title">Staff Management</h2>
-      <p class="panel-sub">Add, view, or delete staff members</p>
+  <div class="container">
+    <h1>Staff Management</h1>
+    <form id="staffForm">
+      <input id="staffName" type="text" placeholder="Staff name" required />
+      <input id="staffPhone" type="text" placeholder="Phone (optional)" />
+      <input id="staffSalary" type="number" placeholder="Salary / month" required />
+      <button type="submit">Add Staff</button>
+    </form>
 
-      <form id="staffForm" class="staff-form" autocomplete="off">
-        <input id="staffName" type="text" placeholder="Staff name" required />
-        <input id="staffPhone" type="tel" placeholder="Phone number (optional)" />
-        <input id="staffSalary" type="number" placeholder="Salary / month (optional)" />
-        <button class="btn-login add-btn" type="submit">Add Staff</button>
-      </form>
-
-      <div id="staffContainer" class="staff-list"></div>
-    </section>
-  </main>
+    <div id="staffList" class="staff-list"></div>
+  </div>
 
   <script>
-    const STAFF_KEY = "staff";
-    const ATT_KEY = "attendance_by_staff";
+    const staffForm = document.getElementById('staffForm');
+    const staffListEl = document.getElementById('staffList');
 
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      localStorage.removeItem("loggedInUser");
-      window.location.href = "login.html";
-    });
-
-    const staffForm = document.getElementById("staffForm");
-    const staffContainer = document.getElementById("staffContainer");
-
-    function getStaff() {
-      return JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
-    }
-
-    function saveStaff(staff) {
-      localStorage.setItem(STAFF_KEY, JSON.stringify(staff));
-      localStorage.setItem("staff_updated_at", Date.now());
-    }
-
-    function getAttendance() {
-      return JSON.parse(localStorage.getItem(ATT_KEY)) || {};
-    }
-
-    staffForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = document.getElementById("staffName").value.trim();
-      const phone = document.getElementById("staffPhone").value.trim();
-      const salary = document.getElementById("staffSalary").value.trim();
-
-      if (!name) return alert("Enter staff name");
-      const staff = getStaff();
-
-      if (staff.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-        alert("Staff already exists!");
-        return;
-      }
-
-      staff.push({ name, phone, salary });
-      saveStaff(staff);
-      staffForm.reset();
-      renderStaff();
-    });
-
-    function deleteStaff(index) {
-      const staff = getStaff();
-      const name = staff[index].name;
-      if (!confirm(`Delete ${name}?`)) return;
-      staff.splice(index, 1);
-      saveStaff(staff);
-
-      const att = getAttendance();
-      delete att[name];
-      localStorage.setItem(ATT_KEY, JSON.stringify(att));
-      localStorage.setItem("attendance_updated_at", Date.now());
-
-      renderStaff();
-    }
-
-    function viewCalendar(name) {
-      localStorage.setItem("selected_staff", name);
-      window.location.href = "attendance.html";
-    }
+    let staffList = JSON.parse(localStorage.getItem('staffList')) || [];
 
     function renderStaff() {
-      const staff = getStaff();
-      const attendance = getAttendance();
-      staffContainer.innerHTML = "";
-
-      if (staff.length === 0) {
-        staffContainer.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
+      staffListEl.innerHTML = '';
+      if (staffList.length === 0) {
+        staffListEl.innerHTML = '<p style="text-align:center;color:#aaa;">No staff added yet.</p>';
         return;
       }
-
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      staff.forEach((s, i) => {
-        const div = document.createElement("div");
-        div.className = "staff-item";
-
-        const attData = attendance[s.name] || {};
-        let counts = { Present: 0, "Half Day": 0, Absent: 0, Leave: 0 };
-
-        Object.keys(attData).forEach(key => {
-          const date = new Date(key);
-          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-            const status = attData[key];
-            if (counts[status] !== undefined) counts[status]++;
-          }
-        });
-
+      staffList.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'staff-item';
         div.innerHTML = `
-          <div class="staff-info">
-            <strong>${s.name}</strong>
-            <div class="staff-stats">
-              ✅ ${counts.Present} | 🌗 ${counts["Half Day"]} | ❌ ${counts.Absent} | 🕐 ${counts.Leave}
-            </div>
+          <div>
+            <strong>${s.name}</strong><br>
+            <small>₹${s.salary}/month</small>
           </div>
-          <div class="staff-actions">
-            <button class="btn-small btn-view" onclick="viewCalendar('${s.name}')">View Calendar</button>
-            <button class="btn-small btn-del" onclick="deleteStaff(${i})">Delete</button>
-          </div>
+          <button onclick="deleteStaff(${i})">Delete</button>
         `;
-        staffContainer.appendChild(div);
+        staffListEl.appendChild(div);
       });
     }
 
-    window.addEventListener("storage", (e) => {
-      if (e.key === ATT_KEY || e.key === "attendance_updated_at" || e.key === "staff_updated_at") {
-        renderStaff();
-      }
-    });
+    staffForm.onsubmit = e => {
+      e.preventDefault();
+      const name = staffForm.staffName.value.trim();
+      const salary = parseFloat(staffForm.staffSalary.value);
+      if (!name || isNaN(salary)) return alert('Enter valid details');
+      staffList.push({ name, salary });
+      localStorage.setItem('staffList', JSON.stringify(staffList));
+      staffForm.reset();
+      renderStaff();
+    };
+
+    function deleteStaff(index) {
+      if (!confirm('Delete this staff?')) return;
+      staffList.splice(index, 1);
+      localStorage.setItem('staffList', JSON.stringify(staffList));
+      renderStaff();
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('loggedInUser');
+      location.href = 'login.html';
+    };
 
     renderStaff();
   </script>
 </body>
 </html>
+
