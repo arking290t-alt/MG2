@@ -151,3 +151,39 @@ document.getElementById("addPaid").onclick = () => {
   renderCalendar();
 };
 updatePaidSection(total);
+function addPayment() {
+  const staffName = staffSelect.value;
+  if (!staffName) return alert("Select a staff first!");
+
+  const amount = prompt("Enter payment amount:");
+  if (!amount || isNaN(amount)) return;
+
+  const note = prompt("Enter note (optional):") || "Salary Payment";
+  const payAmount = parseFloat(amount);
+  const payDate = new Date().toLocaleDateString();
+
+  // Store in attendance paymentData
+  const payKey = `${staffName}_${currentYear}_${currentMonth}`;
+  if (!paymentData[payKey]) paymentData[payKey] = [];
+  paymentData[payKey].push({ amount: payAmount, note, date: payDate });
+  localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+
+  // ✅ Also save to expenses automatically
+  const EXP_KEY = "expensesData";
+  let expensesData = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
+
+  expensesData.push({
+    category: "Salary",
+    description: `${note} - ${staffName}`,
+    amount: payAmount,
+    date: payDate,
+    month: currentMonth,
+    year: currentYear
+  });
+
+  localStorage.setItem(EXP_KEY, JSON.stringify(expensesData));
+
+  // Update the display
+  alert(`₹${payAmount.toFixed(2)} added for ${staffName} and logged in Expenses.`);
+  updateSalarySummary();
+}
