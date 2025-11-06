@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-bg">
+  <header class="nav-top">
+    <h2>Expenses</h2>
+    <button class="btn-back" onclick="window.location.href='home.html'">← Home</button>
+  </header>
+
+  <div class="glass-card animate-slide">
+    <h3>Add Expense</h3>
+    <div class="flex-row">
+      <input type="text" id="expenseName" placeholder="Expense Name">
+      <input type="number" id="expenseAmount" placeholder="Amount ₹">
+      <button class="btn-primary" onclick="addExpense()">Add</button>
+    </div>
+
+    <h3>Expense List</h3>
+    <ul id="expenseList"></ul>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
