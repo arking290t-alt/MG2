@@ -38,9 +38,7 @@
       font-weight: 600;
     }
 
-    .btn-back:hover, .btn-logout:hover {
-      opacity: 0.85;
-    }
+    .btn-back:hover, .btn-logout:hover { opacity: 0.85; }
 
     .expenses-container {
       max-width: 950px;
@@ -93,9 +91,7 @@
       transition: 0.2s;
     }
 
-    button:hover {
-      opacity: 0.9;
-    }
+    button:hover { opacity: 0.9; }
 
     table {
       width: 100%;
@@ -109,14 +105,9 @@
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    th {
-      color: #00b4ff;
-      font-weight: 600;
-    }
+    th { color: #00b4ff; font-weight: 600; }
 
-    tr:hover {
-      background: rgba(0,180,255,0.05);
-    }
+    tr:hover { background: rgba(0,180,255,0.05); }
 
     .filter-bar {
       display: flex;
@@ -135,7 +126,7 @@
       font-weight: 600;
     }
 
-    select#monthFilter {
+    select#monthFilter, select#categoryFilter {
       background: #101820;
       border: 1px solid rgba(255,255,255,0.1);
       color: #fff;
@@ -159,20 +150,19 @@
 
     <form id="expenseForm">
       <input type="text" id="expName" placeholder="Expense Name" required />
-      <select id="expCategory" required>
-        <option value="">Category</option>
-        <option>Salary</option>
-        <option>Rent</option>
-        <option>Utilities</option>
-        <option>Raw Material</option>
-        <option>Maintenance</option>
-        <option>Other</option>
-      </select>
+
+      <select id="expCategory" required></select>
+
       <input type="number" id="expAmount" placeholder="Amount (₹)" required />
       <input type="date" id="expDate" required />
       <textarea id="expNote" placeholder="Note (optional)"></textarea>
       <button type="submit">Add Expense</button>
     </form>
+
+    <div class="filter-bar">
+      <label>Select Category:</label>
+      <select id="categoryFilter"></select>
+    </div>
 
     <div class="filter-bar">
       <label>Filter by Month:</label>
@@ -198,21 +188,53 @@
 
   <script>
     const EXP_KEY = "expenses";
+    const CAT_KEY = "categories";
     let expenses = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
+    let categories = JSON.parse(localStorage.getItem(CAT_KEY)) || [
+      "Salary", "Rent", "Utilities", "Raw Material", "Maintenance", "Other", "➕ Add Category"
+    ];
 
     const form = document.getElementById("expenseForm");
     const table = document.getElementById("expenseTable");
     const totalBar = document.getElementById("totalExpense");
     const monthFilter = document.getElementById("monthFilter");
-
-    document.getElementById("logoutBtn").onclick = () => {
-      localStorage.removeItem("loggedInUser");
-      location = "login.html";
-    };
+    const categoryFilter = document.getElementById("categoryFilter");
+    const catSelect = document.getElementById("expCategory");
 
     function saveExpenses() {
       localStorage.setItem(EXP_KEY, JSON.stringify(expenses));
     }
+
+    function saveCategories() {
+      localStorage.setItem(CAT_KEY, JSON.stringify(categories));
+    }
+
+    function renderCategories() {
+      catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join("");
+      renderCategoryFilter();
+    }
+
+    function renderCategoryFilter() {
+      const uniqueCats = [...new Set(expenses.map(e => e.category))];
+      categoryFilter.innerHTML = '<option value="all">All</option>' +
+        uniqueCats.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    function addNewCategory() {
+      const newCat = prompt("Enter new category name:");
+      if (newCat && !categories.includes(newCat)) {
+        categories.splice(categories.length - 1, 0, newCat);
+        saveCategories();
+        renderCategories();
+        catSelect.value = newCat;
+      } else if (categories.includes(newCat)) {
+        alert("This category already exists!");
+      }
+    }
+
+    catSelect.addEventListener("change", () => {
+      if (catSelect.value === "➕ Add Category") addNewCategory();
+    });
 
     function loadMonthOptions() {
       const months = [...new Set(expenses.map(e => e.date.slice(0, 7)))];
@@ -222,11 +244,13 @@
 
     function renderExpenses() {
       const selectedMonth = monthFilter.value;
+      const selectedCat = categoryFilter.value;
       table.innerHTML = "";
       let total = 0;
 
       expenses
-        .filter(e => selectedMonth === "all" || e.date.startsWith(selectedMonth))
+        .filter(e => (selectedMonth === "all" || e.date.startsWith(selectedMonth)) &&
+                     (selectedCat === "all" || e.category === selectedCat))
         .forEach((e, i) => {
           const row = document.createElement("tr");
           row.innerHTML = `
@@ -243,6 +267,7 @@
 
       totalBar.textContent = "Total: ₹" + total.toFixed(2);
       loadMonthOptions();
+      renderCategoryFilter();
     }
 
     function deleteExpense(i) {
@@ -256,7 +281,7 @@
       e.preventDefault();
       const exp = {
         name: document.getElementById("expName").value,
-        category: document.getElementById("expCategory").value,
+        category: catSelect.value,
         amount: parseFloat(document.getElementById("expAmount").value),
         date: document.getElementById("expDate").value,
         note: document.getElementById("expNote").value.trim(),
@@ -268,6 +293,14 @@
     };
 
     monthFilter.onchange = renderExpenses;
+    categoryFilter.onchange = renderExpenses;
+
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("loggedInUser");
+      location = "login.html";
+    };
+
+    renderCategories();
     renderExpenses();
   </script>
 </body>
