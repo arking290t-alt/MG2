@@ -1,291 +1,188 @@
-/* ---------- Top bar (keeps header simple and small) ---------- */
-.top-bar{
-  width:100%;
-  padding:18px 28px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  position:fixed;
-  top:0;
-  left:0;
-  z-index:50;
-  pointer-events:auto;
-}
-.top-left .logo{ font-size:20px; background:linear-gradient(90deg,#60a5fa,#34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0; }
-.top-right { display:flex; gap:12px; align-items:center; }
-.btn-back { color:#9b7be6; text-decoration:none; font-size:14px; }
-.btn-logout {
-  border:1px solid rgba(52,211,153,0.9);
-  background:transparent;
-  padding:8px 12px; border-radius:10px; color:#66e3b7; cursor:pointer;
+/* ======================================================
+   MG Web App — Modern Glassmorphism UI
+   Works for: Login | Dashboard | Staff Pages
+   ====================================================== */
+
+/* ----------- Reset + Global ----------- */
+* {
+  box-sizing: border-box;
+  font-family: "Poppins", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-/* ---------- Center stage: vertically + horizontally center the card ---------- */
-.center-stage{
-  min-height:100vh;               /* full viewport */
-  display:flex;
-  align-items:center;             /* vertical center */
-  justify-content:center;         /* horizontal center */
-  padding:100px 20px 60px;        /* allow room for fixed header */
-  box-sizing:border-box;
+body {
   background: radial-gradient(circle at top left, #091540, #01081c);
-}
-
-/* ---------- The centered card panel ---------- */
-.card-panel{
-  width:100%;
-  max-width:720px;
-  background: rgba(255,255,255,0.06);
-  border-radius:18px;
-  padding:32px;
-  box-shadow:0 10px 50px rgba(2,8,23,0.6), 0 0 40px rgba(52,211,153,0.06);
-  backdrop-filter: blur(16px);
-  border:1px solid rgba(255,255,255,0.06);
-  color:#e9f2ff;
-  text-align:center;
-}
-
-/* STAFF PANEL specifics */
-.staff-card-panel .panel-title{
-  font-size:1.6rem;
-  margin:0 0 6px;
-  background: linear-gradient(90deg,#60a5fa,#34d399);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
-.staff-card-panel .panel-sub{
-  color:#9fb6df;
-  margin:0 0 18px;
-}
-
-/* Form: inputs flow nicely and wrap on small screens */
-.staff-form{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  justify-content:center;
-  margin-top:14px;
-}
-.staff-form input{
-  flex:1 1 180px;
-  min-width:160px;
-  padding:12px 14px;
-  border-radius:12px;
-  border:none;
-  outline:none;
-  background:rgba(255,255,255,0.06);
-  color:#e8f4ff;
-  font-size:14px;
-  transition:box-shadow .15s, border .15s;
-}
-.staff-form input:focus{
-  box-shadow:0 6px 18px rgba(96,165,250,0.08);
-  border:1px solid rgba(96,165,250,0.2);
-  background:rgba(255,255,255,0.08);
-}
-.add-btn{
-  flex:0 0 auto;
-  padding:10px 16px;
-  border-radius:12px;
-  border:none;
-  background:linear-gradient(90deg,#60a5fa,#34d399);
-  color:#04121d;
-  font-weight:600;
-  cursor:pointer;
-}
-
-/* Staff list (cards inside the panel) */
-.staff-list{
-  margin-top:22px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-.staff-card {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:12px 14px;
-  border-radius:12px;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.04);
-  transition:transform .18s, box-shadow .18s;
-}
-.staff-card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 18px 36px rgba(2,8,23,0.6);
-}
-.staff-info { text-align:left; }
-.staff-info h4{ margin:0; color:#ffffff; font-size:1rem; }
-.staff-info p{ margin:4px 0 0; color:#9fb6df; font-size:0.9rem; }
-
-/* Delete button style */
-.btn-delete{
-  background:transparent;
-  border:1px solid #ff8b8b;
-  color:#ff8b8b;
-  padding:8px 10px;
-  border-radius:10px;
-  cursor:pointer;
-}
-.btn-delete:hover{
-  background:#ff8b8b;
-  color:#04121d;
-}
-
-/* responsive tweaks */
-@media (max-width:520px){
-  .card-panel{ padding:20px; }
-  .staff-form input { min-width: 120px; }
-  .top-bar{ padding:12px 16px; }
-}
-/* ===== STAFF PAGE FIXED CLEAN MODERN ===== */
-.staff-body {
+  color: #f1f6ff;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, #091540, #01081c);
-  color: #f2f6ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  overflow-x: hidden;
 }
 
-.staff-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
+/* ----------- Common Elements ----------- */
+.logo {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.staff-box {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 3rem 3rem 2rem;
-  border-radius: 20px;
-  box-shadow: 0 0 50px rgba(0, 255, 255, 0.15);
-  width: 100%;
-  max-width: 700px;
-  text-align: center;
-  animation: fadeIn 0.6s ease;
+.subtitle {
+  color: #a3bffa;
 }
 
-@keyframes fadeIn {
-  from {opacity: 0; transform: translateY(15px);}
-  to {opacity: 1; transform: translateY(0);}
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
 }
 
-.staff-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1.5rem;
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
-.staff-form input {
-  flex: 1 1 200px;
+/* ----------- Buttons ----------- */
+.btn-login,
+.add-btn {
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  border: none;
+  color: #04121d;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 0.8rem 1.5rem;
+  transition: 0.25s ease;
+}
+
+.btn-login:hover,
+.add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 211, 153, 0.35);
+}
+
+.btn-logout {
+  border: 1px solid #34d399;
+  color: #34d399;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  transition: 0.3s;
+}
+
+.btn-logout:hover {
+  background: #34d399;
+  color: #04121d;
+}
+
+/* ----------- Input & Select Fields ----------- */
+input, select {
   padding: 0.8rem 1rem;
   border-radius: 10px;
   border: none;
   outline: none;
-  background: rgba(255,255,255,0.1);
-  color: white;
-  transition: border 0.2s, background 0.2s;
-}
-
-.staff-form input:focus {
-  border: 1px solid #60a5fa;
-  background: rgba(255,255,255,0.15);
-}
-
-.add-btn {
-  flex: 0 0 auto;
-  padding: 0.8rem 1.5rem;
-  border-radius: 10px;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  color: #04121d;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
   transition: 0.3s;
+  font-size: 0.95rem;
 }
 
-.add-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(52, 211, 153, 0.3);
+input:focus, select:focus {
+  border: 1px solid #60a5fa;
+  background: rgba(255, 255, 255, 0.12);
 }
 
-/* Staff list */
-.staff-list {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.staff-card {
+/* ----------- Header / Top Bar ----------- */
+.top-bar {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 15px;
-  padding: 1rem 1.5rem;
-  transition: 0.3s;
+  padding: 20px 40px;
+  backdrop-filter: blur(8px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
 }
 
-.staff-card:hover {
-  box-shadow: 0 0 25px rgba(0, 255, 255, 0.25);
-  transform: translateY(-3px);
-}
-
-.staff-info {
-  text-align: left;
-}
-
-.staff-info h4 {
-  margin: 0;
-  color: #fff;
-  font-size: 1.1rem;
-}
-
-.staff-info p {
-  color: #a3bffa;
+.btn-back {
+  color: #9b8ef5;
+  margin-right: 10px;
   font-size: 0.9rem;
 }
 
-.btn-delete {
-  background: transparent;
-  border: 1px solid #f87171;
-  color: #f87171;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s;
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.btn-delete:hover {
-  background: #f87171;
-  color: #04121d;
+/* ======================================================
+   LOGIN PAGE
+   ====================================================== */
+.login-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
-/* ========== DASHBOARD FIXED STYLE ========== */
-.dashboard-center {
+
+.login-container {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3rem;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+  animation: fadeIn 0.6s ease;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.error {
+  color: #ff8b8b;
+  font-size: 0.9rem;
+  min-height: 20px;
+}
+
+/* ======================================================
+   DASHBOARD PAGE
+   ====================================================== */
+.dashboard-body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 90vh;
-  text-align: center;
+  height: 100vh;
+  padding-top: 80px;
 }
 
 .dashboard-box {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 3rem 4rem;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+  text-align: center;
   max-width: 800px;
   width: 90%;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+  animation: fadeIn 0.6s ease;
+}
+
+.welcome {
+  font-size: 1.8rem;
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .dashboard-grid {
@@ -297,53 +194,69 @@
 }
 
 .dashboard-card {
-  width: 240px;
-  padding: 2rem;
-  border-radius: 16px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 18px;
+  padding: 2rem;
+  width: 250px;
+  color: #fff;
   text-decoration: none;
-  color: white;
-  transition: 0.3s;
+  transition: 0.3s ease;
 }
 
 .dashboard-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.25);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.25);
 }
 
-.dashboard-card h3 {
-  font-size: 1.3rem;
-  margin-bottom: 8px;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.dashboard-card.inactive {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-/* ========== STAFF PAGE FIXED STYLE ========== */
-.staff-center {
+/* ======================================================
+   STAFF PAGE
+   ====================================================== */
+.staff-body {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 90vh;
-  text-align: center;
+  min-height: 100vh;
+  padding-top: 80px;
+}
+
+.staff-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
 }
 
 .staff-box {
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(18px);
   border-radius: 20px;
-  padding: 3rem 4rem;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
-  max-width: 900px;
-  width: 90%;
+  padding: 3rem;
+  max-width: 720px;
+  width: 100%;
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+  animation: fadeIn 0.6s ease;
+  text-align: center;
 }
 
 .staff-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+}
+
+.staff-form input {
+  flex: 1 1 200px;
 }
 
 .staff-list {
@@ -358,101 +271,26 @@
   justify-content: space-between;
   align-items: center;
   background: rgba(255, 255, 255, 0.05);
-  padding: 1rem 1.5rem;
-  border-radius: 15px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.staff-card:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-  transform: translateY(-3px);
-}
-
-.btn-delete {
-  background: transparent;
-  border: 1px solid #f87171;
-  color: #f87171;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.btn-delete:hover {
-  background: #f87171;
-  color: #04121d;
-}
-/* ===== STAFF PAGE ===== */
-.staff-body {
-  min-height: 100vh;
-  background: radial-gradient(circle at top left, #091540, #01081c);
-  color: #f2f6ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.staff-container {
-  margin-top: 80px;
-  width: 100%;
-  max-width: 900px;
-  padding: 0 20px 60px;
-  text-align: center;
-}
-
-.glass-box {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
-  margin-bottom: 40px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.staff-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.staff-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 1rem 1.5rem;
   border-radius: 15px;
-  transition: 0.3s;
+  padding: 1rem 1.5rem;
+  transition: 0.3s ease;
 }
 
 .staff-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-}
-
-.staff-info {
-  text-align: left;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.25);
 }
 
 .staff-info h4 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #ffffff;
+  color: #fff;
+  font-size: 1rem;
 }
 
 .staff-info p {
   color: #a3bffa;
-  margin-top: 4px;
   font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 .btn-delete {
@@ -461,187 +299,43 @@
   color: #f87171;
   padding: 0.5rem 1rem;
   border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s;
+  transition: 0.3s ease;
 }
 
 .btn-delete:hover {
   background: #f87171;
   color: #04121d;
 }
-/* ===== Modern Dashboard Page ===== */
 
-.dashboard-body {
-  min-height: 100vh;
-  background: radial-gradient(circle at top left, #091540, #01081c);
-  color: #f2f6ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+/* ======================================================
+   Animations + Responsive
+   ====================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.top-bar {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  backdrop-filter: blur(10px);
-}
+@media (max-width: 768px) {
+  .dashboard-box,
+  .staff-box {
+    padding: 2rem;
+  }
 
-.btn-logout {
-  background: transparent;
-  border: 1px solid #34d399;
-  color: #34d399;
-  padding: 0.6rem 1.2rem;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s;
-}
+  .dashboard-grid {
+    flex-direction: column;
+  }
 
-.btn-logout:hover {
-  background: #34d399;
-  color: #04121d;
-}
+  .top-bar {
+    padding: 16px 20px;
+  }
 
-.dashboard-container {
-  text-align: center;
-  margin-top: 70px;
-}
-
-.welcome {
-  font-size: 1.8rem;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  color: #a3bffa;
-  margin-bottom: 40px;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 40px;
-  max-width: 800px;
-  width: 100%;
-  padding: 0 20px;
-}
-
-.dashboard-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px);
-  border-radius: 20px;
-  padding: 3rem 2rem;
-  text-decoration: none;
-  color: white;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
-  transition: all 0.3s ease;
-  text-align: center;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 0 0 50px rgba(0, 255, 255, 0.25);
-}
-
-.dashboard-card.inactive {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.dashboard-card h3 {
-  font-size: 1.4rem;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.dashboard-card p {
-  color: #cbd5e1;
-  font-size: 0.95rem;
-}
-/* === Dashboard Page === */
-.dashboard-body {
-  min-height: 100vh;
-  background: radial-gradient(circle at top left, #091540, #01081c);
-  color: #f2f6ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.top-bar {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  backdrop-filter: blur(10px);
-}
-
-.btn-logout {
-  background: transparent;
-  border: 1px solid #34d399;
-  color: #34d399;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-logout:hover {
-  background: #34d399;
-  color: #04121d;
-}
-
-.dashboard-container {
-  text-align: center;
-  margin-top: 60px;
-  max-width: 900px;
-}
-
-.card-grid {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 30px;
-  margin-top: 40px;
-}
-
-.dashboard-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px);
-  border-radius: 20px;
-  padding: 2rem;
-  width: 250px;
-  text-decoration: none;
-  color: white;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.25);
-}
-
-.dashboard-card.inactive {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.welcome {
-  font-size: 1.8rem;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  .login-container {
+    padding: 2rem;
+  }
 }
