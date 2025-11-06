@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="staff-body">
+
+  <!-- HEADER -->
   <header class="top-bar">
     <div class="top-left">
       <h1 class="logo">MG</h1>
@@ -17,60 +19,122 @@
     </div>
   </header>
 
+  <!-- MAIN CONTENT -->
   <main class="center-stage">
     <section class="staff-card-panel">
       <h2 class="panel-title">Daily Attendance</h2>
       <p class="panel-sub">Mark attendance once per staff per day</p>
 
+      <!-- Attendance List -->
       <div id="attendanceList" class="staff-list"></div>
     </section>
   </main>
 
   <script>
-    // Load staff list and attendance data
+    // -----------------------------
+    // 🔹 LOGOUT FUNCTIONALITY
+    // -----------------------------
+    const logoutBtn = document.getElementById("logoutBtn");
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "login.html";
+    });
+
+    // -----------------------------
+    // 🔹 LOAD STAFF AND ATTENDANCE
+    // -----------------------------
     const attendanceList = document.getElementById("attendanceList");
     const staff = JSON.parse(localStorage.getItem("staff")) || [];
     const attendance = JSON.parse(localStorage.getItem("attendance")) || {};
     const today = new Date().toLocaleDateString("en-IN");
 
-    if (staff.length === 0) {
-      attendanceList.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
-    } else {
-      staff.forEach(member => {
+    function loadAttendance() {
+      attendanceList.innerHTML = "";
+
+      if (staff.length === 0) {
+        attendanceList.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
+        return;
+      }
+
+      staff.forEach((member) => {
         const key = `${member.name}_${today}`;
-        const alreadyMarked = attendance[key];
+        const status = attendance[key];
 
         const div = document.createElement("div");
         div.classList.add("staff-item");
-        div.innerHTML = `
-          <span><strong>${member.name}</strong></span>
-          ${
-            alreadyMarked
-              ? `<span>${alreadyMarked}</span>`
-              : `
-                <div style="display:flex;gap:10px;">
-                  <button class="btn-login" onclick="mark('${member.name}', 'Present')">Present</button>
-                  <button class="btn-login" style="background:#f87171;" onclick="mark('${member.name}', 'Absent')">Absent</button>
-                  <button class="btn-login" style="background:#facc15;color:#000;" onclick="mark('${member.name}', 'Leave')">Leave</button>
-                </div>
-              `
-          }
-        `;
+
+        if (status) {
+          // Already marked
+          div.innerHTML = `
+            <span><strong>${member.name}</strong></span>
+            <span class="badge ${status.toLowerCase()}">${status}</span>
+          `;
+        } else {
+          // Not yet marked
+          div.innerHTML = `
+            <span><strong>${member.name}</strong></span>
+            <div style="display:flex;gap:10px;">
+              <button class="btn-login" onclick="mark('${member.name}', 'Present')">Present</button>
+              <button class="btn-login" style="background:#ef4444;" onclick="mark('${member.name}', 'Absent')">Absent</button>
+              <button class="btn-login" style="background:#eab308;color:#000;" onclick="mark('${member.name}', 'Leave')">Leave</button>
+            </div>
+          `;
+        }
+
         attendanceList.appendChild(div);
       });
     }
 
+    // -----------------------------
+    // 🔹 MARK ATTENDANCE
+    // -----------------------------
     function mark(name, status) {
       const key = `${name}_${today}`;
       const data = JSON.parse(localStorage.getItem("attendance")) || {};
+
       if (data[key]) {
         alert("Attendance already marked for today!");
         return;
       }
+
       data[key] = status;
       localStorage.setItem("attendance", JSON.stringify(data));
-      location.reload();
+      loadAttendance();
     }
+
+    // -----------------------------
+    // 🔹 INITIAL LOAD
+    // -----------------------------
+    loadAttendance();
   </script>
+
+  <!-- INLINE STYLE BADGES -->
+  <style>
+    .badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+
+    .badge.present {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .badge.absent {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .badge.leave {
+      background: #eab308;
+      color: #000;
+      box-shadow: 0 0 8px #eab308;
+    }
+  </style>
+
 </body>
 </html>
