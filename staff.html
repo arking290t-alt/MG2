@@ -8,6 +8,7 @@
 </head>
 <body class="staff-body">
 
+  <!-- HEADER -->
   <header class="top-bar">
     <div class="top-left">
       <h1 class="logo">MG</h1>
@@ -20,64 +21,198 @@
 
   <!-- CENTERED WRAPPER -->
   <main class="center-stage">
-    <section class="card-panel staff-card-panel">
+    <section class="staff-card-panel">
       <h2 class="panel-title">Staff Management</h2>
       <p class="panel-sub">Add, view, or delete staff members</p>
 
-      <form id="staffForm" class="staff-form">
+      <!-- ADD STAFF FORM -->
+      <form id="staffForm" class="staff-form" autocomplete="off">
         <input id="staffName" type="text" placeholder="Staff name" required />
-        <input id="staffPhone" type="tel" placeholder="Phone number" required />
-        <input id="staffSalary" type="number" placeholder="Salary / month" required />
+        <input id="staffPhone" type="tel" placeholder="Phone number (optional)" />
+        <input id="staffSalary" type="number" placeholder="Salary / month (optional)" />
         <button class="btn-login add-btn" type="submit">Add Staff</button>
       </form>
 
-      <div id="staffContainer" class="staff-list">
-        <!-- staff cards injected here -->
-      </div>
+      <!-- STAFF LIST -->
+      <div id="staffContainer" class="staff-list" aria-live="polite"></div>
+
+      <!-- ATTENDANCE SUMMARY (simple) -->
+      <h3 style="margin-top:2rem; text-align:center; color:var(--accent);">Attendance Summary (Last 7 days)</h3>
+      <div id="attendanceStats" style="margin-top:1rem; text-align:center; color:var(--text-muted);"></div>
     </section>
   </main>
 
-  <script src="script.js"></script>
-</body>
-</html>
-<h3 style="text-align:center;margin-top:2rem;color:#38bdf8;">Attendance Summary</h3>
-<div id="attendanceStats" style="margin-top:1rem;text-align:center;color:#ccc;"></div>
+  <script>
+    // -------------- LOGOUT --------------
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('loggedInUser');
+      window.location.href = 'login.html';
+    });
 
-<script>
-  // Attendance stats summary
-  const attendanceData = JSON.parse(localStorage.getItem("attendance")) || {};
-  const staffData = JSON.parse(localStorage.getItem("staff")) || [];
-  const now = new Date();
+    // -------------- HELPERS --------------
+    const staffForm = document.getElementById('staffForm');
+    const staffNameInput = document.getElementById('staffName');
+    const staffPhoneInput = document.getElementById('staffPhone');
+    const staffSalaryInput = document.getElementById('staffSalary');
+    const staffContainer = document.getElementById('staffContainer');
+    const attendanceStatsEl = document.getElementById('attendanceStats');
 
-  function countStats(periodDays) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - periodDays);
+    function getStaff() {
+      return JSON.parse(localStorage.getItem('staff')) || [];
+    }
+    function saveStaff(list){
+      localStorage.setItem('staff', JSON.stringify(list));
+      // some browsers/tabs listen to 'storage' events, but in same tab we reload UI:
+      // Also write a "ping" value to trigger storage events in other tabs if needed.
+      localStorage.setItem('staff_updated_at', Date.now());
+    }
 
-    let stats = {};
-    Object.keys(attendanceData).forEach(key => {
-      const [name, date] = key.split("_");
-      const recordDate = new Date(date);
-      if (recordDate >= cutoff) {
-        stats[name] = stats[name] || { Present: 0, Absent: 0, Leave: 0 };
-        stats[name][attendanceData[key]]++;
+    // -------------- RENDER STAFF LIST --------------
+    function renderStaff() {
+      const staff = getStaff();
+      staffContainer.innerHTML = '';
+
+      if (staff.length === 0) {
+        staffContainer.innerHTML = "<p style='text-align:center;color:#888;'>No staff added yet.</p>";
+        renderAttendanceStats(); // clear stats
+        return;
+      }
+
+      staff.forEach((s, idx) => {
+        const item = document.createElement('div');
+        item.className = 'staff-item';
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.gap = '6px';
+
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.justifyContent = 'space-between';
+        topRow.style.alignItems = 'center';
+
+        const left = document.createElement('div');
+        left.innerHTML = `<strong style="font-size:1rem">${escapeHtml(s.name)}</strong>
+                          <div style="color:var(--text-muted);font-size:0.9rem">${s.phone ? escapeHtml(s.phone) + ' | ' : ''}${s.salary ? '₹' + escapeHtml(s.salary) + '/month' : ''}</div>`;
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.gap = '8px';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-login';
+        delBtn.style.background = '#ef4444';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => {
+          if (!confirm('Delete ' + s.name + ' ?')) return;
+          const arr = getStaff();
+          arr.splice(idx, 1);
+          saveStaff(arr);
+          renderStaff();
+        });
+
+        right.appendChild(delBtn);
+        topRow.appendChild(left);
+        topRow.appendChild(right);
+
+        item.appendChild(topRow);
+        staffContainer.appendChild(item);
+      });
+
+      renderAttendanceStats();
+    }
+
+    // -------------- ADD STAFF --------------
+    staffForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = staffNameInput.value.trim();
+      const phone = staffPhoneInput.value.trim();
+      const salary = staffSalaryInput.value.trim();
+
+      if (!name) return alert('Please enter staff name.');
+
+      // Prevent duplicate names (case-insensitive)
+      const staff = getStaff();
+      const exists = staff.some(s => s.name.toLowerCase() === name.toLowerCase());
+      if (exists) return alert('Staff with this name already exists.');
+
+      staff.push({ name, phone, salary });
+      saveStaff(staff);
+      staffForm.reset();
+      staffNameInput.focus();
+      renderStaff();
+    });
+
+    // -------------- ATTENDANCE STATS (last 7 days) --------------
+    function renderAttendanceStats() {
+      const staff = getStaff();
+      if (staff.length === 0) {
+        attendanceStatsEl.innerHTML = '';
+        return;
+      }
+
+      const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+      const days = 7;
+      const counts = {}; // { name: {Present: n, Absent: n, Leave: n} }
+
+      // init
+      staff.forEach(s => counts[s.name] = { Present: 0, Absent: 0, Leave: 0 });
+
+      for (let k in attendance) {
+        // attendance keys are expected to be "Name_dd/mm/yyyy" or similar from attendance page
+        const [name, dateStr] = k.split('_');
+        if (!name || !attendance[k]) continue;
+        const recordDate = parseDate(dateStr);
+        if (!recordDate) continue;
+        const diffDays = diffInDays(recordDate, new Date());
+        if (diffDays >= 0 && diffDays < days) {
+          if (counts[name]) counts[name][attendance[k]] = (counts[name][attendance[k]] || 0) + 1;
+        }
+      }
+
+      // build html
+      let html = '<div style="display:flex;flex-direction:column;gap:10px;align-items:center;">';
+      staff.forEach(s => {
+        const c = counts[s.name] || { Present: 0, Absent: 0, Leave: 0 };
+        html += `<div style="width:100%;max-width:520px;display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);">
+          <div style="font-weight:600">${escapeHtml(s.name)}</div>
+          <div style="color:var(--text-muted)">${c.Present} ✅ &nbsp; ${c.Absent} ❌ &nbsp; ${c.Leave} 🕐</div>
+        </div>`;
+      });
+      html += '</div>';
+      attendanceStatsEl.innerHTML = html;
+    }
+
+    // -------------- UTILITIES --------------
+    function parseDate(d) {
+      // expecting locale 'en-IN' format like "06/Nov/2025" or "06/11/2025" — try Date parse fallback
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    function diffInDays(a, b) {
+      const _ms = 24*60*60*1000;
+      return Math.floor((b.setHours(0,0,0,0) - a.setHours(0,0,0,0)) / _ms);
+    }
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+    }
+
+    // -------------- WATCH FOR CHANGES FROM OTHER TABS --------------
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'staff' || e.key === 'attendance' || e.key === 'staff_updated_at') {
+        renderStaff();
       }
     });
-    return stats;
-  }
 
-  function displayStats() {
-    const week = countStats(7);
-    const month = countStats(30);
-    const year = countStats(365);
-    let html = `
-      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-        <p><strong>Last 7 Days:</strong> ${JSON.stringify(week)}</p>
-        <p><strong>Last 30 Days:</strong> ${JSON.stringify(month)}</p>
-        <p><strong>This Year:</strong> ${JSON.stringify(year)}</p>
-      </div>
-    `;
-    document.getElementById("attendanceStats").innerHTML = html;
-  }
+    // initial render
+    renderStaff();
+  </script>
 
-  displayStats();
-</script>
+  <!-- Inline tweaks for badges & staff-item style (matches your theme) -->
+  <style>
+    .staff-item { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); }
+    .staff-list { display:flex; flex-direction:column; gap:12px; margin-top:1.2rem; }
+    .staff-form input { width:100%; }
+    .panel-title { margin-bottom: 6px; color: var(--accent); text-shadow: 0 0 8px var(--accent-light); }
+  </style>
+</body>
+</html>
