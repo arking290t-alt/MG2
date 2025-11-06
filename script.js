@@ -123,3 +123,30 @@ document.addEventListener("DOMContentLoaded", () => {
 attendance = {
   "vikas": { Present: 3, Absent: 1, Leave: 0 }
 }
+// ===== Paid Amount System =====
+const PAY_KEY = "payments_by_staff";
+let paymentData = JSON.parse(localStorage.getItem(PAY_KEY)) || {};
+
+function updatePaidSection(total) {
+  if (!selectedStaff) return;
+  const y = viewDate.getFullYear(), m = viewDate.getMonth() + 1;
+  const monthKey = `${y}-${m}`;
+  const list = (paymentData[selectedStaff]?.[monthKey]) || [];
+  const totalPaid = list.reduce((a, b) => a + b, 0);
+  paidList.textContent = list.length ? list.map(x => "₹" + x).join(" | ") : "None";
+  paidTotal.textContent = totalPaid;
+  remaining.textContent = Math.max(0, total - totalPaid);
+}
+
+document.getElementById("addPaid").onclick = () => {
+  if (!selectedStaff) return alert("Select a staff first!");
+  const val = parseFloat(prompt("Enter paid amount: ₹"));
+  if (isNaN(val) || val <= 0) return;
+  const y = viewDate.getFullYear(), m = viewDate.getMonth() + 1;
+  const monthKey = `${y}-${m}`;
+  if (!paymentData[selectedStaff]) paymentData[selectedStaff] = {};
+  if (!paymentData[selectedStaff][monthKey]) paymentData[selectedStaff][monthKey] = [];
+  paymentData[selectedStaff][monthKey].push(val);
+  localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
+  renderCalendar();
+};
