@@ -162,6 +162,23 @@
       font-size: 0.9rem;
     }
 
+    /* Payment List */
+    .payment-list {
+      margin-top: 15px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .payment-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 5px 0;
+      font-size: 0.9rem;
+    }
+
     /* Modal */
     .modal {
       display: none;
@@ -216,6 +233,7 @@
     .leave { background: var(--leave); }
     .ot { background: var(--ot); }
     .clear { background: #64748b; }
+
   </style>
 </head>
 <body>
@@ -244,6 +262,8 @@
 
     <div class="summary" id="salarySummary">Select a staff to view attendance</div>
 
+    <div id="paymentList" class="payment-list"></div>
+
     <button class="add-payment-btn" id="addPaymentBtn">Add Payment</button>
   </div>
 
@@ -265,6 +285,7 @@
     const modalTitle = document.getElementById("modalTitle");
     const salarySummary = document.getElementById("salarySummary");
     const addPaymentBtn = document.getElementById("addPaymentBtn");
+    const paymentList = document.getElementById("paymentList");
 
     const STAFF_KEY = "staffList";
     const ATTEND_KEY = "attendanceData";
@@ -381,8 +402,11 @@
       const amount = prompt("Enter payment amount:");
       if (!amount || isNaN(amount)) return;
 
+      const note = prompt("Enter note (optional):") || "Payment";
       const key = `${staffName}_${currentYear}_${currentMonth}`;
-      paymentData[key] = (paymentData[key] || 0) + parseFloat(amount);
+      if (!paymentData[key]) paymentData[key] = [];
+      paymentData[key].push({ amount: parseFloat(amount), note, date: new Date().toLocaleDateString() });
+
       localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
       updateSalarySummary();
     }
@@ -407,10 +431,16 @@
 
       const total = (full + half) * perDay + totalOT;
       const payKey = `${staffName}_${currentYear}_${currentMonth}`;
-      const paid = paymentData[payKey] || 0;
+      const payments = paymentData[payKey] || [];
+      const paid = payments.reduce((sum, p) => sum + p.amount, 0);
       const remaining = total - paid;
 
       salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${total.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
+
+      paymentList.innerHTML = payments.length
+        ? `<h3 style='color:#00b4ff;'>Payments</h3>` +
+          payments.map(p => `<div class='payment-item'><span>${p.date} - ${p.note}</span><strong>₹${p.amount}</strong></div>`).join("")
+        : "<p style='text-align:center;color:#999;'>No payments yet</p>";
     }
 
     document.getElementById("prevMonth").onclick = () => {
@@ -440,4 +470,3 @@
   </script>
 </body>
 </html>
-
