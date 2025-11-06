@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance | MG</title>
   <style>
     :root {
@@ -92,6 +92,18 @@
       transform: scale(1.2);
     }
 
+    #staffSelect {
+      display: block;
+      margin: 0 auto 20px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      width: 250px;
+      text-align: center;
+    }
+
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -103,17 +115,30 @@
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 10px;
-      padding: 10px;
+      padding: 8px;
       text-align: center;
       width: 100%;
       height: 90px;
       cursor: pointer;
       transition: 0.2s;
+      position: relative;
     }
 
     .day:hover {
       background: rgba(0,180,255,0.1);
       transform: scale(1.02);
+    }
+
+    .status-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #fff;
     }
 
     .summary {
@@ -161,24 +186,10 @@
       font-size: 1.2rem;
     }
 
-    .status-box {
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .status-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
     .status-actions button {
       border: none;
       border-radius: 6px;
-      padding: 4px 6px;
+      padding: 5px 8px;
       font-size: 0.75rem;
       font-weight: 600;
       margin: 2px;
@@ -192,6 +203,7 @@
     .leave { background: var(--leave); }
     .ot { background: var(--ot); }
     .clear { background: #64748b; }
+
   </style>
 </head>
 <body>
@@ -206,6 +218,10 @@
   <div class="container">
     <h1>Attendance Calendar</h1>
 
+    <select id="staffSelect">
+      <option value="">Select Staff</option>
+    </select>
+
     <div class="month-nav">
       <button id="prevMonth">⟨</button>
       <h2 id="monthYear"></h2>
@@ -213,24 +229,25 @@
     </div>
 
     <div id="calendar" class="calendar"></div>
-    <div class="summary">Click any date to mark attendance</div>
+    <div class="summary" id="salarySummary">Select a staff to view attendance</div>
   </div>
 
   <div id="attendanceModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" id="closeModal">&times;</span>
       <h2 id="modalTitle">Date</h2>
-      <div id="attendanceList"></div>
+      <div class="status-actions" id="actions"></div>
     </div>
   </div>
 
   <script>
+    const staffSelect = document.getElementById("staffSelect");
     const calendar = document.getElementById("calendar");
-    const monthYear = document.getElementById("monthYear");
     const modal = document.getElementById("attendanceModal");
     const closeModal = document.getElementById("closeModal");
-    const attendanceList = document.getElementById("attendanceList");
+    const actions = document.getElementById("actions");
     const modalTitle = document.getElementById("modalTitle");
+    const salarySummary = document.getElementById("salarySummary");
 
     const STAFF_KEY = "staffList";
     const ATTEND_KEY = "attendanceData";
@@ -239,81 +256,121 @@
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
+    let currentDay = null;
 
     function updateMonthYear() {
       const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
+      document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
+    }
+
+    function loadStaffList() {
+      if (!staffList.length) {
+        staffSelect.innerHTML = "<option>No staff added</option>";
+        return;
+      }
+      staffSelect.innerHTML = `<option value="">Select Staff</option>` + staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
     }
 
     function renderCalendar() {
       calendar.innerHTML = "";
       updateMonthYear();
 
+      const staffName = staffSelect.value;
+      if (!staffName) return;
+
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
       for (let i = 1; i <= daysInMonth; i++) {
         const div = document.createElement("div");
         div.className = "day";
         div.textContent = i;
+
+        const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
+        const rec = attendanceData[key];
+        if (rec) {
+          const badge = document.createElement("div");
+          badge.className = "status-badge " + rec.status.toLowerCase();
+          badge.textContent = rec.status;
+          div.appendChild(badge);
+        }
+
         div.onclick = () => openAttendanceModal(i);
         calendar.appendChild(div);
       }
+
+      updateSalarySummary();
     }
 
     function openAttendanceModal(day) {
+      const staffName = staffSelect.value;
+      if (!staffName) return alert("Select a staff first!");
+
       modal.style.display = "flex";
-      modalTitle.textContent = `Mark Attendance: ${day}/${currentMonth + 1}/${currentYear}`;
-      attendanceList.innerHTML = "";
+      modalTitle.textContent = `${staffName} - ${day}/${currentMonth + 1}/${currentYear}`;
+      currentDay = day;
 
-      if (staffList.length === 0) {
-        attendanceList.innerHTML = "<p>No staff added yet.</p>";
-        return;
-      }
-
-      staffList.forEach(staff => {
-        const key = `${staff.name}_${currentYear}_${currentMonth}_${day}`;
-        const rec = attendanceData[key] || { status: "No", ot: 0 };
-
-        const div = document.createElement("div");
-        div.className = "status-box";
-        div.innerHTML = `
-          <div class="status-header">
-            <span>${staff.name}</span>
-            <strong>${rec.status}${rec.ot ? " (₹" + rec.ot + ")" : ""}</strong>
-          </div>
-          <div class="status-actions">
-            <button class="present" onclick="mark('${staff.name}',${day},'Present')">P</button>
-            <button class="half" onclick="mark('${staff.name}',${day},'Half')">½</button>
-            <button class="absent" onclick="mark('${staff.name}',${day},'Absent')">A</button>
-            <button class="leave" onclick="mark('${staff.name}',${day},'Leave')">L</button>
-            <button class="ot" onclick="markOT('${staff.name}',${day})">OT</button>
-            <button class="clear" onclick="clearStatus('${staff.name}',${day})">Clear</button>
-          </div>
-        `;
-        attendanceList.appendChild(div);
-      });
+      actions.innerHTML = `
+        <button class="present" onclick="mark('Present')">Present</button>
+        <button class="half" onclick="mark('Half')">Half</button>
+        <button class="absent" onclick="mark('Absent')">Absent</button>
+        <button class="leave" onclick="mark('Leave')">Leave</button>
+        <button class="ot" onclick="markOT()">OT</button>
+        <button class="clear" onclick="clearStatus()">Clear</button>
+      `;
     }
 
-    function mark(staff, day, status) {
-      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+    function mark(status) {
+      const staffName = staffSelect.value;
+      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       attendanceData[key] = { status, ot: 0 };
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      openAttendanceModal(day);
+      renderCalendar();
+      updateSalarySummary();
+      modal.style.display = "none";
     }
 
-    function markOT(staff, day) {
+    function markOT() {
+      const staffName = staffSelect.value;
       const rate = prompt("Enter OT amount:");
       if (!rate || isNaN(rate)) return;
-      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      openAttendanceModal(day);
+      renderCalendar();
+      updateSalarySummary();
+      modal.style.display = "none";
     }
 
-    function clearStatus(staff, day) {
-      const key = `${staff}_${currentYear}_${currentMonth}_${day}`;
+    function clearStatus() {
+      const staffName = staffSelect.value;
+      const key = `${staffName}_${currentYear}_${currentMonth}_${currentDay}`;
       delete attendanceData[key];
       localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
-      openAttendanceModal(day);
+      renderCalendar();
+      updateSalarySummary();
+      modal.style.display = "none";
+    }
+
+    function updateSalarySummary() {
+      const staffName = staffSelect.value;
+      const staff = staffList.find(s => s.name === staffName);
+      if (!staff) return;
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const perDay = staff.salary / daysInMonth;
+      let full = 0, half = 0, totalOT = 0;
+
+      for (let i = 1; i <= daysInMonth; i++) {
+        const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
+        const rec = attendanceData[key];
+        if (!rec) continue;
+        if (rec.status === "Present") full++;
+        if (rec.status === "Half") half += 0.5;
+        if (rec.status === "OT") totalOT += rec.ot;
+      }
+
+      const total = (full + half) * perDay + totalOT;
+      salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings this month: ₹${total.toFixed(2)} (Full: ${full}, Half: ${half}, OT: ₹${totalOT.toFixed(2)})`;
     }
 
     document.getElementById("prevMonth").onclick = () => {
@@ -336,7 +393,10 @@
       location.href = "login.html";
     };
 
-    renderCalendar();
+    staffSelect.onchange = renderCalendar;
+
+    loadStaffList();
   </script>
 </body>
 </html>
+
