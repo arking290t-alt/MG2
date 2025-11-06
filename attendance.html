@@ -41,55 +41,54 @@
     .btn:hover { opacity: 0.85; }
 
     .container {
-      max-width: 1000px;
-      margin: 30px auto;
+      max-width: 1100px;
+      margin: 40px auto;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 15px;
       padding: 25px;
       box-shadow: 0 0 25px rgba(0,180,255,0.07);
+      text-align: center;
     }
 
     h1 {
       color: #00b4ff;
       text-align: center;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
+      gap: 12px;
     }
 
     .day {
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.05);
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 12px 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px;
       text-align: center;
-      font-size: 0.85rem;
       transition: all 0.2s ease;
     }
 
-    .day:hover { background: rgba(0,180,255,0.1); }
-
-    .status {
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      justify-content: center;
+    .day:hover {
+      background: rgba(0,180,255,0.12);
+      transform: scale(1.02);
     }
 
-    .status button {
-      border: none;
-      padding: 4px 6px;
+    .day strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
       border-radius: 6px;
-      font-size: 0.7rem;
-      color: #fff;
-      cursor: pointer;
-      transition: 0.2s;
+      font-size: 0.8rem;
+      font-weight: 600;
     }
 
     .present { background: #16a34a; }
@@ -97,6 +96,29 @@
     .absent { background: #ef4444; }
     .leave { background: #f59e0b; color: #000; }
     .ot { background: #8b5cf6; }
+
+    .buttons {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .buttons button {
+      border: none;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      color: #fff;
+      transition: 0.2s;
+    }
+
+    .buttons button:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
 
     .salary-bar {
       margin-top: 25px;
@@ -107,10 +129,10 @@
 
     .paid-section {
       margin-top: 25px;
-      text-align: center;
       background: rgba(255,255,255,0.03);
       border-radius: 10px;
       padding: 15px;
+      text-align: center;
     }
 
     input {
@@ -122,11 +144,11 @@
       width: 140px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .calendar { grid-template-columns: repeat(5, 1fr); }
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 600px) {
       .calendar { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
@@ -160,7 +182,7 @@
     const paidInput = document.getElementById("paidInput");
     const addPaidBtn = document.getElementById("addPaidBtn");
 
-    const daysInMonth = new Date().getDate() > 28 ? 30 : new Date().getDate();
+    const daysInMonth = 30;
     let attendance = JSON.parse(localStorage.getItem("attendance")) || {};
     let paidRecords = JSON.parse(localStorage.getItem("paidRecords")) || [];
 
@@ -178,38 +200,41 @@
 
     function renderCalendar() {
       calendarEl.innerHTML = "";
-      const monthDays = 30;
       let fullDays = 0, halfDays = 0, totalOT = 0;
 
-      for (let d = 1; d <= monthDays; d++) {
-        const div = document.createElement("div");
-        div.classList.add("day");
-        const dayStatus = attendance[d] || "No";
-        let color = "";
-        if (dayStatus.startsWith("OT")) color = "ot";
-        else if (dayStatus === "Present") color = "present";
-        else if (dayStatus === "Half Day") color = "halfday";
-        else if (dayStatus === "Absent") color = "absent";
-        else if (dayStatus === "Leave") color = "leave";
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.classList.add("day");
 
-        div.innerHTML = `<strong>${d}</strong><br><span class="${color}">${dayStatus}</span>
-          <div class="status">
+        const dayStatus = attendance[d] || "No";
+        let badgeClass = "";
+        if (dayStatus.startsWith("OT")) badgeClass = "ot";
+        else if (dayStatus === "Present") badgeClass = "present";
+        else if (dayStatus === "Half Day") badgeClass = "halfday";
+        else if (dayStatus === "Absent") badgeClass = "absent";
+        else if (dayStatus === "Leave") badgeClass = "leave";
+
+        dayDiv.innerHTML = `
+          <strong>${d}</strong>
+          <span class="badge ${badgeClass}">${dayStatus}</span>
+          <div class="buttons">
             <button class="present" onclick="markDay(${d}, 'Present')">P</button>
             <button class="halfday" onclick="markDay(${d}, 'Half Day')">½</button>
             <button class="absent" onclick="markDay(${d}, 'Absent')">A</button>
             <button class="leave" onclick="markDay(${d}, 'Leave')">L</button>
             <button class="ot" onclick="setOT(${d})">OT</button>
-          </div>`;
+          </div>
+        `;
 
         if (dayStatus === "Present") fullDays++;
         if (dayStatus === "Half Day") halfDays++;
         if (dayStatus.startsWith("OT")) totalOT += parseFloat(dayStatus.split("₹")[1] || 0);
 
-        calendarEl.appendChild(div);
+        calendarEl.appendChild(dayDiv);
       }
 
       const monthlySalary = 30000;
-      const perDay = monthlySalary / monthDays;
+      const perDay = monthlySalary / daysInMonth;
       const earnings = fullDays * perDay + halfDays * (perDay / 2) + totalOT;
       salaryBar.innerHTML = `Earnings this month: ₹${earnings.toFixed(0)}<br>Per Day: ₹${perDay.toFixed(0)} (Full: ${fullDays}, Half: ${halfDays}, OT: ₹${totalOT})`;
 
