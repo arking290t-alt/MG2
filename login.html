@@ -1,35 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | MG</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #0b111b;
+      font-family: "Poppins", sans-serif;
+      color: #d4e1f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: rgba(255,255,255,0.05);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+      width: 320px;
+      text-align: center;
+    }
+    .logo {
+      color: #00b4ff;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      margin-bottom: 20px;
+      color: #8aa3c2;
+      font-size: 0.95rem;
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .login-form label {
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #9fb6d4;
+    }
+    .login-form input,
+    .login-form select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+    .btn-login {
+      background: #00b4ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+    .btn-login:hover {
+      background: #0090d1;
+    }
+    .error {
+      color: #ef4444;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+  </style>
 </head>
-<body class="login-body">
+<body>
   <div class="login-container">
     <h1 class="logo">MG</h1>
-    <div class="subtitle">Sign in to continue</div>
+    <p class="subtitle">Sign in to continue</p>
 
-    <label>Email</label>
-    <input id="email" type="email" placeholder="admin@mg.com" />
+    <form id="loginForm" class="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
 
-    <label>Password</label>
-    <input id="password" type="password" placeholder="mg@1234" />
+      <label for="password">Password</label>
+      <input type="password" id="password" required />
 
-    <label>Role</label>
-    <select id="role">
-      <option value="owner">Owner</option>
-      <option value="staff">Staff</option>
-    </select>
+      <label for="role">Role</label>
+      <select id="role" required>
+        <option value="owner">Owner</option>
+        <option value="staff">Staff</option>
+      </select>
 
-    <button id="signInBtn" class="btn-login">Login</button>
-    <div id="error" class="error"></div>
-    <div class="small" style="margin-top:8px;color:#9fb6d4">Default admin: <strong>arking290t@gmail.com</strong> / <strong>mg@1234</strong></div>
+      <button type="submit" class="btn-login">Login</button>
+      <p id="error" class="error"></p>
+    </form>
   </div>
 
   <script type="module">
-    // FIREBASE CONFIG (your project)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -40,84 +112,31 @@
       measurementId: "G-05HW0KSN38"
     };
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    const signInBtn = document.getElementById("signInBtn");
-    const errorEl = document.getElementById("error");
+    const loginForm = document.getElementById("loginForm");
+    const errorText = document.getElementById("error");
 
-    // Attempt auto-create default admin if they try to login with default credentials
-    async function tryAutoCreateAdmin(email, password) {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        const u = auth.currentUser;
-        await setDoc(doc(db, "users", u.uid), {
-          email,
-          role: "owner",
-          displayName: "admin",
-          createdAt: new Date().toISOString()
-        });
-        return true;
-      } catch (e) {
-        console.warn("Auto-create admin failed:", e);
-        return false;
-      }
-    }
-
-    signInBtn.onclick = async () => {
-      errorEl.textContent = "";
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
       const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-      const roleSelected = document.getElementById("role").value;
-      if (!email || !password) { errorEl.textContent = "Enter email and password"; return; }
+      const password = document.getElementById("password").value.trim();
+      const role = document.getElementById("role").value;
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        const u = auth.currentUser;
-        const snapshot = await getDoc(doc(db, "users", u.uid));
-        if (!snapshot.exists()) {
-          // create user doc from selected role
-          await setDoc(doc(db, "users", u.uid), {
-            email,
-            role: roleSelected,
-            displayName: email.split("@")[0],
-            createdAt: new Date().toISOString()
-          });
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
+
+        if (role === "owner") {
+          window.location.href = "dashboard.html";
+        } else {
+          window.location.href = "attendance.html";
         }
-        // Redirect based on role stored in user doc
-        const userDoc = await getDoc(doc(db, "users", u.uid));
-        const role = userDoc.exists() && userDoc.data().role ? userDoc.data().role : roleSelected;
-        if (role === "owner") location.href = "dashboard.html";
-        else location.href = "attendance.html";
       } catch (err) {
-        // If user tried default admin credentials, auto-create and login
-        if (email === "arking290t@gmail.com" && password === "mg@1234") {
-          const created = await tryAutoCreateAdmin(email, password);
-          if (created) { location.href = "dashboard.html"; return; }
-        }
-        errorEl.textContent = "Login failed: " + (err.message || err);
+        errorText.textContent = "Login failed: " + err.message;
       }
-    };
-
-    // If already logged in, route them
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
-      try {
-        const udoc = await getDoc(doc(db, "users", user.uid));
-        const r = udoc.exists() && udoc.data().role ? udoc.data().role : "staff";
-        if (r === "owner") location.href = "dashboard.html";
-        else location.href = "attendance.html";
-      } catch (e) { console.error(e); }
     });
   </script>
 </body>
 </html>
-<p class="error" id="error"></p>
-<p style="color:#9fb6d4;font-size:0.85rem;">
-  Default admin: arking290t@gmail.com / mg@1234
-</p>
