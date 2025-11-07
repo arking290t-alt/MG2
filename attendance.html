@@ -6,7 +6,9 @@
   <title>Attendance | MG</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { 
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, addDoc, deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -26,12 +28,13 @@
     const paymentListDiv = document.getElementById("paymentList");
     const addPaymentBtn = document.getElementById("addPaymentBtn");
     const deductPaymentBtn = document.getElementById("deductPaymentBtn");
+    const monthYear = document.getElementById("monthYear");
 
     let staffData = [];
-    let selectedStaff = null;
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
 
+    // Load staff
     async function loadStaff() {
       const snap = await getDocs(collection(db, "staff"));
       staffData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -39,26 +42,70 @@
         staffData.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
     }
 
+    // Render month name
+    function updateMonthName() {
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
+    }
+
+    // Render calendar
     async function renderCalendar() {
       calendar.innerHTML = "";
+      updateMonthName();
       const staffId = staffSelect.value;
       if (!staffId) return;
-
       const staff = staffData.find(s => s.id === staffId);
       if (!staff) return;
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const attSnap = await getDocs(collection(db, "staff", staffId, "attendance"));
+      const records = {};
+      attSnap.forEach(d => { records[d.id] = d.data(); });
+
       for (let i = 1; i <= daysInMonth; i++) {
         const div = document.createElement("div");
         div.className = "day";
         div.textContent = i;
+        const key = `${currentYear}_${currentMonth}_${i}`;
+        const rec = records[key];
+        if (rec) {
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          dot.style.background = rec.status === "Present" ? "#22c55e" :
+                                 rec.status === "Half" ? "#3b82f6" :
+                                 rec.status === "Absent" ? "#ef4444" :
+                                 rec.status === "Leave" ? "#f59e0b" : "#8b5cf6";
+          div.appendChild(dot);
+        }
+        div.onclick = () => openMarkMenu(staffId, key, i);
         calendar.appendChild(div);
       }
-
       await updateSalarySummary(staff);
       await renderPayments(staffId);
     }
 
+    // Mark attendance
+    async function openMarkMenu(staffId, key, day) {
+      const choice = prompt(`Mark ${day}/${currentMonth+1}/${currentYear}:\n1=Present, 2=Half, 3=Absent, 4=Leave, 5=OT, 0=Clear`);
+      if (choice === null) return;
+      if (choice === "0") {
+        await deleteDoc(doc(db, "staff", staffId, "attendance", key));
+      } else {
+        let status = "Present", ot = 0;
+        if (choice === "2") status = "Half";
+        if (choice === "3") status = "Absent";
+        if (choice === "4") status = "Leave";
+        if (choice === "5") {
+          status = "OT";
+          const rate = prompt("Enter OT amount:");
+          ot = parseFloat(rate) || 0;
+        }
+        await setDoc(doc(db, "staff", staffId, "attendance", key), { status, ot });
+      }
+      renderCalendar();
+    }
+
+    // Add or deduct payment
     async function addPayment(isDeduct = false) {
       const staffId = staffSelect.value;
       if (!staffId) return alert("Select a staff first!");
@@ -74,6 +121,7 @@
       await updateSalarySummary(staffData.find(s => s.id === staffId));
     }
 
+    // Delete payment
     async function deletePayment(staffId, paymentId) {
       if (!confirm("Delete this payment?")) return;
       await deleteDoc(doc(db, "staff", staffId, "payments", paymentId));
@@ -81,6 +129,7 @@
       await updateSalarySummary(staffData.find(s => s.id === staffId));
     }
 
+    // Render payment list
     async function renderPayments(staffId) {
       const snap = await getDocs(collection(db, "staff", staffId, "payments"));
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -99,6 +148,7 @@
       `).join("");
     }
 
+    // Calculate salary summary
     async function updateSalarySummary(staff) {
       const days = new Date(currentYear, currentMonth + 1, 0).getDate();
       const perDay = staff.salary / days;
@@ -129,35 +179,35 @@
   </script>
 
   <style>
-    body{background:#0b111b;color:#d4e1f0;font-family:"Poppins",sans-serif;margin:0;padding:0;}
+    body{background:#0b111b;color:#d4e1f0;font-family:"Poppins",sans-serif;margin:0;}
     header{background:rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;padding:10px 25px;}
     .btn{background:#00b4ff;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;}
     .container{max-width:1100px;margin:30px auto;padding:25px;background:rgba(255,255,255,0.05);border-radius:14px;}
     .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
-    .day{background:rgba(255,255,255,0.07);border-radius:10px;text-align:center;padding:8px;height:80px;}
+    .day{background:rgba(255,255,255,0.07);border-radius:10px;text-align:center;padding:8px;height:80px;position:relative;cursor:pointer;}
+    .dot{width:10px;height:10px;border-radius:50%;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);}
     .summary{text-align:center;color:#00b4ff;font-weight:600;margin-top:20px;}
     .payment-item{display:flex;justify-content:space-between;background:rgba(255,255,255,0.05);padding:8px;margin:5px 0;border-radius:8px;}
     .delete-btn{background:#ef4444;color:white;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;}
+    h1{text-align:center;color:#00b4ff;}
   </style>
 </head>
 <body>
   <header>
     <div class="logo">MG</div>
-    <div>
-      <a href="dashboard.html" class="btn">← Dashboard</a>
-    </div>
+    <div><a href="dashboard.html" class="btn">← Dashboard</a></div>
   </header>
-
   <div class="container">
-    <h1 style="color:#00b4ff;text-align:center;">Attendance</h1>
+    <h1>Attendance Calendar</h1>
     <select id="staffSelect" style="display:block;margin:10px auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.1);color:white;"></select>
-    <div class="month-nav" style="text-align:center;margin-bottom:10px;">
+    <div style="text-align:center;margin:15px;">
       <button id="prevMonth" class="btn">⟨</button>
+      <span id="monthYear" style="margin:0 10px;font-weight:600;color:#00b4ff;"></span>
       <button id="nextMonth" class="btn">⟩</button>
     </div>
     <div id="calendar" class="calendar"></div>
     <div id="salarySummary" class="summary">Select a staff to view summary</div>
-    <div class="payment-section" style="margin-top:20px;">
+    <div style="margin-top:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <h3 style="color:#00b4ff;">Payments</h3>
         <div>
