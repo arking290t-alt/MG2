@@ -4,34 +4,111 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Staff | MG</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #0b111b;
+      color: #e2e8f0;
+      font-family: "Poppins", sans-serif;
+      margin: 0;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo {
+      color: #00b4ff;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .btn {
+      background: #00b4ff;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.05);
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+    }
+    h1 { text-align: center; color: #00b4ff; }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    input {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+    }
+    button {
+      background: #00b4ff;
+      border: none;
+      padding: 10px;
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .staff-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .staff-item button {
+      background: #ef4444;
+      border: none;
+      padding: 6px 10px;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="staff-body">
-  <header class="top-bar">
+<body>
+  <header>
     <div class="logo">MG</div>
     <div>
-      <a href="dashboard.html" class="btn-back">← Dashboard</a>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
+      <a href="dashboard.html" class="btn">← Dashboard</a>
+      <button id="logoutBtn" class="btn">Logout</button>
     </div>
   </header>
 
-  <div class="center-stage">
-    <div class="staff-card-panel">
-      <h2 class="panel-title">Staff Management</h2>
-      <p class="panel-sub">Add, edit and remove staff</p>
-
-      <form id="staffForm" class="staff-form">
-        <input id="staffName" placeholder="Staff name" required />
-        <input id="staffPhone" placeholder="Phone (optional)" />
-        <input id="staffSalary" placeholder="Salary / month" type="number" required />
-        <button id="addStaffBtn" class="add-btn">Add Staff</button>
-      </form>
-
-      <div class="staff-list" id="staffList"></div>
-    </div>
+  <div class="container">
+    <h1>Staff Management</h1>
+    <form id="staffForm">
+      <input id="staffName" type="text" placeholder="Staff Name" required />
+      <input id="staffPhone" type="text" placeholder="Phone (optional)" />
+      <input id="staffSalary" type="number" placeholder="Salary / month" required />
+      <button type="submit">Add Staff</button>
+    </form>
+    <div id="staffList"></div>
   </div>
 
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -41,53 +118,52 @@
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
     };
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
-    const staffCol = collection(db, "staff");
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    const staffForm = document.getElementById("staffForm");
-    const staffListEl = document.getElementById("staffList");
-
-    onAuthStateChanged(auth, user => { if (!user) location.href = "login.html"; });
-
-    logoutBtn.onclick = async () => { await signOut(auth); location.href = "login.html"; };
+    const staffForm = document.getElementById('staffForm');
+    const staffListEl = document.getElementById('staffList');
 
     async function loadStaff() {
-      staffListEl.innerHTML = "";
-      const snaps = await getDocs(staffCol);
-      snaps.forEach(d => {
-        const s = d.data();
-        const div = document.createElement("div"); div.className = "staff-item";
-        div.innerHTML = `<div><strong>${s.name}</strong><br><small>₹${s.salary || 0}</small></div>
-                         <div><button onclick="deleteStaff('${d.id}')">Delete</button></div>`;
+      staffListEl.innerHTML = '';
+      const querySnapshot = await getDocs(collection(db, "staff"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const div = document.createElement('div');
+        div.className = 'staff-item';
+        div.innerHTML = `
+          <div><strong>${data.name}</strong><br><small>₹${data.salary}/month</small></div>
+          <button onclick="deleteStaff('${docSnap.id}')">Delete</button>
+        `;
         staffListEl.appendChild(div);
       });
     }
 
-    staffForm.addEventListener("submit", async (e) => {
+    staffForm.onsubmit = async (e) => {
       e.preventDefault();
-      const name = document.getElementById("staffName").value.trim();
-      const phone = document.getElementById("staffPhone").value.trim();
-      const salary = parseFloat(document.getElementById("staffSalary").value);
-      if (!name || isNaN(salary)) return alert("Enter valid details");
-      await addDoc(staffCol, { name, phone, salary });
-      staffForm.reset();
-      await loadStaff();
-    });
+      const name = staffForm.staffName.value.trim();
+      const salary = parseFloat(staffForm.staffSalary.value);
+      const phone = staffForm.staffPhone.value.trim();
+      if (!name || isNaN(salary)) return alert('Enter valid details');
 
-    window.deleteStaff = async function(id) {
-      if (!confirm("Delete this staff?")) return;
-      await deleteDoc(doc(db, "staff", id));
-      await loadStaff();
+      await addDoc(collection(db, "staff"), { name, phone, salary });
+      staffForm.reset();
+      loadStaff();
     };
 
-    // initial load
+    window.deleteStaff = async (id) => {
+      if (confirm('Delete this staff?')) {
+        await deleteDoc(doc(db, "staff", id));
+        loadStaff();
+      }
+    };
+
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem('loggedInUser');
+      location.href = 'login.html';
+    };
+
     loadStaff();
   </script>
 </body>
