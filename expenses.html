@@ -1,59 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Expenses | MG</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance | MG</title>
+  <style>
+    :root {
+      --bg: #0b111b;
+      --card: rgba(255,255,255,0.05);
+      --accent: #00b4ff;
+      --text-light: #d4e1f0;
+      --present: #22c55e;
+      --half: #3b82f6;
+      --absent: #ef4444;
+      --leave: #f59e0b;
+      --ot: #8b5cf6;
+    }
+    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body { background: var(--bg); color: var(--text-light); margin: 0; }
+    header {
+      background: rgba(255,255,255,0.05);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 25px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .btn {
+      background: var(--accent); border: none; color: #fff; font-weight: 600;
+      padding: 8px 14px; border-radius: 8px; cursor: pointer; text-decoration: none;
+    }
+    .container {
+      max-width: 1100px; margin: 30px auto; padding: 25px;
+      background: var(--card); border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+    }
+    h1 { text-align: center; color: var(--accent); margin-bottom: 10px; }
+    .month-nav {
+      display: flex; justify-content: center; align-items: center;
+      gap: 10px; margin-bottom: 25px;
+    }
+    .month-nav button {
+      background: none; border: none; color: var(--accent);
+      font-size: 1.6rem; cursor: pointer; transition: 0.2s;
+    }
+    .month-nav button:hover { color: #fff; transform: scale(1.2); }
+    #staffSelect {
+      display: block; margin: 0 auto 20px; background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px;
+      border-radius: 8px; width: 250px; text-align: center;
+    }
+    .calendar {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 10px; justify-items: center;
+    }
+    .day {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 8px; text-align: center;
+      width: 100%; height: 90px; cursor: pointer; transition: 0.2s; position: relative;
+    }
+    .day:hover { background: rgba(0,180,255,0.1); transform: scale(1.02); }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    }
+    .summary { margin-top: 25px; text-align: center; color: var(--accent); font-weight: 600; }
+    .payment-section {
+      margin-top: 25px; background: rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 15px;
+    }
+    .payment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .payment-header h3 { color: var(--accent); margin: 0; }
+    .payment-actions button {
+      background: var(--accent); border: none; color: white;
+      padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer;
+      margin-left: 8px; font-size: 0.85rem;
+    }
+    .payment-actions button.deduct { background: #ef4444; }
+    .payment-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .delete-btn {
+      background: #64748b; border: none; color: white;
+      border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;
+    }
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card); border-radius: 12px; padding: 20px;
+      width: 420px; color: var(--text-light);
+      box-shadow: 0 0 20px rgba(0,180,255,0.2);
+    }
+    .close-btn {
+      float: right; cursor: pointer; color: #fff;
+      font-weight: 700; font-size: 1.2rem;
+    }
+    .status-actions button {
+      border: none; border-radius: 6px; padding: 5px 8px;
+      font-size: 0.75rem; font-weight: 600; margin: 2px; color: #fff; cursor: pointer;
+    }
+    .present { background: var(--present); }
+    .half { background: var(--half); }
+    .absent { background: var(--absent); }
+    .leave { background: var(--leave); }
+    .ot { background: var(--ot); }
+    .clear { background: #64748b; }
+  </style>
 </head>
 <body>
-  <header class="top-bar">
+  <header>
     <div class="logo">MG</div>
     <div>
-      <a href="dashboard.html" class="btn-back">← Dashboard</a>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
+      <a href="dashboard.html" class="btn">← Dashboard</a>
+      <button id="logoutBtn" class="btn">Logout</button>
     </div>
   </header>
 
   <div class="container">
-    <h1>Expense Tracker</h1>
-
-    <div class="controls">
-      <div class="filter-group">
-        <label>Category</label>
-        <select id="categoryFilter"><option value="all">All Categories</option></select>
+    <h1>Attendance Calendar</h1>
+    <select id="staffSelect"><option value="">Select Staff</option></select>
+    <div class="month-nav">
+      <button id="prevMonth">⟨</button>
+      <h2 id="monthYear"></h2>
+      <button id="nextMonth">⟩</button>
+    </div>
+    <div id="calendar" class="calendar"></div>
+    <div class="summary" id="salarySummary">Select a staff to view attendance</div>
+    <div class="payment-section">
+      <div class="payment-header">
+        <h3>Payments</h3>
+        <div class="payment-actions">
+          <button id="addPaymentBtn">+ Add Payment</button>
+          <button class="deduct" id="deductPaymentBtn">− Deduct Payment</button>
+        </div>
       </div>
-      <div class="filter-group">
-        <label>Time</label>
-        <input type="month" id="timeFilter">
-        <button id="clearTime" class="btn-back">Clear</button>
-      </div>
+      <div id="paymentList"></div>
     </div>
+  </div>
 
-    <div id="expenseList" class="expense-list"></div>
-    <div id="summaryText" class="summary">Total: ₹0</div>
-
-    <div class="add-row">
-      <input id="expenseName" type="text" placeholder="Expense name" />
-      <input id="expenseAmount" type="number" placeholder="Amount ₹" />
-      <select id="expenseCategory"></select>
-      <input id="expenseDate" type="date" />
-      <button id="addExpenseBtn" class="add-btn">Add Expense</button>
-    </div>
-
-    <div style="margin-top:20px;text-align:center" class="muted">
-      Add category:
-      <input id="newCategory" type="text" placeholder="New Category name" style="min-width:180px;margin-left:8px"/>
-      <button id="addCategoryBtn" class="add-btn">Add Category</button>
-    </div>
-
-    <div class="category-section">
-      <h3 style="color:#00b4ff;">Manage Categories</h3>
-      <div id="categoryList" class="category-list"></div>
+  <div id="attendanceModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closeModal">&times;</span>
+      <h2 id="modalTitle">Date</h2>
+      <div class="status-actions" id="actions"></div>
     </div>
   </div>
 
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -63,121 +162,51 @@
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
     };
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const expensesCol = collection(db, "expenses");
-    const categoriesCol = collection(db, "categories");
+    const staffSelect = document.getElementById("staffSelect");
+    const calendar = document.getElementById("calendar");
+    const salarySummary = document.getElementById("salarySummary");
+    const addPaymentBtn = document.getElementById("addPaymentBtn");
+    const deductPaymentBtn = document.getElementById("deductPaymentBtn");
+    const paymentListDiv = document.getElementById("paymentList");
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    const expenseListEl = document.getElementById('expenseList');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const timeFilter = document.getElementById('timeFilter');
-    const clearTime = document.getElementById('clearTime');
-    const expenseCategory = document.getElementById('expenseCategory');
-    const summaryText = document.getElementById('summaryText');
-    const categoryListEl = document.getElementById('categoryList');
+    async function loadStaffList() {
+      const querySnapshot = await getDocs(collection(db, "staff"));
+      const staffArr = [];
+      querySnapshot.forEach((docSnap) => staffArr.push(docSnap.data()));
+      staffSelect.innerHTML = '<option value="">Select Staff</option>' +
+        staffArr.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
+    }
 
-    onAuthStateChanged(auth, user => { if (!user) location.href="login.html"; });
+    function updateMonthYear() {
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
+    }
 
-    logoutBtn.onclick = async () => { await signOut(auth); location.href="login.html"; };
-
-    async function loadCategories() {
-      categoryFilter.innerHTML = '<option value="all">All Categories</option>';
-      expenseCategory.innerHTML = '';
-      categoryListEl.innerHTML = '';
-      const snaps = await getDocs(categoriesCol);
-      const catArr = [];
-      snaps.forEach(d => catArr.push(d.data().name));
-      if (catArr.length === 0) {
-        // seed default categories
-        const defaults = ['Food','Travel','Bills','Other'];
-        for (const c of defaults) await addDoc(categoriesCol, { name: c });
-        return loadCategories();
+    function renderCalendar() {
+      calendar.innerHTML = "";
+      updateMonthYear();
+      const days = new Date(currentYear, currentMonth + 1, 0).getDate();
+      for (let i = 1; i <= days; i++) {
+        const div = document.createElement("div");
+        div.className = "day";
+        div.textContent = i;
+        div.onclick = () => alert("Mark attendance (coming soon)");
+        calendar.appendChild(div);
       }
-      catArr.forEach(c => {
-        categoryFilter.innerHTML += `<option value="${c}">${c}</option>`;
-        expenseCategory.innerHTML += `<option value="${c}">${c}</option>`;
-        const div = document.createElement('div'); div.className = 'category-item';
-        div.innerHTML = `${c} <button onclick="deleteCategory('${c}')">❌</button>`;
-        categoryListEl.appendChild(div);
-      });
     }
 
-    async function renderExpenses() {
-      expenseListEl.innerHTML = '';
-      const snapshots = await getDocs(expensesCol);
-      const arr = [];
-      snapshots.forEach(d => arr.push({ id: d.id, ...d.data() }));
-      const cat = categoryFilter.value;
-      const time = timeFilter.value;
-      const filtered = arr.filter(e => {
-        const dt = new Date(e.date);
-        const matchesCat = (cat === 'all') || (e.category === cat);
-        const matchesTime = (!time) || (dt.getFullYear() === parseInt(time.split('-')[0]) && (dt.getMonth()+1) === parseInt(time.split('-')[1]));
-        return matchesCat && matchesTime;
-      });
-      if (!filtered.length) expenseListEl.innerHTML = '<p style="text-align:center;color:#888">No expenses found</p>';
-      else filtered.forEach(ex => {
-        const div = document.createElement('div'); div.className='expense-item';
-        div.innerHTML = `<div><strong>${ex.name}</strong><br><small>${ex.category} | ${ex.date.slice(0,10)}</small></div>
-          <div style="display:flex;align-items:center;gap:10px;"><span class="amt">₹${ex.amount}</span>
-          <button style="background:#ef4444;border:none;color:#fff;padding:5px 8px;border-radius:6px;cursor:pointer" onclick="deleteExpense('${ex.id}')">Delete</button></div>`;
-        expenseListEl.appendChild(div);
-      });
-      const total = filtered.reduce((s,e)=> s + (e.amount||0), 0);
-      summaryText.textContent = `Total: ₹${total}`;
-    }
+    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("loggedInUser"); location.href = "login.html"; };
+    document.getElementById("prevMonth").onclick = () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
+    document.getElementById("nextMonth").onclick = () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
 
-    document.getElementById('addExpenseBtn').onclick = async () => {
-      const name = document.getElementById('expenseName').value.trim();
-      const amt = parseFloat(document.getElementById('expenseAmount').value);
-      const cat = document.getElementById('expenseCategory').value;
-      const date = document.getElementById('expenseDate').value || new Date().toISOString().slice(0,10);
-      if (!name || isNaN(amt)) return alert('Enter valid details!');
-      await addDoc(expensesCol, { name, amount: amt, category: cat, date });
-      document.getElementById('expenseName').value = '';
-      document.getElementById('expenseAmount').value = '';
-      await renderExpenses();
-    };
-
-    async function deleteExpense(id) {
-      if (!confirm('Delete this expense?')) return;
-      await deleteDoc(doc(db, "expenses", id));
-      await renderExpenses();
-    }
-
-    document.getElementById('addCategoryBtn').onclick = async () => {
-      const val = document.getElementById('newCategory').value.trim();
-      if (!val) return alert('Enter category');
-      await addDoc(categoriesCol, { name: val });
-      document.getElementById('newCategory').value = '';
-      await loadCategories();
-    };
-
-    window.deleteCategory = async function(name) {
-      if (!confirm(`Delete category "${name}"?`)) return;
-      // find category doc by name and delete
-      const snaps = await getDocs(categoriesCol);
-      for (const d of snaps.docs) {
-        if (d.data().name === name) await deleteDoc(doc(db, "categories", d.id));
-      }
-      await loadCategories();
-      await renderExpenses();
-    };
-
-    categoryFilter.onchange = renderExpenses;
-    timeFilter.onchange = renderExpenses;
-    clearTime.onclick = () => { timeFilter.value = ''; renderExpenses(); };
-
-    // initial
-    await loadCategories();
-    await renderExpenses();
+    loadStaffList();
+    renderCalendar();
   </script>
 </body>
 </html>
