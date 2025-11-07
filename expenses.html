@@ -2,112 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance | MG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expenses | MG</title>
   <style>
     :root {
-      --bg: #0b111b;
-      --card: rgba(255,255,255,0.05);
-      --accent: #00b4ff;
-      --text-light: #d4e1f0;
-      --present: #22c55e;
-      --half: #3b82f6;
-      --absent: #ef4444;
-      --leave: #f59e0b;
-      --ot: #8b5cf6;
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --panel:#101820;
+      --border:rgba(255,255,255,0.1);
     }
-    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { background: var(--bg); color: var(--text-light); margin: 0; }
-    header {
-      background: rgba(255,255,255,0.05);
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 25px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{
+      background:var(--bg);
+      color:#fff;
+      margin:0;
+      min-height:100vh;
     }
-    .logo { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
-    .btn {
-      background: var(--accent); border: none; color: #fff; font-weight: 600;
-      padding: 8px 14px; border-radius: 8px; cursor: pointer; text-decoration: none;
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      background:rgba(255,255,255,0.05);
+      padding:15px 25px;border-bottom:1px solid var(--border);
     }
-    .container {
-      max-width: 1100px; margin: 30px auto; padding: 25px;
-      background: var(--card); border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
+    .btn{
+      background:var(--accent);color:#fff;border:none;
+      padding:8px 14px;border-radius:8px;cursor:pointer;
+      text-decoration:none;font-weight:600;
     }
-    h1 { text-align: center; color: var(--accent); margin-bottom: 10px; }
-    .month-nav {
-      display: flex; justify-content: center; align-items: center;
-      gap: 10px; margin-bottom: 25px;
+    .btn:hover{opacity:.9;}
+    .container{
+      max-width:950px;
+      margin:40px auto;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:30px 25px;
+      box-shadow:0 8px 30px rgba(0,180,255,0.05);
     }
-    .month-nav button {
-      background: none; border: none; color: var(--accent);
-      font-size: 1.6rem; cursor: pointer; transition: 0.2s;
+    h1{text-align:center;color:var(--accent);margin:5px 0 25px;}
+    .controls{
+      display:flex;flex-wrap:wrap;justify-content:center;gap:15px;margin-bottom:20px;
     }
-    .month-nav button:hover { color: #fff; transform: scale(1.2); }
-    #staffSelect {
-      display: block; margin: 0 auto 20px; background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px;
-      border-radius: 8px; width: 250px; text-align: center;
+    label{font-size:.9rem;color:#9fbcdff0;}
+    select,input[type="month"],input[type="text"],input[type="number"],input[type="date"]{
+      background:var(--panel);border:1px solid var(--border);
+      color:#fff;padding:8px 10px;border-radius:8px;outline:none;
     }
-    .calendar {
-      display: grid; grid-template-columns: repeat(7, 1fr);
-      gap: 10px; justify-items: center;
+    .expense-list{margin-top:10px;}
+    .expense-item{
+      background:rgba(255,255,255,0.05);
+      padding:12px 16px;border-radius:10px;margin-bottom:10px;
+      display:flex;justify-content:space-between;align-items:center;
+      border:1px solid rgba(255,255,255,0.06);
     }
-    .day {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px; padding: 8px; text-align: center;
-      width: 100%; height: 90px; cursor: pointer; transition: 0.2s; position: relative;
+    .expense-item .amt{color:var(--accent);font-weight:700;}
+    .expense-item small{color:#a9c8df;}
+    .summary{
+      margin-top:15px;text-align:center;font-weight:700;color:var(--accent);
     }
-    .day:hover { background: rgba(0,180,255,0.1); transform: scale(1.02); }
-    .dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    .add-row{
+      display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+      margin-top:25px;
     }
-    .summary { margin-top: 25px; text-align: center; color: var(--accent); font-weight: 600; }
-    .payment-section {
-      margin-top: 25px; background: rgba(255,255,255,0.07);
-      border-radius: 12px; padding: 15px;
+    .add-row input,.add-row select{
+      background:var(--panel);
+      border:1px solid var(--border);
+      color:#fff;padding:8px 10px;border-radius:8px;
     }
-    .payment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .payment-header h3 { color: var(--accent); margin: 0; }
-    .payment-actions button {
-      background: var(--accent); border: none; color: white;
-      padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer;
-      margin-left: 8px; font-size: 0.85rem;
+    .muted{text-align:center;margin-top:25px;color:#9aa9b6;}
+    .category-section{
+      margin-top:40px;text-align:center;
     }
-    .payment-actions button.deduct { background: #ef4444; }
-    .payment-item {
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
-      display: flex; justify-content: space-between; align-items: center;
+    .category-list{
+      display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+      margin-top:15px;
     }
-    .delete-btn {
-      background: #64748b; border: none; color: white;
-      border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;
+    .category-item{
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      padding:6px 10px;border-radius:6px;
+      display:flex;align-items:center;gap:6px;
     }
-    .modal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;
+    .category-item button{
+      background:#ef4444;border:none;color:white;padding:3px 7px;
+      border-radius:4px;cursor:pointer;
     }
-    .modal-content {
-      background: var(--card); border-radius: 12px; padding: 20px;
-      width: 420px; color: var(--text-light);
-      box-shadow: 0 0 20px rgba(0,180,255,0.2);
+    @media(max-width:720px){
+      .controls,.add-row{gap:8px;padding:0 8px;}
     }
-    .close-btn {
-      float: right; cursor: pointer; color: #fff;
-      font-weight: 700; font-size: 1.2rem;
-    }
-    .status-actions button {
-      border: none; border-radius: 6px; padding: 5px 8px;
-      font-size: 0.75rem; font-weight: 600; margin: 2px; color: #fff; cursor: pointer;
-    }
-    .present { background: var(--present); }
-    .half { background: var(--half); }
-    .absent { background: var(--absent); }
-    .leave { background: var(--leave); }
-    .ot { background: var(--ot); }
-    .clear { background: #64748b; }
   </style>
 </head>
 <body>
@@ -120,93 +103,145 @@
   </header>
 
   <div class="container">
-    <h1>Attendance Calendar</h1>
-    <select id="staffSelect"><option value="">Select Staff</option></select>
-    <div class="month-nav">
-      <button id="prevMonth">⟨</button>
-      <h2 id="monthYear"></h2>
-      <button id="nextMonth">⟩</button>
-    </div>
-    <div id="calendar" class="calendar"></div>
-    <div class="summary" id="salarySummary">Select a staff to view attendance</div>
-    <div class="payment-section">
-      <div class="payment-header">
-        <h3>Payments</h3>
-        <div class="payment-actions">
-          <button id="addPaymentBtn">+ Add Payment</button>
-          <button class="deduct" id="deductPaymentBtn">− Deduct Payment</button>
-        </div>
+    <h1>Expense Tracker</h1>
+
+    <div class="controls">
+      <div>
+        <label>Category</label>
+        <select id="categoryFilter">
+          <option value="all">All Categories</option>
+        </select>
       </div>
-      <div id="paymentList"></div>
+
+      <div>
+        <label>Time</label>
+        <input type="month" id="timeFilter">
+        <button id="clearTime" class="btn" style="background:transparent;border:1px solid var(--border);color:#fff;">Clear</button>
+      </div>
+    </div>
+
+    <div id="expenseList" class="expense-list"></div>
+    <div id="summaryText" class="summary">Total: ₹0</div>
+
+    <div class="add-row">
+      <input id="expenseName" type="text" placeholder="Expense name">
+      <input id="expenseAmount" type="number" placeholder="Amount ₹">
+      <select id="expenseCategory"></select>
+      <input id="expenseDate" type="date">
+      <button id="addExpenseBtn" class="btn">Add Expense</button>
+    </div>
+
+    <div class="muted">
+      Add category:
+      <input id="newCategory" type="text" placeholder="New Category name" style="min-width:180px;margin-left:8px;">
+      <button id="addCategoryBtn" class="btn">Add Category</button>
+    </div>
+
+    <div class="category-section">
+      <h3 style="color:#00b4ff;">Manage Categories</h3>
+      <div id="categoryList" class="category-list"></div>
     </div>
   </div>
 
-  <div id="attendanceModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeModal">&times;</span>
-      <h2 id="modalTitle">Date</h2>
-      <div class="status-actions" id="actions"></div>
-    </div>
-  </div>
+  <script>
+    const EXP_KEY='expenses',CAT_KEY='categories';
+    let expenses=JSON.parse(localStorage.getItem(EXP_KEY))||[];
+    let categories=JSON.parse(localStorage.getItem(CAT_KEY))||['Food','Travel','Bills','Salary','Other'];
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    const expenseListEl=document.getElementById('expenseList');
+    const categoryFilter=document.getElementById('categoryFilter');
+    const timeFilter=document.getElementById('timeFilter');
+    const clearTime=document.getElementById('clearTime');
+    const expenseCategory=document.getElementById('expenseCategory');
+    const summaryText=document.getElementById('summaryText');
+    const categoryListEl=document.getElementById('categoryList');
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-      authDomain: "mg-manager-3ab66.firebaseapp.com",
-      projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.firebasestorage.app",
-      messagingSenderId: "330667005987",
-      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
+    function saveAll(){
+      localStorage.setItem(EXP_KEY,JSON.stringify(expenses));
+      localStorage.setItem(CAT_KEY,JSON.stringify(categories));
+    }
+
+    function renderCategories(){
+      categoryFilter.innerHTML='<option value="all">All Categories</option>'+
+      categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+      expenseCategory.innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join('');
+      categoryListEl.innerHTML='';
+      categories.forEach(cat=>{
+        const div=document.createElement('div');
+        div.className='category-item';
+        div.innerHTML=`${cat} <button onclick="deleteCategory('${cat}')">❌</button>`;
+        categoryListEl.appendChild(div);
+      });
+    }
+
+    function renderExpenses(){
+      expenseListEl.innerHTML='';
+      const cat=categoryFilter.value,time=timeFilter.value;
+      const filtered=expenses.filter(e=>{
+        const matchesCat=(cat==='all')||(e.category===cat);
+        const matchesTime=!time||e.date.startsWith(time);
+        return matchesCat&&matchesTime;
+      });
+      if(!filtered.length){
+        expenseListEl.innerHTML='<p style="text-align:center;color:#888;">No expenses found</p>';
+      }else{
+        filtered.forEach((exp,i)=>{
+          const div=document.createElement('div');
+          div.className='expense-item';
+          div.innerHTML=`
+          <div>
+            <strong>${exp.name}</strong><br><small>${exp.category} | ${exp.date}</small>
+          </div>
+          <div>
+            <span class="amt">₹${exp.amount}</span>
+            <button onclick="deleteExpense(${i})" style="background:#ef4444;border:none;color:white;padding:4px 8px;border-radius:6px;">Delete</button>
+          </div>`;
+          expenseListEl.appendChild(div);
+        });
+      }
+      const total=filtered.reduce((s,e)=>s+e.amount,0);
+      summaryText.textContent=`Total: ₹${total}`;
+    }
+
+    document.getElementById('addExpenseBtn').onclick=()=>{
+      const name=document.getElementById('expenseName').value.trim();
+      const amt=parseFloat(document.getElementById('expenseAmount').value);
+      const cat=expenseCategory.value;
+      const date=document.getElementById('expenseDate').value||new Date().toISOString().slice(0,10);
+      if(!name||!amt)return alert('Enter valid details!');
+      expenses.push({name,amount:amt,category:cat,date});
+      saveAll();renderExpenses();
+      document.getElementById('expenseName').value='';
+      document.getElementById('expenseAmount').value='';
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    document.getElementById('addCategoryBtn').onclick=()=>{
+      const val=document.getElementById('newCategory').value.trim();
+      if(!val)return alert('Enter category name');
+      if(categories.includes(val))return alert('Already exists');
+      categories.push(val);
+      saveAll();document.getElementById('newCategory').value='';
+      renderCategories();
+    };
 
-    const staffSelect = document.getElementById("staffSelect");
-    const calendar = document.getElementById("calendar");
-    const salarySummary = document.getElementById("salarySummary");
-    const addPaymentBtn = document.getElementById("addPaymentBtn");
-    const deductPaymentBtn = document.getElementById("deductPaymentBtn");
-    const paymentListDiv = document.getElementById("paymentList");
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-
-    async function loadStaffList() {
-      const querySnapshot = await getDocs(collection(db, "staff"));
-      const staffArr = [];
-      querySnapshot.forEach((docSnap) => staffArr.push(docSnap.data()));
-      staffSelect.innerHTML = '<option value="">Select Staff</option>' +
-        staffArr.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
+    function deleteCategory(name){
+      if(!confirm(`Delete category "${name}"?`))return;
+      categories=categories.filter(c=>c!==name);
+      saveAll();renderCategories();
     }
 
-    function updateMonthYear() {
-      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
-    }
-
-    function renderCalendar() {
-      calendar.innerHTML = "";
-      updateMonthYear();
-      const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-      for (let i = 1; i <= days; i++) {
-        const div = document.createElement("div");
-        div.className = "day";
-        div.textContent = i;
-        div.onclick = () => alert("Mark attendance (coming soon)");
-        calendar.appendChild(div);
+    function deleteExpense(i){
+      if(confirm('Delete this expense?')){
+        expenses.splice(i,1);saveAll();renderExpenses();
       }
     }
 
-    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("loggedInUser"); location.href = "login.html"; };
-    document.getElementById("prevMonth").onclick = () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
-    document.getElementById("nextMonth").onclick = () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
+    categoryFilter.onchange=renderExpenses;
+    timeFilter.onchange=renderExpenses;
+    clearTime.onclick=()=>{timeFilter.value='';renderExpenses();};
+    document.getElementById('logoutBtn').onclick=()=>{localStorage.removeItem('loggedInUser');location.href='login.html';};
 
-    loadStaffList();
-    renderCalendar();
+    renderCategories();renderExpenses();
   </script>
 </body>
 </html>
