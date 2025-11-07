@@ -1,287 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Attendance | MG</title>
-  <style>
-    :root {
-      --bg: #0b111b;
-      --card: rgba(255, 255, 255, 0.05);
-      --accent: #00b4ff;
-      --text-light: #d4e1f0;
-      --present: #22c55e;
-      --half: #3b82f6;
-      --absent: #ef4444;
-      --leave: #f59e0b;
-      --ot: #8b5cf6;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text-light);
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background: rgba(255,255,255,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 25px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .btn {
-      background: var(--accent);
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 25px;
-      background: var(--card);
-      border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
-      position: relative;
-    }
-
-    h1 {
-      text-align: center;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
-
-    .month-nav {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 25px;
-    }
-
-    .month-nav button {
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 1.6rem;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .month-nav button:hover {
-      color: #fff;
-      transform: scale(1.2);
-    }
-
-    #staffSelect {
-      display: block;
-      margin: 0 auto 20px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      width: 250px;
-      text-align: center;
-    }
-
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
-      justify-items: center;
-    }
-
-    .day {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 8px;
-      text-align: center;
-      width: 100%;
-      height: 90px;
-      cursor: pointer;
-      transition: 0.2s;
-      position: relative;
-    }
-
-    .day:hover {
-      background: rgba(0,180,255,0.1);
-      transform: scale(1.02);
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .summary {
-      margin-top: 25px;
-      text-align: center;
-      font-size: 1.1rem;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .payment-section {
-      margin-top: 25px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 12px;
-      padding: 15px;
-    }
-
-    .payment-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .payment-header h3 {
-      color: var(--accent);
-      margin: 0;
-    }
-
-    .payment-actions button {
-      background: var(--accent);
-      border: none;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-left: 8px;
-      font-size: 0.85rem;
-    }
-
-    .payment-actions button.deduct {
-      background: #ef4444;
-    }
-
-    .payment-list {
-      margin-top: 10px;
-    }
-
-    .payment-item {
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .payment-item span {
-      font-size: 0.9rem;
-    }
-
-    .payment-item .delete-btn {
-      background: #64748b;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-    }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      width: 420px;
-      color: var(--text-light);
-      box-shadow: 0 0 20px rgba(0,180,255,0.2);
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal h2 {
-      text-align: center;
-      color: var(--accent);
-      margin-bottom: 15px;
-    }
-
-    .close-btn {
-      float: right;
-      cursor: pointer;
-      color: #fff;
-      font-weight: 700;
-      font-size: 1.2rem;
-    }
-
-    .status-actions button {
-      border: none;
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin: 2px;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .present { background: var(--present); }
-    .half { background: var(--half); }
-    .absent { background: var(--absent); }
-    .leave { background: var(--leave); }
-    .ot { background: var(--ot); }
-    .clear { background: #64748b; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
+  <header class="top-bar">
     <div class="logo">MG</div>
     <div>
-      <a href="dashboard.html" class="btn">← Dashboard</a>
-      <button id="logoutBtn" class="btn">Logout</button>
+      <a href="dashboard.html" class="btn-back">← Dashboard</a>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
     </div>
   </header>
 
   <div class="container">
     <h1>Attendance Calendar</h1>
 
-    <select id="staffSelect">
-      <option value="">Select Staff</option>
-    </select>
+    <select id="staffSelect"><option value="">Select Staff</option></select>
 
     <div class="month-nav">
       <button id="prevMonth">⟨</button>
@@ -296,222 +33,309 @@
       <div class="payment-header">
         <h3>Payments</h3>
         <div class="payment-actions">
-          <button id="addPaymentBtn">+ Add Payment</button>
-          <button class="deduct" id="deductPaymentBtn">− Deduct Payment</button>
+          <button id="addPaymentBtn" class="add-btn">+ Add Payment</button>
+          <button id="deductPaymentBtn" class="add-btn" style="background:#ef4444">− Deduct Payment</button>
         </div>
       </div>
       <div class="payment-list" id="paymentList"></div>
+      <div class="paid-box">
+        <strong>Total Paid:</strong> <span id="totalPaid">₹0</span>
+        <button id="migrateLocalBtn" class="paid-btn" style="display:none">Migrate Local Data</button>
+      </div>
     </div>
   </div>
 
-  <!-- Attendance Modal -->
+  <!-- modal -->
   <div id="attendanceModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" id="closeModal">&times;</span>
       <h2 id="modalTitle">Date</h2>
-      <div class="status-actions" id="actions"></div>
+      <div id="actions" class="status-actions"></div>
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    // firebase init
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, doc, setDoc, getDocs, query, where, deleteDoc, updateDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // DOM
     const staffSelect = document.getElementById("staffSelect");
     const calendar = document.getElementById("calendar");
     const salarySummary = document.getElementById("salarySummary");
     const addPaymentBtn = document.getElementById("addPaymentBtn");
     const deductPaymentBtn = document.getElementById("deductPaymentBtn");
     const paymentListDiv = document.getElementById("paymentList");
-
-    const STAFF_KEY = "staffList";
-    const ATTEND_KEY = "attendanceData";
-    const PAY_KEY = "paymentData";
-    const PAY_LIST_KEY = "paymentListData";
-
-    const staffList = JSON.parse(localStorage.getItem(STAFF_KEY)) || [];
-    const attendanceData = JSON.parse(localStorage.getItem(ATTEND_KEY)) || {};
-    const paymentData = JSON.parse(localStorage.getItem(PAY_KEY)) || {};
-    const paymentListData = JSON.parse(localStorage.getItem(PAY_LIST_KEY)) || {};
+    const logoutBtn = document.getElementById("logoutBtn");
+    const prevMonth = document.getElementById("prevMonth");
+    const nextMonth = document.getElementById("nextMonth");
+    const monthYear = document.getElementById("monthYear");
+    const attendanceModal = document.getElementById("attendanceModal");
+    const closeModal = document.getElementById("closeModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const actions = document.getElementById("actions");
+    const totalPaidEl = document.getElementById("totalPaid");
+    const migrateLocalBtn = document.getElementById("migrateLocalBtn");
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
+    let currentDay = null;
+    let currentUser = null;
+    let currentUserRole = null;
 
-    function updateMonthYear() {
-      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      document.getElementById("monthYear").textContent = `${months[currentMonth]} ${currentYear}`;
+    // Firestore collections
+    const staffCol = collection(db, "staff");
+    const attendanceCol = collection(db, "attendance");
+    const paymentsCol = collection(db, "payments");
+
+    // Auth guard
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return location.href = "login.html";
+      currentUser = user;
+      // read role
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      currentUserRole = userDoc.exists() && userDoc.data().role ? userDoc.data().role : "staff";
+      if (currentUserRole === "owner") migrateLocalBtn.style.display = "inline-block";
+      await loadStaffList();
+      renderCalendar();
+    });
+
+    logoutBtn.onclick = async () => { await signOut(auth); location.href = "login.html"; };
+
+    // Load staff list
+    async function loadStaffList() {
+      staffSelect.innerHTML = `<option value="">Select Staff</option>`;
+      const snap = await getDocs(staffCol);
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      arr.sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+      arr.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.name + (s.salary ? ` — ₹${s.salary}` : "");
+        staffSelect.appendChild(opt);
+      });
     }
 
-    function loadStaffList() {
-      if (!staffList.length) {
-        staffSelect.innerHTML = "<option>No staff added</option>";
-        return;
-      }
-      staffSelect.innerHTML = `<option value="">Select Staff</option>` + staffList.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
-    }
-
-    function renderCalendar() {
+    // Calendar
+    async function renderCalendar() {
       calendar.innerHTML = "";
-      updateMonthYear();
-      const staffName = staffSelect.value;
-      if (!staffName) return;
+      monthYear.textContent = `${new Date(currentYear, currentMonth).toLocaleString('default',{month:'long'})} ${currentYear}`;
+      const staffId = staffSelect.value;
+      if (!staffId) return;
       const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-      for (let i = 1; i <= days; i++) {
-        const div = document.createElement("div");
-        div.className = "day";
-        div.textContent = i;
-        const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
-        const rec = attendanceData[key];
-        if (rec) {
-          const dot = document.createElement("div");
-          dot.className = "dot";
-          dot.style.background =
-            rec.status === "Present" ? "var(--present)" :
-            rec.status === "Half" ? "var(--half)" :
-            rec.status === "Absent" ? "var(--absent)" :
-            rec.status === "Leave" ? "var(--leave)" :
-            rec.status === "OT" ? "var(--ot)" : "#888";
+      for (let i=1;i<=days;i++){
+        const div = document.createElement("div"); div.className="day"; div.textContent = i;
+        // query attendance for that staff/day
+        const q = query(attendanceCol, where("staffId","==",staffId), where("year","==",currentYear), where("month","==",currentMonth), where("day","==",i));
+        const snaps = await getDocs(q);
+        if (!snaps.empty) {
+          const rec = snaps.docs[0].data();
+          const dot = document.createElement("div"); dot.className="dot";
+          dot.style.background = rec.status === "Present" ? "var(--present)" : rec.status === "Half" ? "var(--half)" : rec.status === "Absent" ? "var(--absent)" : rec.status === "Leave" ? "var(--leave)" : rec.status === "OT" ? "var(--ot)" : "#888";
           div.appendChild(dot);
         }
-        div.onclick = () => openAttendanceModal(i);
+        div.onclick = ()=> openAttendanceModal(i);
         calendar.appendChild(div);
       }
-      updateSalarySummary();
-      renderPaymentList();
+      await updateSalarySummary();
+      await renderPaymentList();
     }
 
-    // Attendance Modal
+    staffSelect.onchange = renderCalendar;
+
+    // Modal actions
     function openAttendanceModal(day) {
-      const staffName = staffSelect.value;
-      if (!staffName) return alert("Select a staff first!");
-      const modal = document.getElementById("attendanceModal");
-      const modalTitle = document.getElementById("modalTitle");
-      const actions = document.getElementById("actions");
-      modal.style.display = "flex";
-      modalTitle.textContent = `${staffName} - ${day}/${currentMonth + 1}/${currentYear}`;
+      const staffId = staffSelect.value;
+      if (!staffId) return alert("Select a staff first!");
+      attendanceModal.style.display = "flex";
+      modalTitle.textContent = `${day}/${currentMonth+1}/${currentYear}`;
+      currentDay = day;
       actions.innerHTML = `
-        <button class="present" onclick="mark('${day}','Present')">Present</button>
-        <button class="half" onclick="mark('${day}','Half')">Half</button>
-        <button class="absent" onclick="mark('${day}','Absent')">Absent</button>
-        <button class="leave" onclick="mark('${day}','Leave')">Leave</button>
-        <button class="ot" onclick="markOT('${day}')">OT</button>
-        <button class="clear" onclick="clearStatus('${day}')">Clear</button>`;
-      document.getElementById("closeModal").onclick = () => modal.style.display = "none";
-      window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+        <button class="present" onclick="window.mark('Present')">Present</button>
+        <button class="half" onclick="window.mark('Half')">Half</button>
+        <button class="absent" onclick="window.mark('Absent')">Absent</button>
+        <button class="leave" onclick="window.mark('Leave')">Leave</button>
+        <button class="ot" onclick="window.markOT()">OT</button>
+        <button class="clear" onclick="window.clearStatus()">Clear</button>
+      `;
     }
+    closeModal.onclick = ()=> attendanceModal.style.display = "none";
+    window.onclick = e => { if (e.target === attendanceModal) attendanceModal.style.display = "none"; };
 
-    function mark(day, status) {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${day}`;
-      attendanceData[key] = { status, ot: 0 };
-      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    // attendance functions exposed globally for inline onclicks
+    window.mark = async function(status) {
+      const staffId = staffSelect.value; if (!staffId) return alert("Select a staff first!");
+      const payload = { staffId, status, ot: 0, year: currentYear, month: currentMonth, day: currentDay, updatedAt: new Date().toISOString() };
+      // check existing
+      const q = query(attendanceCol, where("staffId","==",staffId), where("year","==",currentYear), where("month","==",currentMonth), where("day","==",currentDay));
+      const snaps = await getDocs(q);
+      if (!snaps.empty) await updateDoc(doc(db, "attendance", snaps.docs[0].id), payload);
+      else await addDoc(attendanceCol, payload);
+      attendanceModal.style.display = "none";
       renderCalendar();
-      document.getElementById("attendanceModal").style.display = "none";
-    }
+    };
 
-    function markOT(day) {
-      const staffName = staffSelect.value;
-      const rate = prompt("Enter OT amount:");
-      if (!rate || isNaN(rate)) return;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${day}`;
-      attendanceData[key] = { status: "OT", ot: parseFloat(rate) };
-      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    window.markOT = async function() {
+      const staffId = staffSelect.value; if (!staffId) return alert("Select a staff first!");
+      const rate = prompt("Enter OT amount:"); if (!rate || isNaN(rate)) return;
+      const payload = { staffId, status: "OT", ot: parseFloat(rate), year: currentYear, month: currentMonth, day: currentDay, updatedAt: new Date().toISOString() };
+      const q = query(attendanceCol, where("staffId","==",staffId), where("year","==",currentYear), where("month","==",currentMonth), where("day","==",currentDay));
+      const snaps = await getDocs(q);
+      if (!snaps.empty) await updateDoc(doc(db, "attendance", snaps.docs[0].id), payload);
+      else await addDoc(attendanceCol, payload);
+      attendanceModal.style.display = "none";
       renderCalendar();
-      document.getElementById("attendanceModal").style.display = "none";
-    }
+    };
 
-    function clearStatus(day) {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}_${day}`;
-      delete attendanceData[key];
-      localStorage.setItem(ATTEND_KEY, JSON.stringify(attendanceData));
+    window.clearStatus = async function() {
+      const staffId = staffSelect.value; if (!staffId) return alert("Select a staff first!");
+      const q = query(attendanceCol, where("staffId","==",staffId), where("year","==",currentYear), where("month","==",currentMonth), where("day","==",currentDay));
+      const snaps = await getDocs(q);
+      if (!snaps.empty) await deleteDoc(doc(db, "attendance", snaps.docs[0].id));
+      attendanceModal.style.display = "none";
       renderCalendar();
-      document.getElementById("attendanceModal").style.display = "none";
-    }
+    };
 
-    // Payment Functions
-    function addPayment(isDeduct = false) {
-      const staffName = staffSelect.value;
-      if (!staffName) return alert("Select a staff first!");
+    // Payments
+    addPaymentBtn.onclick = () => openPaymentPrompt(false);
+    deductPaymentBtn.onclick = () => openPaymentPrompt(true);
+
+    async function openPaymentPrompt(isDeduct) {
+      const staffId = staffSelect.value; if (!staffId) return alert("Select a staff first!");
       const amount = prompt(isDeduct ? "Enter deduction amount:" : "Enter payment amount:");
       if (!amount || isNaN(amount)) return;
-      const key = `${staffName}_${currentYear}_${currentMonth}`;
-      const list = paymentListData[key] || [];
-      const id = Date.now();
-      const entry = {
-        id,
-        amount: isDeduct ? -parseFloat(amount) : parseFloat(amount),
-        date: new Date().toLocaleString(),
-        type: isDeduct ? "deduct" : "add"
+      const payload = {
+        staffId,
+        amount: isDeduct ? -Math.abs(parseFloat(amount)) : Math.abs(parseFloat(amount)),
+        type: isDeduct ? "deduct" : "add",
+        date: new Date().toISOString(),
+        createdBy: currentUser ? currentUser.uid : null
       };
-      list.push(entry);
-      paymentListData[key] = list;
-      paymentData[key] = (paymentData[key] || 0) + entry.amount;
-      localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
-      localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
-      updateSalarySummary();
+      await addDoc(paymentsCol, payload);
       renderPaymentList();
+      updateSalarySummary();
     }
 
-    function deletePayment(id) {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}`;
-      let list = paymentListData[key] || [];
-      const item = list.find(p => p.id === id);
-      if (!item) return;
-      if (!confirm("Delete this payment?")) return;
-      list = list.filter(p => p.id !== id);
-      paymentListData[key] = list;
-      paymentData[key] = (paymentData[key] || 0) - item.amount;
-      localStorage.setItem(PAY_KEY, JSON.stringify(paymentData));
-      localStorage.setItem(PAY_LIST_KEY, JSON.stringify(paymentListData));
-      updateSalarySummary();
-      renderPaymentList();
-    }
-
-    function renderPaymentList() {
-      const staffName = staffSelect.value;
-      const key = `${staffName}_${currentYear}_${currentMonth}`;
-      const list = paymentListData[key] || [];
-      if (!staffName) { paymentListDiv.innerHTML = ""; return; }
-      if (!list.length) { paymentListDiv.innerHTML = `<p style="color:#aaa;">No payments yet.</p>`; return; }
-      paymentListDiv.innerHTML = list.map(p => `
+    async function renderPaymentList() {
+      const staffId = staffSelect.value; if (!staffId) { paymentListDiv.innerHTML = ""; return; }
+      const q = query(paymentsCol, where("staffId","==",staffId), where("year","==",currentYear)); // note: payments may not have year/month; we use date instead
+      // safer fetch all payments for staff and filter by month
+      const snaps = await getDocs(query(paymentsCol, where("staffId","==",staffId)));
+      const docs = [];
+      snaps.forEach(d => docs.push({ id: d.id, ...d.data() }));
+      // filter by month/year
+      const list = docs.filter(p => {
+        const dt = new Date(p.date || p.createdAt || Date.now());
+        return dt.getFullYear() === currentYear && dt.getMonth() === currentMonth;
+      }).sort((a,b)=> new Date(b.date) - new Date(a.date));
+      paymentListDiv.innerHTML = list.length ? list.map(p=>`
         <div class="payment-item">
           <span style="color:${p.amount < 0 ? '#ef4444' : '#22c55e'};">
-            ${p.amount < 0 ? "-₹" + Math.abs(p.amount) : "₹" + p.amount}
-            <small style="color:#aaa;">(${p.date})</small>
+            ${p.amount < 0 ? '- ₹' + Math.abs(p.amount) : '₹' + p.amount}
+            <small style="color:#aaa;"> (${new Date(p.date).toLocaleString()})</small>
           </span>
-          <button class="delete-btn" onclick="deletePayment(${p.id})">Delete</button>
+          <button class="delete-payment-btn" onclick="deletePayment('${p.id}', ${p.amount})">Delete</button>
         </div>
-      `).join("");
+      `).join("") : `<p style="color:#aaa">No payments yet.</p>`;
+
+      // total paid
+      const total = list.reduce((s,p)=> s + (p.amount || 0), 0);
+      totalPaidEl.textContent = `₹${total.toFixed(2)}`;
     }
 
-    function updateSalarySummary() {
-      const staffName = staffSelect.value;
-      const staff = staffList.find(s => s.name === staffName);
+    window.deletePayment = async function(id, amount) {
+      if (!confirm("Delete this payment?")) return;
+      await deleteDoc(doc(db, "payments", id));
+      // deletion automatically reduces total because we recompute from docs
+      await renderPaymentList();
+      await updateSalarySummary();
+    };
+
+    // Salary summary: calculate earnings by reading attendance entries and OT
+    async function updateSalarySummary() {
+      const staffId = staffSelect.value; if (!staffId) return;
+      // get staff doc
+      const sdoc = await getDoc(doc(db, "staff", staffId));
+      const staff = sdoc.exists() ? sdoc.data() : null;
       if (!staff) return;
       const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const perDay = staff.salary / days;
+      const perDay = (staff.salary || 0) / days;
+      // fetch attendance for staff for month
+      const snaps = await getDocs(query(attendanceCol, where("staffId","==",staffId)));
       let full = 0, half = 0, totalOT = 0;
-      for (let i = 1; i <= days; i++) {
-        const key = `${staffName}_${currentYear}_${currentMonth}_${i}`;
-        const rec = attendanceData[key];
-        if (!rec) continue;
-        if (rec.status === "Present") full++;
-        if (rec.status === "Half") half += 0.5;
-        if (rec.status === "OT") totalOT += rec.ot;
-      }
-      const total = (full + half) * perDay + totalOT;
-      const payKey = `${staffName}_${currentYear}_${currentMonth}`;
-      const paid = paymentData[payKey] || 0;
-      const remaining = total - paid;
-      salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${total.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
+      snaps.forEach(d => {
+        const rec = d.data();
+        if (rec.year === currentYear && rec.month === currentMonth) {
+          if (rec.status === "Present") full++;
+          else if (rec.status === "Half") half += 0.5;
+          else if (rec.status === "OT") totalOT += (rec.ot || 0);
+        }
+      });
+      const totalEarnings = (full + half) * perDay + totalOT;
+      // compute paid
+      const paymentSnaps = await getDocs(query(paymentsCol, where("staffId","==",staffId)));
+      let paid = 0;
+      paymentSnaps.forEach(d => {
+        const p = d.data();
+        const dt = new Date(p.date || p.createdAt || Date.now());
+        if (dt.getFullYear() === currentYear && dt.getMonth() === currentMonth) paid += (p.amount || 0);
+      });
+      const remaining = totalEarnings - paid;
+      salarySummary.textContent = `Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${totalEarnings.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
     }
 
-    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("loggedInUser"); location.href = "login.html"; };
-    document.getElementById("prevMonth").onclick = () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
-    document.getElementById("nextMonth").onclick = () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
-    staffSelect.onchange = renderCalendar;
-    addPaymentBtn.onclick = () => addPayment(false);
-    deductPaymentBtn.onclick = () => addPayment(true);
-    loadStaffList();
+    // Prev/Next month
+    prevMonth.onclick = () => { currentMonth--; if (currentMonth<0){ currentMonth=11; currentYear--; } renderCalendar(); };
+    nextMonth.onclick = () => { currentMonth++; if (currentMonth>11){ currentMonth=0; currentYear++; } renderCalendar(); };
+
+    // Migration helper (owner only)
+    migrateLocalBtn.onclick = async () => {
+      if (!confirm("Upload your local data (staff, attendance, payments) to Firestore? This runs once.")) return;
+      migrateLocalBtn.textContent = "Migrating...";
+      try {
+        const staffList = JSON.parse(localStorage.getItem("staffList")) || [];
+        const attendanceData = JSON.parse(localStorage.getItem("attendanceData")) || {};
+        const paymentListData = JSON.parse(localStorage.getItem("paymentListData")) || {};
+        // staff
+        for (const s of staffList) await addDoc(staffCol, { name: s.name, salary: s.salary || 0, phone: s.phone || "" });
+        // attendance
+        for (const k in attendanceData) {
+          const parts = k.split("_"); // staffName_year_month_day
+          const staffName = parts[0];
+          const year = parseInt(parts[1]); const month = parseInt(parts[2]); const day = parseInt(parts[3]);
+          const rec = attendanceData[k];
+          await addDoc(attendanceCol, { staffName, staffId: null, year, month, day, status: rec.status, ot: rec.ot || 0, migratedAt: new Date().toISOString() });
+        }
+        // payments
+        for (const k in paymentListData) {
+          const parts = k.split("_"); const staffName = parts[0]; const year = parseInt(parts[1]); const month = parseInt(parts[2]);
+          for (const p of (paymentListData[k]||[])) {
+            await addDoc(paymentsCol, { staffName, staffId: null, year, month, amount: p.amount, type: p.amount < 0 ? "deduct" : "add", date: p.date || new Date().toISOString(), migratedAt: new Date().toISOString() });
+          }
+        }
+        alert("Migration done. You may clear localStorage after verifying data.");
+      } catch (e) {
+        console.error(e); alert("Migration failed: " + e.message);
+      } finally { migrateLocalBtn.textContent = "Migrate Local Data"; }
+    };
+
   </script>
 </body>
 </html>
