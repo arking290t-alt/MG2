@@ -89,6 +89,7 @@
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -114,9 +115,15 @@
       calendarGrid.innerHTML = "";
       for (let i = 0; i < firstDayIndex; i++) calendarGrid.innerHTML += `<div></div>`;
 
-      const attendanceSnap = currentStaff ? await getDocs(query(collection(db, "attendance"), where("staff", "==", currentStaff), where("month", "==", month), where("year", "==", year))) : [];
-      const attendanceData = {};
-      attendanceSnap.forEach(d => attendanceData[d.data().day] = d.data().status);
+      let attendanceData = {};
+      if (currentStaff) {
+        const snap = await getDocs(query(collection(db, "attendance"),
+          where("staff", "==", currentStaff),
+          where("month", "==", month),
+          where("year", "==", year)
+        ));
+        snap.forEach(d => attendanceData[d.data().day] = d.data().status);
+      }
 
       for (let d = 1; d <= lastDay.getDate(); d++) {
         const dayDiv = document.createElement("div");
@@ -143,7 +150,7 @@
       });
     }
 
-    // 🔹 Attendance marking with saving to Firebase
+    // 🔹 Attendance marking with saving to Firebase (with OT input)
     async function markAttendance(day) {
       if (!currentStaff) return alert("Select a staff first!");
       const modal = document.createElement("div");
@@ -161,7 +168,8 @@
         </div>`;
       document.body.appendChild(modal);
 
-      const statusMap = { p: "present", h: "half", a: "absent", l: "leave", o: "ot" };
+      const statusMap = { p: "present", h: "half", a: "absent", l: "leave" };
+
       Object.keys(statusMap).forEach(key => {
         modal.querySelector(`#${key}`).onclick = async () => {
           await addDoc(collection(db, "attendance"), {
@@ -169,12 +177,30 @@
             day,
             month: currentDate.getMonth(),
             year: currentDate.getFullYear(),
-            status: statusMap[key]
+            status: statusMap[key],
+            otAmount: 0
           });
           modal.remove();
           renderCalendar();
         };
       });
+
+      // OT special input
+      modal.querySelector("#o").onclick = async () => {
+        const amount = prompt("Enter OT amount (₹):");
+        if (!amount || isNaN(amount)) return alert("Enter a valid number!");
+        await addDoc(collection(db, "attendance"), {
+          staff: currentStaff,
+          day,
+          month: currentDate.getMonth(),
+          year: currentDate.getFullYear(),
+          status: "ot",
+          otAmount: parseFloat(amount)
+        });
+        modal.remove();
+        renderCalendar();
+      };
+
       modal.querySelector("#c").onclick = () => modal.remove();
     }
 
