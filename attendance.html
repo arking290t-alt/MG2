@@ -103,6 +103,7 @@
 
     let currentDate = new Date();
     let currentStaff = "";
+    let currentStaffId = "";
 
     document.getElementById("prevMonth").onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();};
     document.getElementById("nextMonth").onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();};
@@ -113,7 +114,7 @@
       snap.forEach(docSnap=>{
         const d=docSnap.data();
         const opt=document.createElement("option");
-        opt.value=d.name;
+        opt.value=JSON.stringify({name:d.name,id:d.staffId});
         opt.textContent=d.name;
         staffSelect.appendChild(opt);
       });
@@ -129,8 +130,8 @@
       calendarGrid.innerHTML="";
       for(let i=0;i<firstDayIndex;i++) calendarGrid.innerHTML+="<div></div>";
       let attendanceData={};
-      if(currentStaff){
-        const snap=await getDocs(query(collection(db,"attendance"),where("staff","==",currentStaff),where("month","==",month),where("year","==",year)));
+      if(currentStaffId){
+        const snap=await getDocs(query(collection(db,"attendance"),where("staffId","==",currentStaffId),where("month","==",month),where("year","==",year)));
         snap.forEach(d=>attendanceData[d.data().day]=d.data());
       }
       for(let d=1;d<=lastDay.getDate();d++){
@@ -141,11 +142,11 @@
         div.onclick=()=>markAttendance(d);
         calendarGrid.appendChild(div);
       }
-      if(currentStaff) updateStats();
+      if(currentStaffId) updateStats();
     }
 
     async function markAttendance(day){
-      if(!currentStaff)return alert("Select a staff first!");
+      if(!currentStaffId)return alert("Select a staff first!");
       const modal=document.createElement("div");
       modal.innerHTML=`
         <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -161,8 +162,8 @@
         </div>`;
       document.body.appendChild(modal);
       const save=async(status,ot=0)=>{
-        await setDoc(doc(db,"attendance",`${currentStaff}_${day}_${currentDate.getMonth()}_${currentDate.getFullYear()}`),{
-          staff:currentStaff,day,month:currentDate.getMonth(),year:currentDate.getFullYear(),status,otAmount:ot
+        await setDoc(doc(db,"attendance",`${currentStaffId}_${day}_${currentDate.getMonth()}_${currentDate.getFullYear()}`),{
+          staff:currentStaff,staffId:currentStaffId,day,month:currentDate.getMonth(),year:currentDate.getFullYear(),status,otAmount:ot
         });
         modal.remove();renderCalendar();
       };
@@ -176,12 +177,12 @@
 
     async function updateStats(){
       const m=currentDate.getMonth(),y=currentDate.getFullYear();
-      const attendSnap=await getDocs(query(collection(db,"attendance"),where("staff","==",currentStaff),where("month","==",m),where("year","==",y)));
-      const staffSnap=await getDocs(query(collection(db,"staff"),where("name","==",currentStaff)));
+      const attendSnap=await getDocs(query(collection(db,"attendance"),where("staffId","==",currentStaffId),where("month","==",m),where("year","==",y)));
+      const staffSnap=await getDocs(query(collection(db,"staff"),where("staffId","==",currentStaffId)));
       let salary=0;staffSnap.forEach(d=>salary=d.data().salary||0);
       let p=0,h=0,ot=0;attendSnap.forEach(d=>{const a=d.data();if(a.status=="present")p++;if(a.status=="half")h+=0.5;if(a.status=="ot")ot+=a.otAmount||0;});
       const perDay=salary/30;const earned=(p+h)*perDay+ot;
-      const paySnap=await getDocs(query(collection(db,"payments"),where("staff","==",currentStaff)));let paid=0;paySnap.forEach(p=>paid+=p.data().amount);
+      const paySnap=await getDocs(query(collection(db,"payments"),where("staffId","==",currentStaffId)));let paid=0;paySnap.forEach(p=>paid+=p.data().amount);
       const remain=earned-paid;
       statsEl.innerHTML=`Per Day: ₹${perDay.toFixed(2)} | Earned: ₹${earned.toFixed(2)} | OT: ₹${ot.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remain.toFixed(2)}`;
       loadPayments();
@@ -189,7 +190,7 @@
 
     async function loadPayments(){
       paymentList.innerHTML="";
-      const paySnap=await getDocs(query(collection(db,"payments"),where("staff","==",currentStaff),orderBy("date")));
+      const paySnap=await getDocs(query(collection(db,"payments"),where("staffId","==",currentStaffId),orderBy("date")));
       if(paySnap.empty){paymentList.innerHTML="<p style='text-align:center;color:#888;'>No payments yet.</p>";return;}
       paySnap.forEach(p=>{
         const d=p.data();
@@ -201,8 +202,8 @@
       });
     }
 
-    document.getElementById("addPayment").onclick=async()=>{if(!currentStaff)return alert("Select staff first!");const a=prompt("Enter payment amount:");if(!a||isNaN(a))return;await setDoc(doc(db,"payments",`${currentStaff}_${Date.now()}`),{staff:currentStaff,amount:parseFloat(a),date:new Date().toLocaleDateString()});updateStats();};
-    document.getElementById("staffSelect").onchange=e=>{currentStaff=e.target.value;statsEl.textContent=currentStaff?`Showing attendance for ${currentStaff}`:"Select a staff";renderCalendar();};
+    document.getElementById("addPayment").onclick=async()=>{if(!currentStaffId)return alert("Select staff first!");const a=prompt("Enter payment amount:");if(!a||isNaN(a))return;await setDoc(doc(db,"payments",`${currentStaffId}_${Date.now()}`),{staff:currentStaff,staffId:currentStaffId,amount:parseFloat(a),date:new Date().toLocaleDateString()});updateStats();};
+    document.getElementById("staffSelect").onchange=e=>{const data=JSON.parse(e.target.value);currentStaff=data.name;currentStaffId=data.id;statsEl.textContent=currentStaff?`Showing attendance for ${currentStaff}`:"Select a staff";renderCalendar();};
     loadStaff();renderCalendar();
   </script>
 </body>
