@@ -6,72 +6,21 @@
   <title>Staff | MG</title>
   <style>
     :root {
-      --bg: #0b111b;
-      --card: rgba(255,255,255,0.05);
-      --accent: #00b4ff;
-      --text: #e2e8f0;
+      --bg:#0b111b;--card:rgba(255,255,255,0.05);--accent:#00b4ff;--text:#e2e8f0;
     }
     *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
-    body{
-      background:var(--bg);
-      color:var(--text);
-      margin:0;
-    }
-    header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:15px 25px;
-      background:rgba(255,255,255,0.05);
-      border-bottom:1px solid rgba(255,255,255,0.1);
-    }
+    body{background:var(--bg);color:var(--text);margin:0;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.1);}
     .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
     .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;cursor:pointer;}
-    .container{
-      max-width:700px;
-      margin:40px auto;
-      background:var(--card);
-      padding:25px;
-      border-radius:14px;
-      box-shadow:0 8px 30px rgba(0,180,255,0.1);
-    }
+    .container{max-width:700px;margin:40px auto;background:var(--card);padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);}
     h1{text-align:center;color:var(--accent);}
     form{display:flex;flex-direction:column;gap:12px;margin-top:15px;}
-    input{
-      background:rgba(255,255,255,0.08);
-      border:none;
-      padding:10px;
-      border-radius:8px;
-      color:white;
-      font-size:1rem;
-    }
-    button{
-      background:var(--accent);
-      border:none;
-      padding:10px;
-      color:white;
-      border-radius:8px;
-      font-weight:600;
-      cursor:pointer;
-    }
+    input{background:rgba(255,255,255,0.08);border:none;padding:10px;border-radius:8px;color:white;font-size:1rem;}
+    button{background:var(--accent);border:none;padding:10px;color:white;border-radius:8px;font-weight:600;cursor:pointer;}
     .staff-list{margin-top:20px;}
-    .staff-item{
-      background:rgba(255,255,255,0.08);
-      border-radius:8px;
-      padding:10px 15px;
-      margin-bottom:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    .staff-item button{
-      background:#ef4444;
-      border:none;
-      padding:6px 10px;
-      color:white;
-      border-radius:5px;
-      cursor:pointer;
-    }
+    .staff-item{background:rgba(255,255,255,0.08);border-radius:8px;padding:10px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+    .staff-item button{background:#ef4444;border:none;padding:6px 10px;color:white;border-radius:5px;cursor:pointer;}
   </style>
 </head>
 <body>
@@ -98,7 +47,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc
     } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -146,31 +95,33 @@
       const name = staffForm.staffName.value.trim();
       const salary = parseFloat(staffForm.staffSalary.value);
       if (!name || isNaN(salary)) return alert('Enter valid details');
-      await addDoc(collection(db, "staff"), { name, salary });
+      const docRef = await addDoc(collection(db, "staff"), { name, salary });
+      const staffId = docRef.id;
+
+      // store the same ID in staff document for linking
+      await setDoc(docRef, { name, salary, staffId });
+
       staffForm.reset();
       loadStaff();
     };
 
     async function deleteStaff(staffId, staffName) {
-      if (!confirm(`Delete ${staffName}? All related data will also be deleted!`)) return;
-
+      if (!confirm(`Delete ${staffName}? All attendance and payments will be deleted!`)) return;
       try {
-        // Delete staff document
         await deleteDoc(doc(db, "staff", staffId));
 
-        // Delete related attendance data
-        const attendSnap = await getDocs(query(collection(db, "attendance"), where("staff", "==", staffName)));
-        attendSnap.forEach(async (d) => await deleteDoc(doc(db, "attendance", d.id)));
+        // delete attendance & payments by staffId
+        const attSnap = await getDocs(query(collection(db, "attendance"), where("staffId", "==", staffId)));
+        attSnap.forEach(async d => await deleteDoc(doc(db, "attendance", d.id)));
 
-        // Delete related payments data
-        const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", staffName)));
-        paySnap.forEach(async (d) => await deleteDoc(doc(db, "payments", d.id)));
+        const paySnap = await getDocs(query(collection(db, "payments"), where("staffId", "==", staffId)));
+        paySnap.forEach(async d => await deleteDoc(doc(db, "payments", d.id)));
 
-        alert(`✅ Deleted ${staffName} and all related records.`);
+        alert(`✅ Deleted ${staffName} and all their data.`);
         loadStaff();
-      } catch (err) {
-        console.error("❌ Error deleting staff:", err);
-        alert("Error deleting staff. Check console for details.");
+      } catch (e) {
+        console.error(e);
+        alert("Error deleting staff");
       }
     }
 
