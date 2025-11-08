@@ -3,297 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance | MG</title>
-
-  <!-- Firebase (Compat version) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
+  <title>Attendance Calendar</title>
   <style>
     :root {
-      --bg: #0b1118;
-      --card: rgba(255, 255, 255, 0.03);
+      --bg: #0b111b;
+      --card: rgba(255, 255, 255, 0.05);
       --accent: #00b4ff;
-      --text: #d4e1f0;
+      --text: #e2e8f0;
       --present: #22c55e;
-      --half: #3b82f6;
       --absent: #ef4444;
-      --leave: #f59e0b;
-      --ot: #8b5cf6;
-      --muted: #9aa3ad;
+      --half: #f59e0b;
+      --leave: #3b82f6;
+      --ot: #a855f7;
     }
-    * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-    body { margin: 0; background: radial-gradient(circle at 20% 30%, #0f1620, #070b10); color: var(--text); min-height: 100vh; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .logo { color: var(--accent); font-weight: 700; font-size: 1.4rem; }
-    .btn { background: var(--accent); border: none; color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; }
-
-    .container { max-width: 1100px; margin: 28px auto; padding: 22px; background: var(--card); border-radius: 14px; box-shadow: 0 10px 40px rgba(0,180,255,0.06); }
-    h1 { text-align: center; color: var(--accent); margin-bottom: 18px; }
-
-    #staffSelect { display: block; margin: 0 auto 14px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff; border: 1px solid rgba(255,255,255,0.04); width: 240px; }
-    .month-nav { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .month-btn { background: transparent; border: 1px solid rgba(255,255,255,0.06); padding: 8px; border-radius: 8px; color: var(--accent); cursor: pointer; }
-    #monthYear { color: var(--accent); font-weight: 700; }
-
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
-    .day { background: rgba(255,255,255,0.02); border-radius: 10px; height: 100px; position: relative; padding: 10px; color: #cbd5e1; cursor: pointer; transition: transform 0.12s; }
-    .day:hover { transform: translateY(-4px); }
-    .day .num { position: absolute; top: 8px; left: 10px; font-weight: 600; color: #cbd5e1; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); }
-
-    .summary { margin-top: 18px; text-align: center; color: var(--accent); font-weight: 700; }
-
-    .payments-wrap { margin-top: 18px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .payment-actions { display: flex; gap: 8px; }
-    .pay-btn { background: linear-gradient(90deg,var(--accent),#39c8ff); border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer; }
-    .deduct-btn { background:#ef4444; border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer; }
-    .payment-list { margin-top:12px; max-height:160px; overflow:auto; padding-top:6px; }
-    .payment-item { display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:8px; background:rgba(255,255,255,0.02); margin-bottom:8px; }
-    .delete-payment { background:#ff6b6b; border:none; color:#fff; padding:6px 8px; border-radius:6px; cursor:pointer; }
-
-    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:999; }
-    .modal-content { background:#0f2533; padding:18px; border-radius:12px; min-width:320px; color:var(--text); box-shadow:0 8px 40px rgba(0,0,0,0.6); }
-    .modal-title { color:var(--accent); font-weight:700; margin-bottom:10px; text-align:center; }
-    .status-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-    .status-actions button { padding:8px 12px; border-radius:8px; border:none; font-weight:700; cursor:pointer; }
-    .present{background:var(--present);color:#01220a}
-    .half{background:var(--half);color:#07204a}
-    .absent{background:var(--absent);color:#3b0703}
-    .leave{background:var(--leave);color:#3b2000}
-    .ot{background:var(--ot);color:#38124f}
-    .cancel{background:#64748b;color:white}
+    * { box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body { background: var(--bg); color: var(--text); margin: 0; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { color: var(--accent); font-size: 1.5rem; font-weight: 700; }
+    .btn { background: var(--accent); border: none; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; }
+    .container { max-width: 950px; margin: 30px auto; background: var(--card); padding: 25px; border-radius: 14px; box-shadow: 0 8px 30px rgba(0, 180, 255, 0.1); }
+    h1 { text-align: center; color: var(--accent); margin-bottom: 20px; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+    .day-header { text-align: center; font-weight: 600; opacity: 0.8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+    .day { background: rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 15px; text-align: center; min-height: 70px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 1.1rem; }
+    .day:hover { background: rgba(255,255,255,0.12); }
+    .present { background: var(--present) !important; color: #fff; }
+    .absent { background: var(--absent) !important; color: #fff; }
+    .half { background: var(--half) !important; color: #fff; }
+    .leave { background: var(--leave) !important; color: #fff; }
+    .ot { background: var(--ot) !important; color: #fff; }
+    .controls { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+    select, button { padding: 8px 12px; border-radius: 8px; border: none; font-weight: 500; }
+    .month-nav button { background: var(--accent); color: #fff; margin: 0 5px; }
+    .stats { margin-top: 15px; text-align: center; font-weight: 500; }
   </style>
 </head>
-
 <body>
-<header>
-  <div class="logo">MG</div>
-  <div>
+  <header>
+    <div class="logo">MG</div>
     <a href="dashboard.html" class="btn">← Dashboard</a>
-    <button id="logoutBtn" class="btn">Logout</button>
-  </div>
-</header>
+  </header>
 
-<main class="container">
-  <h1>Attendance Calendar</h1>
-  <select id="staffSelect"><option value="">Select Staff</option></select>
-  <div class="month-nav">
-    <button id="prevMonth" class="month-btn">⟨</button>
-    <div id="monthYear">Month Year</div>
-    <button id="nextMonth" class="month-btn">⟩</button>
-  </div>
+  <div class="container">
+    <h1>Attendance Calendar</h1>
 
-  <div id="calendar" class="calendar"></div>
-  <div class="summary" id="salarySummary">Select a staff to view attendance</div>
-
-  <div class="payments-wrap">
-    <div>
-      <strong style="color:var(--accent)">Payments</strong>
-      <div class="payment-list" id="paymentList"></div>
+    <div class="controls">
+      <div class="month-nav">
+        <button id="prevMonth">◀</button>
+        <span id="monthLabel"></span>
+        <button id="nextMonth">▶</button>
+      </div>
+      <select id="staffSelect">
+        <option value="">Select Staff</option>
+      </select>
     </div>
-    <div class="payment-actions">
-      <button id="addPaymentBtn" class="pay-btn">+ Add Payment</button>
-      <button id="deductPaymentBtn" class="deduct-btn">− Deduct</button>
-    </div>
+
+    <!-- Weekday headers -->
+    <div class="calendar" id="weekdays"></div>
+    <!-- Dates -->
+    <div class="calendar" id="calendarGrid"></div>
+
+    <div class="stats" id="stats"></div>
   </div>
-</main>
 
-<!-- Modal -->
-<div id="attendanceModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-title" id="modalTitle">Mark</div>
-    <div class="status-actions">
-      <button class="present" onclick="markAttendance('Present')">Present</button>
-      <button class="half" onclick="markAttendance('Half')">Half</button>
-      <button class="absent" onclick="markAttendance('Absent')">Absent</button>
-      <button class="leave" onclick="markAttendance('Leave')">Leave</button>
-      <button class="ot" onclick="markAttendance('OT')">OT</button>
-      <button class="cancel" onclick="closeModal()">Cancel</button>
-    </div>
-  </div>
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.firebasestorage.app",
-  messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-  measurementId: "G-05HW0KSN38"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-let staffList = [];
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-let selectedStaff = "";
-let selectedDay = null;
-let attendanceCache = {};
+    const monthLabel = document.getElementById("monthLabel");
+    const calendarGrid = document.getElementById("calendarGrid");
+    const weekdaysEl = document.getElementById("weekdays");
 
-const staffSelect = document.getElementById('staffSelect');
-const calendar = document.getElementById('calendar');
-const monthYear = document.getElementById('monthYear');
-const salarySummary = document.getElementById('salarySummary');
-const paymentListEl = document.getElementById('paymentList');
+    const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    weekdaysEl.innerHTML = weekdays.map(day => `<div class="day-header">${day}</div>`).join("");
 
-function fmtKey(s,y,m,d){return `${s}_${y}_${m}_${d}`;}
-function updateMonthYear(){
-  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  monthYear.textContent = `${m[currentMonth]} ${currentYear}`;
-}
+    let currentDate = new Date();
 
-async function loadStaff(){
-  const snap = await db.collection('staff').get();
-  staffList = snap.docs.map(d=>d.data());
-  staffSelect.innerHTML = '<option value="">Select Staff</option>';
-  staffList.forEach(s=>{
-    const o=document.createElement('option');
-    o.value=s.name;o.textContent=s.name;
-    staffSelect.appendChild(o);
-  });
-}
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const firstDayIndex = (firstDay.getDay() + 6) % 7; // Adjust for Monday start
 
-function renderCalendar(){
-  calendar.innerHTML="";
-  const daysInMonth=new Date(currentYear,currentMonth+1,0).getDate();
-  for(let d=1;d<=daysInMonth;d++){
-    const div=document.createElement('div');
-    div.className='day';
-    div.innerHTML=`<div class="num">${d}</div>`;
-    const rec=attendanceCache[fmtKey(selectedStaff,currentYear,currentMonth,d)];
-    if(rec){
-      const dot=document.createElement('div');
-      dot.className='dot';
-      dot.style.background=rec.status==='Present'?'#22c55e':
-                           rec.status==='Half'?'#3b82f6':
-                           rec.status==='Absent'?'#ef4444':
-                           rec.status==='Leave'?'#f59e0b':'#8b5cf6';
-      div.appendChild(dot);
+      monthLabel.textContent = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+      calendarGrid.innerHTML = "";
+
+      // empty cells before first day
+      for (let i = 0; i < firstDayIndex; i++) {
+        calendarGrid.innerHTML += `<div></div>`;
+      }
+
+      // fill days
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "day";
+        dayDiv.textContent = d;
+        dayDiv.onclick = () => markAttendance(d);
+        calendarGrid.appendChild(dayDiv);
+      }
     }
-    div.onclick=()=>openAttendance(d);
-    calendar.appendChild(div);
-  }
-  updateSalarySummary();
-  loadPayments();
-}
 
-function openAttendance(day){
-  selectedDay=day;
-  document.getElementById('attendanceModal').style.display='flex';
-  document.getElementById('modalTitle').textContent=`Mark ${day}/${currentMonth+1}/${currentYear}`;
-}
-function closeModal(){document.getElementById('attendanceModal').style.display='none';}
+    document.getElementById("prevMonth").onclick = () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    };
+    document.getElementById("nextMonth").onclick = () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    };
 
-async function markAttendance(status){
-  if(!selectedStaff)return closeModal();
-  let ot=0;
-  if(status==='OT')ot=parseFloat(prompt('Enter OT amount:','0'))||0;
-  const data={staff:selectedStaff,year:currentYear,month:currentMonth,day:selectedDay,status,ot,timestamp:new Date()};
-  await db.collection('attendance').doc(fmtKey(selectedStaff,currentYear,currentMonth,selectedDay)).set(data);
-  attendanceCache[fmtKey(selectedStaff,currentYear,currentMonth,selectedDay)]=data;
-  closeModal();
-  renderCalendar();
-}
+    renderCalendar();
 
-async function loadAttendance(){
-  attendanceCache={};
-  const q=await db.collection('attendance')
-    .where('staff','==',selectedStaff)
-    .where('year','==',currentYear)
-    .where('month','==',currentMonth).get();
-  q.forEach(d=>attendanceCache[d.id]=d.data());
-}
+    async function loadStaff() {
+      const staffSelect = document.getElementById("staffSelect");
+      const snap = await getDocs(collection(db, "staff"));
+      snap.forEach(doc => {
+        const data = doc.data();
+        const option = document.createElement("option");
+        option.value = data.name;
+        option.textContent = data.name;
+        staffSelect.appendChild(option);
+      });
+    }
 
-async function addPayment(isDeduct=false){
-  if(!selectedStaff)return alert("Select staff first");
-  const val=parseFloat(prompt(isDeduct?"Deduct amount ₹:":"Add amount ₹:","0"));
-  if(!val)return;
-  const data={
-    staff:selectedStaff,
-    year:currentYear,
-    month:currentMonth,
-    amount:isDeduct?-val:val,
-    timestamp:new Date()
-  };
-  await db.collection('payments').add(data);
-  loadPayments();
-}
+    function markAttendance(day) {
+      const staff = document.getElementById("staffSelect").value;
+      if (!staff) return alert("Select a staff first!");
+      alert(`Mark attendance for ${staff} on ${day} ${monthLabel.textContent}`);
+    }
 
-async function deletePayment(id){
-  await db.collection('payments').doc(id).delete();
-  loadPayments();
-}
-
-async function loadPayments(){
-  paymentListEl.innerHTML='Loading...';
-  try{
-    const snap=await db.collection('payments').where('staff','==',selectedStaff).get();
-    const list=[];
-    snap.forEach(d=>{
-      const data=d.data();
-      if(data.year===currentYear&&data.month===currentMonth)list.push({id:d.id,...data});
-    });
-    list.sort((a,b)=>b.timestamp?.seconds-a.timestamp?.seconds);
-    paymentListEl.innerHTML='';
-    if(list.length===0)paymentListEl.innerHTML='<div style="color:var(--muted)">No payments yet.</div>';
-    let total=0;
-    list.forEach(p=>{
-      total+=p.amount;
-      const row=document.createElement('div');
-      row.className='payment-item';
-      row.innerHTML=`<div>${p.amount<0?'-':'+'}₹${Math.abs(p.amount)}</div>
-        <button class="delete-payment" onclick="deletePayment('${p.id}')">Delete</button>`;
-      paymentListEl.appendChild(row);
-    });
-    paymentListEl.dataset.paid=total;
-    updateSalarySummary();
-  }catch(e){
-    console.error(e);
-    paymentListEl.innerHTML='<div style="color:var(--muted)">Unable to load payments</div>';
-  }
-}
-
-function updateSalarySummary(){
-  if(!selectedStaff)return;
-  const s=staffList.find(x=>x.name===selectedStaff);
-  const perDay=(s?.salary||0)/30;
-  let present=0,half=0,ot=0;
-  for(const k in attendanceCache){
-    const v=attendanceCache[k];
-    if(v.status==='Present')present++;
-    if(v.status==='Half')half+=0.5;
-    if(v.status==='OT')ot+=v.ot||0;
-  }
-  const earned=(present+half)*perDay+ot;
-  const paid=parseFloat(paymentListEl.dataset.paid||0);
-  const remaining=earned-paid;
-  salarySummary.textContent=`Per Day: ₹${perDay.toFixed(2)} | Earnings: ₹${earned.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`;
-}
-
-document.getElementById('prevMonth').onclick=async()=>{
-  currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}
-  updateMonthYear();await loadAttendance();renderCalendar();
-};
-document.getElementById('nextMonth').onclick=async()=>{
-  currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}
-  updateMonthYear();await loadAttendance();renderCalendar();
-};
-staffSelect.onchange=async()=>{
-  selectedStaff=staffSelect.value;
-  await loadAttendance();renderCalendar();
-};
-document.getElementById('addPaymentBtn').onclick=()=>addPayment(false);
-document.getElementById('deductPaymentBtn').onclick=()=>addPayment(true);
-document.getElementById('logoutBtn').onclick=()=>{location.href='login.html';};
-
-(async()=>{
-  await loadStaff();
-  updateMonthYear();
-})();
-</script>
+    loadStaff();
+  </script>
 </body>
 </html>
