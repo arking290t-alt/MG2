@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Attendance Calendar | MG</title>
+  <title>Attendance | MG</title>
   <style>
     :root {
       --bg: #0b111b;
@@ -38,7 +38,6 @@
     .stats{margin-top:20px;text-align:center;font-weight:500;color:var(--accent);}
     .payments{margin-top:25px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.1);}
     .payments h3{color:var(--accent);margin-bottom:10px;text-align:center;}
-    .payments button{margin:5px;}
     .payment-entry{background:rgba(255,255,255,0.08);padding:8px 10px;border-radius:8px;margin:5px 0;display:flex;justify-content:space-between;align-items:center;}
     .delete-btn{background:#ef4444;border:none;padding:5px 10px;border-radius:5px;color:white;cursor:pointer;}
   </style>
@@ -72,7 +71,6 @@
       <h3>Payments</h3>
       <div style="text-align:center;">
         <button class="btn" id="addPayment">+ Add Payment</button>
-        <button class="btn" style="background:#f97316;" id="deductPayment">− Deduct</button>
       </div>
       <div id="paymentList" style="margin-top:15px;"></div>
     </div>
@@ -204,7 +202,6 @@
     }
 
     document.getElementById("addPayment").onclick=async()=>{if(!currentStaff)return alert("Select staff first!");const a=prompt("Enter payment amount:");if(!a||isNaN(a))return;await setDoc(doc(db,"payments",`${currentStaff}_${Date.now()}`),{staff:currentStaff,amount:parseFloat(a),date:new Date().toLocaleDateString()});updateStats();};
-    document.getElementById("deductPayment").onclick=async()=>{if(!currentStaff)return alert("Select staff first!");const a=prompt("Enter deduction amount:");if(!a||isNaN(a))return;await setDoc(doc(db,"payments",`${currentStaff}_${Date.now()}`),{staff:currentStaff,amount:-parseFloat(a),date:new Date().toLocaleDateString()});updateStats();};
     document.getElementById("staffSelect").onchange=e=>{currentStaff=e.target.value;statsEl.textContent=currentStaff?`Showing attendance for ${currentStaff}`:"Select a staff";renderCalendar();};
     loadStaff();renderCalendar();
   </script>
