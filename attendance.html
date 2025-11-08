@@ -35,10 +35,10 @@
     .half { background: var(--half) !important; color: #fff; }
     .leave { background: var(--leave) !important; color: #fff; }
     .ot { background: var(--ot) !important; color: #fff; }
-    .stats { margin-top: 15px; text-align: center; font-weight: 500; color: var(--accent); }
+    .stats { margin-top: 20px; text-align: center; font-weight: 500; color: var(--accent); }
     .payments { margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .payments h3 { color: var(--accent); margin-bottom: 10px; }
-    .payments button { margin-right: 10px; }
+    .payments h3 { color: var(--accent); margin-bottom: 10px; text-align: center; }
+    .payments button { margin: 5px; }
     .payment-entry { background: rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; }
     .delete-btn { background: #ef4444; border: none; color: white; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
   </style>
@@ -70,15 +70,17 @@
 
     <div class="payments">
       <h3>Payments</h3>
-      <button class="btn" id="addPayment">+ Add Payment</button>
-      <button class="btn" style="background:#ef4444;" id="deductPayment">− Deduct</button>
+      <div style="text-align:center;">
+        <button class="btn" id="addPayment">+ Add Payment</button>
+        <button class="btn" style="background:#ef4444;" id="deductPayment">− Deduct</button>
+      </div>
       <div id="paymentList"></div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -101,10 +103,10 @@
     const monthLabel = document.getElementById("monthLabel");
     const statsEl = document.getElementById("stats");
     const paymentList = document.getElementById("paymentList");
+
     let currentDate = new Date();
     let currentStaff = "";
 
-    // 🔹 Render Calendar with attendance colors
     async function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
@@ -122,17 +124,19 @@
           where("month", "==", month),
           where("year", "==", year)
         ));
-        snap.forEach(d => attendanceData[d.data().day] = d.data().status);
+        snap.forEach(d => attendanceData[d.data().day] = d.data());
       }
 
       for (let d = 1; d <= lastDay.getDate(); d++) {
         const dayDiv = document.createElement("div");
         dayDiv.className = "day";
         dayDiv.textContent = d;
-        if (attendanceData[d]) dayDiv.classList.add(attendanceData[d]);
+        if (attendanceData[d]) dayDiv.classList.add(attendanceData[d].status);
         dayDiv.onclick = () => markAttendance(d);
         calendarGrid.appendChild(dayDiv);
       }
+
+      if (currentStaff) updateStats();
     }
 
     document.getElementById("prevMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
@@ -150,7 +154,6 @@
       });
     }
 
-    // 🔹 Attendance marking with saving to Firebase (with OT input)
     async function markAttendance(day) {
       if (!currentStaff) return alert("Select a staff first!");
       const modal = document.createElement("div");
@@ -185,7 +188,6 @@
         };
       });
 
-      // OT special input
       modal.querySelector("#o").onclick = async () => {
         const amount = prompt("Enter OT amount (₹):");
         if (!amount || isNaN(amount)) return alert("Enter a valid number!");
@@ -204,10 +206,94 @@
       modal.querySelector("#c").onclick = () => modal.remove();
     }
 
+    async function updateStats() {
+      const month = currentDate.getMonth();
+      const year = currentDate.getFullYear();
+
+      const attendSnap = await getDocs(query(collection(db, "attendance"),
+        where("staff", "==", currentStaff),
+        where("month", "==", month),
+        where("year", "==", year)
+      ));
+
+      const staffSnap = await getDocs(query(collection(db, "staff"), where("name", "==", currentStaff)));
+      let salary = 0;
+      staffSnap.forEach(d => salary = d.data().salary || 0);
+
+      let present = 0, half = 0, otTotal = 0;
+      attendSnap.forEach(d => {
+        const a = d.data();
+        if (a.status === "present") present++;
+        else if (a.status === "half") half += 0.5;
+        else if (a.status === "ot") otTotal += a.otAmount || 0;
+      });
+
+      const perDay = salary / 30;
+      const earned = (present + half) * perDay + otTotal;
+
+      // Get total payments
+      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff)));
+      let paid = 0;
+      paySnap.forEach(p => paid += p.data().amount);
+
+      const remaining = earned - paid;
+
+      statsEl.innerHTML = `
+        Per Day: ₹${perDay.toFixed(2)} | Earned: ₹${earned.toFixed(2)} | OT: ₹${otTotal.toFixed(2)} |
+        Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}
+      `;
+    }
+
+    // 🔹 Payments System
+    document.getElementById("addPayment").onclick = async () => {
+      if (!currentStaff) return alert("Select staff first!");
+      const amount = prompt("Enter payment amount:");
+      if (!amount || isNaN(amount)) return;
+      await addDoc(collection(db, "payments"), {
+        staff: currentStaff,
+        amount: parseFloat(amount),
+        type: "add",
+        date: new Date().toLocaleDateString()
+      });
+      updateStats();
+      loadPayments();
+    };
+
+    document.getElementById("deductPayment").onclick = async () => {
+      if (!currentStaff) return alert("Select staff first!");
+      const amount = prompt("Enter deduction amount:");
+      if (!amount || isNaN(amount)) return;
+      await addDoc(collection(db, "payments"), {
+        staff: currentStaff,
+        amount: -parseFloat(amount),
+        type: "deduct",
+        date: new Date().toLocaleDateString()
+      });
+      updateStats();
+      loadPayments();
+    };
+
+    async function loadPayments() {
+      paymentList.innerHTML = "";
+      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff), orderBy("date")));
+      if (paySnap.empty) {
+        paymentList.innerHTML = "<p style='text-align:center;color:#888;'>No payments yet.</p>";
+        return;
+      }
+      paySnap.forEach(p => {
+        const d = p.data();
+        const div = document.createElement("div");
+        div.className = "payment-entry";
+        div.innerHTML = `<span>${d.date} — ₹${d.amount}</span>`;
+        paymentList.appendChild(div);
+      });
+    }
+
     document.getElementById("staffSelect").onchange = e => {
       currentStaff = e.target.value;
       statsEl.textContent = currentStaff ? `Showing attendance for ${currentStaff}` : "Select a staff to view attendance";
       renderCalendar();
+      loadPayments();
     };
 
     loadStaff();
