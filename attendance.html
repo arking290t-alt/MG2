@@ -21,7 +21,7 @@
     header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1); }
     .logo { color: var(--accent); font-size: 1.5rem; font-weight: 700; }
     .btn { background: var(--accent); border: none; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; }
-    .container { max-width: 1000px; margin: 30px auto; background: var(--card); padding: 25px; border-radius: 14px; box-shadow: 0 8px 30px rgba(0, 180, 255, 0.1); }
+    .container { max-width: 1000px; margin: 30px auto; background: var(--card); padding: 25px; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,180,255,0.1); }
     h1 { text-align: center; color: var(--accent); margin-bottom: 20px; }
     .controls { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
     select, button { padding: 8px 12px; border-radius: 8px; border: none; font-weight: 500; }
@@ -36,6 +36,11 @@
     .leave { background: var(--leave) !important; color: #fff; }
     .ot { background: var(--ot) !important; color: #fff; }
     .stats { margin-top: 20px; text-align: center; font-weight: 500; color: var(--accent); }
+    .payments { margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .payments h3 { color: var(--accent); margin-bottom: 10px; text-align: center; }
+    .payments button { margin: 5px; }
+    .payment-entry { background: rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; }
+    .delete-btn { background: #ef4444; border: none; padding: 5px 10px; border-radius: 5px; color: white; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -46,6 +51,7 @@
 
   <div class="container">
     <h1>Attendance Calendar</h1>
+
     <div class="controls">
       <div class="month-nav">
         <button id="prevMonth">◀</button>
@@ -61,11 +67,20 @@
     <div class="calendar" id="calendarGrid"></div>
 
     <div class="stats" id="stats">Select a staff to view attendance</div>
+
+    <div class="payments">
+      <h3>Payments</h3>
+      <div style="text-align:center;">
+        <button class="btn" id="addPayment">+ Add Payment</button>
+        <button class="btn" style="background:#f97316;" id="deductPayment">− Deduct</button>
+      </div>
+      <div id="paymentList"></div>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -86,9 +101,25 @@
     const calendarGrid = document.getElementById("calendarGrid");
     const monthLabel = document.getElementById("monthLabel");
     const statsEl = document.getElementById("stats");
+    const paymentList = document.getElementById("paymentList");
 
     let currentDate = new Date();
     let currentStaff = "";
+
+    document.getElementById("prevMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
+    document.getElementById("nextMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+
+    async function loadStaff() {
+      const staffSelect = document.getElementById("staffSelect");
+      const snap = await getDocs(collection(db, "staff"));
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const opt = document.createElement("option");
+        opt.value = d.name;
+        opt.textContent = d.name;
+        staffSelect.appendChild(opt);
+      });
+    }
 
     async function renderCalendar() {
       const year = currentDate.getFullYear();
@@ -108,7 +139,7 @@
           where("month", "==", month),
           where("year", "==", year)
         ));
-        snap.forEach(d => attendanceData[d.data().day] = { id: d.id, ...d.data() });
+        snap.forEach(d => attendanceData[d.data().day] = d.data());
       }
 
       for (let d = 1; d <= lastDay.getDate(); d++) {
@@ -119,6 +150,8 @@
         div.onclick = () => markAttendance(d, attendanceData[d]);
         calendarGrid.appendChild(div);
       }
+
+      if (currentStaff) updateStats();
     }
 
     async function markAttendance(day, existingData) {
@@ -148,11 +181,7 @@
           status,
           otAmount
         };
-        if (existingData) {
-          await updateDoc(doc(db, "attendance", existingData.id), data);
-        } else {
-          await setDoc(doc(db, "attendance", `${currentStaff}_${day}_${currentDate.getMonth()}_${currentDate.getFullYear()}`), data);
-        }
+        await setDoc(doc(db, "attendance", `${currentStaff}_${day}_${currentDate.getMonth()}_${currentDate.getFullYear()}`), data);
         modal.remove();
         renderCalendar();
       };
@@ -169,23 +198,96 @@
       modal.querySelector("#c").onclick = () => modal.remove();
     }
 
-    document.getElementById("prevMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-    document.getElementById("nextMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+    async function updateStats() {
+      const month = currentDate.getMonth();
+      const year = currentDate.getFullYear();
 
-    async function loadStaff() {
-      const staffSelect = document.getElementById("staffSelect");
-      const snap = await getDocs(collection(db, "staff"));
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        const opt = document.createElement("option");
-        opt.value = d.name;
-        opt.textContent = d.name;
-        staffSelect.appendChild(opt);
+      const attendSnap = await getDocs(query(collection(db, "attendance"),
+        where("staff", "==", currentStaff),
+        where("month", "==", month),
+        where("year", "==", year)
+      ));
+      const staffSnap = await getDocs(query(collection(db, "staff"), where("name", "==", currentStaff)));
+      let salary = 0;
+      staffSnap.forEach(d => salary = d.data().salary || 0);
+
+      let present = 0, half = 0, otTotal = 0;
+      attendSnap.forEach(d => {
+        const a = d.data();
+        if (a.status === "present") present++;
+        else if (a.status === "half") half += 0.5;
+        else if (a.status === "ot") otTotal += a.otAmount || 0;
+      });
+
+      const perDay = salary / 30;
+      const earned = (present + half) * perDay + otTotal;
+
+      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff)));
+      let paid = 0;
+      paySnap.forEach(p => paid += p.data().amount);
+
+      const remaining = earned - paid;
+
+      statsEl.innerHTML = `
+        Per Day: ₹${perDay.toFixed(2)} | Earned: ₹${earned.toFixed(2)} | OT: ₹${otTotal.toFixed(2)} | Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}
+      `;
+      loadPayments();
+    }
+
+    async function loadPayments() {
+      paymentList.innerHTML = "";
+      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff), orderBy("date")));
+      if (paySnap.empty) {
+        paymentList.innerHTML = "<p style='text-align:center;color:#888;'>No payments yet.</p>";
+        return;
+      }
+      paySnap.forEach(async (p) => {
+        const d = p.data();
+        const div = document.createElement("div");
+        div.className = "payment-entry";
+        div.innerHTML = `
+          <span>${d.date} — ₹${d.amount}</span>
+          <button class="delete-btn">Delete</button>
+        `;
+        div.querySelector(".delete-btn").onclick = async () => {
+          if (confirm("Delete this payment?")) {
+            await deleteDoc(doc(db, "payments", p.id));
+            updateStats();
+          }
+        };
+        paymentList.appendChild(div);
       });
     }
 
+    document.getElementById("addPayment").onclick = async () => {
+      if (!currentStaff) return alert("Select staff first!");
+      const amount = prompt("Enter payment amount:");
+      if (!amount || isNaN(amount)) return;
+      await setDoc(doc(db, "payments", `${currentStaff}_${Date.now()}`), {
+        staff: currentStaff,
+        amount: parseFloat(amount),
+        type: "add",
+        date: new Date().toLocaleDateString()
+      });
+      updateStats();
+    };
+
+    document.getElementById("deductPayment").onclick = async () => {
+      if (!currentStaff) return alert("Select staff first!");
+      const amount = prompt("Enter deduction amount:");
+      if (!amount || isNaN(amount)) return;
+      await setDoc(doc(db, "payments", `${currentStaff}_${Date.now()}`), {
+        staff: currentStaff,
+        amount: -parseFloat(amount),
+        type: "deduct",
+        date: new Date().toLocaleDateString()
+      });
+      updateStats();
+    };
+
     document.getElementById("staffSelect").onchange = e => {
       currentStaff = e.target.value;
+      statsEl.textContent = currentStaff ? `Showing attendance for ${currentStaff}` : "Select a staff to view attendance";
       renderCalendar();
     };
 
