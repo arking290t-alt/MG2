@@ -50,6 +50,7 @@
       getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc
     } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
+    // 🔥 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -66,6 +67,7 @@
     const staffForm = document.getElementById('staffForm');
     const staffListEl = document.getElementById('staffList');
 
+    // Load all staff
     async function loadStaff() {
       staffListEl.innerHTML = "<p style='text-align:center;color:#aaa;'>Loading...</p>";
       const snap = await getDocs(collection(db, "staff"));
@@ -83,45 +85,52 @@
             <strong>${s.name}</strong><br>
             <small>₹${s.salary}/month</small>
           </div>
-          <button data-id="${docSnap.id}">Delete</button>
+          <button data-id="${s.staffId}">Delete</button>
         `;
-        div.querySelector("button").onclick = () => deleteStaff(docSnap.id, s.name);
+        div.querySelector("button").onclick = () => deleteStaff(s.staffId, s.name);
         staffListEl.appendChild(div);
       });
     }
 
+    // Add new staff
     staffForm.onsubmit = async e => {
       e.preventDefault();
       const name = staffForm.staffName.value.trim();
+      const phone = staffForm.staffPhone.value.trim();
       const salary = parseFloat(staffForm.staffSalary.value);
       if (!name || isNaN(salary)) return alert('Enter valid details');
-      const docRef = await addDoc(collection(db, "staff"), { name, salary });
-      const staffId = docRef.id;
 
-      // store the same ID in staff document for linking
-      await setDoc(docRef, { name, salary, staffId });
+      const staffRef = await addDoc(collection(db, "staff"), { name, phone, salary });
+      await setDoc(doc(db, "staff", staffRef.id), { name, phone, salary, staffId: staffRef.id });
 
       staffForm.reset();
       loadStaff();
     };
 
+    // Delete staff + all related attendance and payments
     async function deleteStaff(staffId, staffName) {
-      if (!confirm(`Delete ${staffName}? All attendance and payments will be deleted!`)) return;
+      if (!confirm(`Delete ${staffName}? All attendance and payments will also be deleted!`)) return;
       try {
+        // Delete the staff document
         await deleteDoc(doc(db, "staff", staffId));
 
-        // delete attendance & payments by staffId
+        // Delete attendance linked with staffId
         const attSnap = await getDocs(query(collection(db, "attendance"), where("staffId", "==", staffId)));
-        attSnap.forEach(async d => await deleteDoc(doc(db, "attendance", d.id)));
+        for (const a of attSnap.docs) {
+          await deleteDoc(doc(db, "attendance", a.id));
+        }
 
+        // Delete payments linked with staffId
         const paySnap = await getDocs(query(collection(db, "payments"), where("staffId", "==", staffId)));
-        paySnap.forEach(async d => await deleteDoc(doc(db, "payments", d.id)));
+        for (const p of paySnap.docs) {
+          await deleteDoc(doc(db, "payments", p.id));
+        }
 
-        alert(`✅ Deleted ${staffName} and all their data.`);
+        alert(`✅ Deleted ${staffName} and all their data permanently.`);
         loadStaff();
-      } catch (e) {
-        console.error(e);
-        alert("Error deleting staff");
+      } catch (err) {
+        console.error("Error deleting staff:", err);
+        alert("Failed to delete staff. Check console for details.");
       }
     }
 
