@@ -36,11 +36,6 @@
     .leave { background: var(--leave) !important; color: #fff; }
     .ot { background: var(--ot) !important; color: #fff; }
     .stats { margin-top: 20px; text-align: center; font-weight: 500; color: var(--accent); }
-    .payments { margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .payments h3 { color: var(--accent); margin-bottom: 10px; text-align: center; }
-    .payments button { margin: 5px; }
-    .payment-entry { background: rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 8px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; }
-    .delete-btn { background: #ef4444; border: none; color: white; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -51,7 +46,6 @@
 
   <div class="container">
     <h1>Attendance Calendar</h1>
-
     <div class="controls">
       <div class="month-nav">
         <button id="prevMonth">◀</button>
@@ -67,20 +61,11 @@
     <div class="calendar" id="calendarGrid"></div>
 
     <div class="stats" id="stats">Select a staff to view attendance</div>
-
-    <div class="payments">
-      <h3>Payments</h3>
-      <div style="text-align:center;">
-        <button class="btn" id="addPayment">+ Add Payment</button>
-        <button class="btn" style="background:#ef4444;" id="deductPayment">− Deduct</button>
-      </div>
-      <div id="paymentList"></div>
-    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -96,13 +81,11 @@
     const db = getFirestore(app);
 
     const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const weekdaysEl = document.getElementById("weekdays");
-    weekdaysEl.innerHTML = weekdays.map(day => `<div class='day-header'>${day}</div>`).join("");
+    document.getElementById("weekdays").innerHTML = weekdays.map(d => `<div class='day-header'>${d}</div>`).join("");
 
     const calendarGrid = document.getElementById("calendarGrid");
     const monthLabel = document.getElementById("monthLabel");
     const statsEl = document.getElementById("stats");
-    const paymentList = document.getElementById("paymentList");
 
     let currentDate = new Date();
     let currentStaff = "";
@@ -114,6 +97,7 @@
       const lastDay = new Date(year, month + 1, 0);
       const firstDayIndex = (firstDay.getDay() + 6) % 7;
       monthLabel.textContent = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+
       calendarGrid.innerHTML = "";
       for (let i = 0; i < firstDayIndex; i++) calendarGrid.innerHTML += `<div></div>`;
 
@@ -124,38 +108,22 @@
           where("month", "==", month),
           where("year", "==", year)
         ));
-        snap.forEach(d => attendanceData[d.data().day] = d.data());
+        snap.forEach(d => attendanceData[d.data().day] = { id: d.id, ...d.data() });
       }
 
       for (let d = 1; d <= lastDay.getDate(); d++) {
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "day";
-        dayDiv.textContent = d;
-        if (attendanceData[d]) dayDiv.classList.add(attendanceData[d].status);
-        dayDiv.onclick = () => markAttendance(d);
-        calendarGrid.appendChild(dayDiv);
+        const div = document.createElement("div");
+        div.className = "day";
+        div.textContent = d;
+        if (attendanceData[d]) div.classList.add(attendanceData[d].status);
+        div.onclick = () => markAttendance(d, attendanceData[d]);
+        calendarGrid.appendChild(div);
       }
-
-      if (currentStaff) updateStats();
     }
 
-    document.getElementById("prevMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-    document.getElementById("nextMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
-
-    async function loadStaff() {
-      const staffSelect = document.getElementById("staffSelect");
-      const snap = await getDocs(collection(db, "staff"));
-      snap.forEach(docSnap => {
-        const data = docSnap.data();
-        const option = document.createElement("option");
-        option.value = data.name;
-        option.textContent = data.name;
-        staffSelect.appendChild(option);
-      });
-    }
-
-    async function markAttendance(day) {
+    async function markAttendance(day, existingData) {
       if (!currentStaff) return alert("Select a staff first!");
+
       const modal = document.createElement("div");
       modal.innerHTML = `
         <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -171,129 +139,54 @@
         </div>`;
       document.body.appendChild(modal);
 
-      const statusMap = { p: "present", h: "half", a: "absent", l: "leave" };
-
-      Object.keys(statusMap).forEach(key => {
-        modal.querySelector(`#${key}`).onclick = async () => {
-          await addDoc(collection(db, "attendance"), {
-            staff: currentStaff,
-            day,
-            month: currentDate.getMonth(),
-            year: currentDate.getFullYear(),
-            status: statusMap[key],
-            otAmount: 0
-          });
-          modal.remove();
-          renderCalendar();
-        };
-      });
-
-      modal.querySelector("#o").onclick = async () => {
-        const amount = prompt("Enter OT amount (₹):");
-        if (!amount || isNaN(amount)) return alert("Enter a valid number!");
-        await addDoc(collection(db, "attendance"), {
+      const saveStatus = async (status, otAmount = 0) => {
+        const data = {
           staff: currentStaff,
           day,
           month: currentDate.getMonth(),
           year: currentDate.getFullYear(),
-          status: "ot",
-          otAmount: parseFloat(amount)
-        });
+          status,
+          otAmount
+        };
+        if (existingData) {
+          await updateDoc(doc(db, "attendance", existingData.id), data);
+        } else {
+          await setDoc(doc(db, "attendance", `${currentStaff}_${day}_${currentDate.getMonth()}_${currentDate.getFullYear()}`), data);
+        }
         modal.remove();
         renderCalendar();
       };
 
+      modal.querySelector("#p").onclick = () => saveStatus("present");
+      modal.querySelector("#h").onclick = () => saveStatus("half");
+      modal.querySelector("#a").onclick = () => saveStatus("absent");
+      modal.querySelector("#l").onclick = () => saveStatus("leave");
+      modal.querySelector("#o").onclick = () => {
+        const amount = prompt("Enter OT amount (₹):");
+        if (!amount || isNaN(amount)) return alert("Enter valid number!");
+        saveStatus("ot", parseFloat(amount));
+      };
       modal.querySelector("#c").onclick = () => modal.remove();
     }
 
-    async function updateStats() {
-      const month = currentDate.getMonth();
-      const year = currentDate.getFullYear();
+    document.getElementById("prevMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
+    document.getElementById("nextMonth").onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
 
-      const attendSnap = await getDocs(query(collection(db, "attendance"),
-        where("staff", "==", currentStaff),
-        where("month", "==", month),
-        where("year", "==", year)
-      ));
-
-      const staffSnap = await getDocs(query(collection(db, "staff"), where("name", "==", currentStaff)));
-      let salary = 0;
-      staffSnap.forEach(d => salary = d.data().salary || 0);
-
-      let present = 0, half = 0, otTotal = 0;
-      attendSnap.forEach(d => {
-        const a = d.data();
-        if (a.status === "present") present++;
-        else if (a.status === "half") half += 0.5;
-        else if (a.status === "ot") otTotal += a.otAmount || 0;
-      });
-
-      const perDay = salary / 30;
-      const earned = (present + half) * perDay + otTotal;
-
-      // Get total payments
-      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff)));
-      let paid = 0;
-      paySnap.forEach(p => paid += p.data().amount);
-
-      const remaining = earned - paid;
-
-      statsEl.innerHTML = `
-        Per Day: ₹${perDay.toFixed(2)} | Earned: ₹${earned.toFixed(2)} | OT: ₹${otTotal.toFixed(2)} |
-        Paid: ₹${paid.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}
-      `;
-    }
-
-    // 🔹 Payments System
-    document.getElementById("addPayment").onclick = async () => {
-      if (!currentStaff) return alert("Select staff first!");
-      const amount = prompt("Enter payment amount:");
-      if (!amount || isNaN(amount)) return;
-      await addDoc(collection(db, "payments"), {
-        staff: currentStaff,
-        amount: parseFloat(amount),
-        type: "add",
-        date: new Date().toLocaleDateString()
-      });
-      updateStats();
-      loadPayments();
-    };
-
-    document.getElementById("deductPayment").onclick = async () => {
-      if (!currentStaff) return alert("Select staff first!");
-      const amount = prompt("Enter deduction amount:");
-      if (!amount || isNaN(amount)) return;
-      await addDoc(collection(db, "payments"), {
-        staff: currentStaff,
-        amount: -parseFloat(amount),
-        type: "deduct",
-        date: new Date().toLocaleDateString()
-      });
-      updateStats();
-      loadPayments();
-    };
-
-    async function loadPayments() {
-      paymentList.innerHTML = "";
-      const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", currentStaff), orderBy("date")));
-      if (paySnap.empty) {
-        paymentList.innerHTML = "<p style='text-align:center;color:#888;'>No payments yet.</p>";
-        return;
-      }
-      paySnap.forEach(p => {
-        const d = p.data();
-        const div = document.createElement("div");
-        div.className = "payment-entry";
-        div.innerHTML = `<span>${d.date} — ₹${d.amount}</span>`;
-        paymentList.appendChild(div);
+    async function loadStaff() {
+      const staffSelect = document.getElementById("staffSelect");
+      const snap = await getDocs(collection(db, "staff"));
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const opt = document.createElement("option");
+        opt.value = d.name;
+        opt.textContent = d.name;
+        staffSelect.appendChild(opt);
       });
     }
 
     document.getElementById("staffSelect").onchange = e => {
       currentStaff = e.target.value;
-      statsEl.textContent = currentStaff ? `Showing attendance for ${currentStaff}` : "Select a staff to view attendance";
       renderCalendar();
-      loadPayments();
     };
 
     loadStaff();
