@@ -2,53 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Staff | MG</title>
   <style>
     :root {
       --bg: #0b111b;
-      --card: rgba(255,255,255,0.05);
+      --card: rgba(255, 255, 255, 0.05);
       --accent: #00b4ff;
       --text: #e2e8f0;
     }
-    * {box-sizing:border-box;font-family:'Poppins',sans-serif;}
+
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
     body {
       background: var(--bg);
       color: var(--text);
       margin: 0;
     }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 15px 25px;
-      background: rgba(255,255,255,0.05);
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .logo {color: var(--accent); font-size: 1.5rem; font-weight: 700;}
-    .btn {background: var(--accent); border: none; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600;}
+
+    .logo {
+      color: var(--accent);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     .container {
       max-width: 700px;
       margin: 40px auto;
       background: var(--card);
       padding: 25px;
       border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+      box-shadow: 0 8px 30px rgba(0, 180, 255, 0.1);
     }
-    h1 {text-align: center; color: var(--accent);}
-    form {display: flex; flex-direction: column; gap: 12px; margin-top: 15px;}
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
     input {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
       padding: 10px;
       border-radius: 8px;
       color: white;
       font-size: 1rem;
     }
-    input[type="file"] {
-      background: rgba(255,255,255,0.1);
-      padding: 8px;
-    }
+
     button {
       background: var(--accent);
       border: none;
@@ -58,9 +88,13 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .staff-list {margin-top: 20px;}
+
+    .staff-list {
+      margin-top: 20px;
+    }
+
     .staff-item {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255, 255, 255, 0.08);
       border-radius: 8px;
       padding: 10px 15px;
       margin-bottom: 10px;
@@ -68,13 +102,7 @@
       justify-content: space-between;
       align-items: center;
     }
-    .staff-item img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 10px;
-      object-fit: cover;
-    }
+
     .staff-item button {
       background: #ef4444;
       border: none;
@@ -85,6 +113,7 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <div class="logo">MG</div>
@@ -101,7 +130,6 @@
       <input id="staffPhone" type="text" placeholder="Phone (optional)" />
       <input id="staffAddress" type="text" placeholder="Address (optional)" />
       <input id="staffSalary" type="number" placeholder="Salary / month" required />
-      <input id="staffPhoto" type="file" accept="image/*" />
       <button type="submit">Add Staff</button>
     </form>
 
@@ -112,7 +140,6 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     // 🔥 Your Firebase Config
     const firebaseConfig = {
@@ -128,7 +155,6 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
     const staffForm = document.getElementById("staffForm");
     const staffListEl = document.getElementById("staffList");
@@ -140,24 +166,15 @@
       const phone = staffForm.staffPhone.value.trim();
       const address = staffForm.staffAddress.value.trim();
       const salary = parseFloat(staffForm.staffSalary.value);
-      const photoFile = staffForm.staffPhoto.files[0];
 
       if (!name || isNaN(salary)) return alert("Enter valid details");
 
-      let photoURL = "";
       try {
-        if (photoFile) {
-          const photoRef = ref(storage, `staff_photos/${Date.now()}_${photoFile.name}`);
-          const snap = await uploadBytes(photoRef, photoFile);
-          photoURL = await getDownloadURL(snap.ref);
-        }
-
         await addDoc(collection(db, "staff"), {
           name,
           phone,
           address,
           salary,
-          photoURL,
           timestamp: new Date()
         });
 
@@ -177,17 +194,13 @@
       staffListEl.innerHTML = "";
       querySnapshot.forEach((docItem) => {
         const s = docItem.data();
-        const img = s.photoURL ? `<img src="${s.photoURL}" alt="${s.name}">` : "";
         staffListEl.innerHTML += `
           <div class="staff-item">
-            <div style="display:flex;align-items:center;">
-              ${img}
-              <div>
-                <strong>${s.name}</strong><br>
-                <small>₹${s.salary}/month</small><br>
-                ${s.phone ? `<small>${s.phone}</small><br>` : ""}
-                ${s.address ? `<small>${s.address}</small>` : ""}
-              </div>
+            <div>
+              <strong>${s.name}</strong><br>
+              <small>₹${s.salary}/month</small><br>
+              ${s.phone ? `<small>${s.phone}</small><br>` : ""}
+              ${s.address ? `<small>${s.address}</small>` : ""}
             </div>
             <button onclick="deleteStaff('${docItem.id}')">Delete</button>
           </div>
