@@ -1,119 +1,80 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Staff | MG</title>
   <style>
     :root {
       --bg: #0b111b;
-      --card: rgba(255, 255, 255, 0.05);
+      --card: rgba(255,255,255,0.05);
       --accent: #00b4ff;
       --text: #e2e8f0;
     }
-
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      margin:0;
     }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:15px 25px;
+      background:rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.1);
     }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 25px;
-      background: rgba(255, 255, 255, 0.05);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
+    .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;}
+    .container{
+      max-width:700px;
+      margin:40px auto;
+      background:var(--card);
+      padding:25px;
+      border-radius:14px;
+      box-shadow:0 8px 30px rgba(0,180,255,0.1);
     }
-
-    .logo {
-      color: var(--accent);
-      font-size: 1.5rem;
-      font-weight: 700;
+    h1{text-align:center;color:var(--accent);}
+    form{display:flex;flex-direction:column;gap:12px;margin-top:15px;}
+    input{
+      background:rgba(255,255,255,0.08);
+      border:none;
+      padding:10px;
+      border-radius:8px;
+      color:white;
+      font-size:1rem;
     }
-
-    .btn {
-      background: var(--accent);
-      border: none;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      cursor: pointer;
+    button{
+      background:var(--accent);
+      border:none;
+      padding:10px;
+      color:white;
+      border-radius:8px;
+      font-weight:600;
+      cursor:pointer;
     }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background: var(--card);
-      padding: 25px;
-      border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0, 180, 255, 0.1);
+    .staff-list{margin-top:20px;}
+    .staff-item{
+      background:rgba(255,255,255,0.08);
+      border-radius:8px;
+      padding:10px 15px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
     }
-
-    h1 {
-      text-align: center;
-      color: var(--accent);
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 15px;
-    }
-
-    input {
-      background: rgba(255, 255, 255, 0.08);
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      color: white;
-      font-size: 1rem;
-    }
-
-    button {
-      background: var(--accent);
-      border: none;
-      padding: 10px;
-      color: white;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .staff-list {
-      margin-top: 20px;
-    }
-
-    .staff-item {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 10px 15px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .staff-item button {
-      background: #ef4444;
-      border: none;
-      padding: 6px 10px;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
+    .staff-item button{
+      background:#ef4444;
+      border:none;
+      padding:6px 10px;
+      color:white;
+      border-radius:5px;
+      cursor:pointer;
     }
   </style>
 </head>
-
 <body>
   <header>
     <div class="logo">MG</div>
@@ -128,7 +89,6 @@
     <form id="staffForm">
       <input id="staffName" type="text" placeholder="Staff name" required />
       <input id="staffPhone" type="text" placeholder="Phone (optional)" />
-      <input id="staffAddress" type="text" placeholder="Address (optional)" />
       <input id="staffSalary" type="number" placeholder="Salary / month" required />
       <button type="submit">Add Staff</button>
     </form>
@@ -136,90 +96,86 @@
     <div id="staffList" class="staff-list"></div>
   </div>
 
-  <!-- ✅ FIREBASE CODE -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-    // 🔥 Your Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
       projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.appspot.com",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
       messagingSenderId: "330667005987",
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const staffForm = document.getElementById("staffForm");
-    const staffListEl = document.getElementById("staffList");
+    const staffForm = document.getElementById('staffForm');
+    const staffListEl = document.getElementById('staffList');
 
-    // 🧩 Add staff
-    staffForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const name = staffForm.staffName.value.trim();
-      const phone = staffForm.staffPhone.value.trim();
-      const address = staffForm.staffAddress.value.trim();
-      const salary = parseFloat(staffForm.staffSalary.value);
-
-      if (!name || isNaN(salary)) return alert("Enter valid details");
-
-      try {
-        await addDoc(collection(db, "staff"), {
-          name,
-          phone,
-          address,
-          salary,
-          timestamp: new Date()
-        });
-
-        alert("✅ Staff added successfully!");
-        staffForm.reset();
-        loadStaff();
-      } catch (err) {
-        console.error("Error adding staff:", err);
-        alert("❌ Failed to add staff. Check console.");
-      }
-    };
-
-    // 📋 Load staff
     async function loadStaff() {
       staffListEl.innerHTML = "<p style='text-align:center;color:#aaa;'>Loading...</p>";
-      const querySnapshot = await getDocs(collection(db, "staff"));
+      const snap = await getDocs(collection(db, "staff"));
       staffListEl.innerHTML = "";
-      querySnapshot.forEach((docItem) => {
-        const s = docItem.data();
-        staffListEl.innerHTML += `
-          <div class="staff-item">
-            <div>
-              <strong>${s.name}</strong><br>
-              <small>₹${s.salary}/month</small><br>
-              ${s.phone ? `<small>${s.phone}</small><br>` : ""}
-              ${s.address ? `<small>${s.address}</small>` : ""}
-            </div>
-            <button onclick="deleteStaff('${docItem.id}')">Delete</button>
+      if (snap.empty) {
+        staffListEl.innerHTML = "<p style='text-align:center;color:#aaa;'>No staff added yet.</p>";
+        return;
+      }
+      snap.forEach(docSnap => {
+        const s = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "staff-item";
+        div.innerHTML = `
+          <div>
+            <strong>${s.name}</strong><br>
+            <small>₹${s.salary}/month</small>
           </div>
+          <button data-id="${docSnap.id}">Delete</button>
         `;
+        div.querySelector("button").onclick = () => deleteStaff(docSnap.id, s.name);
+        staffListEl.appendChild(div);
       });
     }
 
-    // 🗑 Delete staff
-    window.deleteStaff = async (id) => {
-      if (!confirm("Delete this staff?")) return;
-      await deleteDoc(doc(db, "staff", id));
-      alert("Staff deleted.");
+    staffForm.onsubmit = async e => {
+      e.preventDefault();
+      const name = staffForm.staffName.value.trim();
+      const salary = parseFloat(staffForm.staffSalary.value);
+      if (!name || isNaN(salary)) return alert('Enter valid details');
+      await addDoc(collection(db, "staff"), { name, salary });
+      staffForm.reset();
       loadStaff();
     };
 
-    // 🚪 Logout
-    document.getElementById("logoutBtn").onclick = () => {
-      localStorage.removeItem("loggedInUser");
-      location.href = "login.html";
+    async function deleteStaff(staffId, staffName) {
+      if (!confirm(`Delete ${staffName}? All data will be removed!`)) return;
+
+      try {
+        // 1️⃣ Delete staff document
+        await deleteDoc(doc(db, "staff", staffId));
+
+        // 2️⃣ Delete attendance linked to this staff
+        const attendSnap = await getDocs(query(collection(db, "attendance"), where("staff", "==", staffName)));
+        attendSnap.forEach(async (d) => await deleteDoc(doc(db, "attendance", d.id)));
+
+        // 3️⃣ Delete payments linked to this staff
+        const paySnap = await getDocs(query(collection(db, "payments"), where("staff", "==", staffName)));
+        paySnap.forEach(async (d) => await deleteDoc(doc(db, "payments", d.id)));
+
+        alert(`✅ Deleted ${staffName} and all related data.`);
+        loadStaff();
+      } catch (err) {
+        console.error("Error deleting staff:", err);
+        alert("Failed to delete staff. Check console.");
+      }
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('loggedInUser');
+      location.href = 'login.html';
     };
 
     loadStaff();
