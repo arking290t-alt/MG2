@@ -33,6 +33,7 @@
       padding: 8px 14px;
       border-radius: 8px;
       text-decoration: none;
+      font-weight: 500;
     }
 
     .container {
@@ -46,25 +47,44 @@
     h1 {
       text-align: center;
       color: #00b4ff;
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+    }
+
+    .job-main {
+      text-align: center;
       margin-bottom: 30px;
     }
 
-    /* Timeline container */
+    .job-name {
+      font-size: 1.5rem;
+      color: #00b4ff;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .job-type {
+      font-size: 1rem;
+      color: #9fc7e6;
+      margin-top: 5px;
+      text-transform: capitalize;
+    }
+
+    /* --- Category Timeline --- */
     .timeline {
       position: relative;
       margin: 30px auto;
       padding-left: 50px;
       border-left: 3px solid #00b4ff;
+      width: fit-content;
     }
 
-    /* Each job item */
     .timeline-item {
       position: relative;
-      margin: 40px 0;
-      padding-left: 20px;
+      margin: 30px 0;
+      padding-left: 25px;
     }
 
-    /* Blue dot */
     .timeline-item::before {
       content: "";
       position: absolute;
@@ -77,31 +97,25 @@
       box-shadow: 0 0 10px #00b4ff;
     }
 
-    .timeline-label {
-      font-weight: 600;
+    .timeline-item h3 {
       color: #00b4ff;
-      margin-right: 8px;
-      font-size: 1rem;
+      font-size: 1.1rem;
+      margin: 0;
     }
 
-    .timeline-value {
-      color: #e0e0e0;
-      font-size: 1rem;
-      font-weight: 500;
+    .timeline-item p {
+      color: #ccc;
+      margin: 3px 0 0;
+      font-size: 0.95rem;
     }
 
-    .timeline-line {
-      position: absolute;
-      left: -3px;
-      top: 22px;
-      width: 3px;
-      height: 40px;
-      background: rgba(0,180,255,0.3);
-    }
-
-    @media (max-width:600px) {
-      .timeline { padding-left: 40px; }
-      .timeline-item { margin: 30px 0; }
+    @media (max-width: 600px) {
+      .timeline {
+        padding-left: 35px;
+      }
+      .timeline-item {
+        padding-left: 15px;
+      }
     }
   </style>
 </head>
@@ -113,6 +127,12 @@
 
   <div class="container">
     <h1>Job Detail</h1>
+
+    <div class="job-main">
+      <div class="job-name" id="jobName">Loading...</div>
+      <div class="job-type" id="jobType">Loading...</div>
+    </div>
+
     <div id="timeline" class="timeline"></div>
   </div>
 
@@ -132,37 +152,35 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    const jobNameEl = document.getElementById("jobName");
+    const jobTypeEl = document.getElementById("jobType");
     const timeline = document.getElementById("timeline");
 
     async function loadJob() {
       const jobId = localStorage.getItem("selectedJob");
       if (!jobId) {
-        timeline.innerHTML = "<p style='text-align:center;color:#888;'>No job selected.</p>";
+        jobNameEl.textContent = "No job selected";
+        jobTypeEl.textContent = "";
         return;
       }
 
       const snap = await getDoc(doc(db, "jobs", jobId));
       if (!snap.exists()) {
-        timeline.innerHTML = "<p style='text-align:center;color:#888;'>Job not found.</p>";
+        jobNameEl.textContent = "Job not found";
+        jobTypeEl.textContent = "";
         return;
       }
 
       const j = snap.data();
+      jobNameEl.textContent = j.name;
+      jobTypeEl.textContent = j.type;
 
+      // Only category under timeline
       timeline.innerHTML = `
         <div class="timeline-item">
-          <span class="timeline-label">Job Name:</span>
-          <span class="timeline-value">${j.name}</span>
-          <div class="timeline-line"></div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-label">Job Type:</span>
-          <span class="timeline-value">${j.type}</span>
-          <div class="timeline-line"></div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-label">Category:</span>
-          <span class="timeline-value">${j.category}</span>
+          <h3>${j.category}</h3>
+          <p>Category</p>
         </div>
       `;
     }
