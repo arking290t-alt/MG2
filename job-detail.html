@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Job Detail | MG</title>
+  <style>
+    body {background:#0b111b;color:#fff;font-family:'Poppins',sans-serif;margin:0;}
+    header {display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);}
+    .logo {color:#00b4ff;font-size:1.5rem;font-weight:700;}
+    .btn {background:#00b4ff;border:none;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;}
+    .container {max-width:700px;margin:40px auto;padding:25px;background:rgba(255,255,255,0.04);border-radius:14px;}
+    .timeline {position:relative;margin:20px auto;padding-left:40px;border-left:3px solid #00b4ff;}
+    .timeline-item {margin:20px 0;position:relative;}
+    .timeline-item::before {
+      content:"";
+      position:absolute;
+      left:-10px;
+      top:5px;
+      width:16px;
+      height:16px;
+      background:#00b4ff;
+      border-radius:50%;
+      box-shadow:0 0 10px #00b4ff;
+    }
+    .timeline-item h3 {margin:0;color:#00b4ff;}
+    .timeline-item p {color:#ccc;margin:4px 0 0;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">MG</div>
+    <a href="jobs.html" class="btn">← Back</a>
+  </header>
+
+  <div class="container">
+    <h1 style="text-align:center;color:#00b4ff;">Job Detail</h1>
+    <div id="timeline" class="timeline"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const timeline = document.getElementById("timeline");
+
+    async function loadJob() {
+      const jobId = localStorage.getItem("selectedJob");
+      if(!jobId) return (timeline.innerHTML="<p style='text-align:center;color:#888;'>No job selected.</p>");
+      const snap = await getDoc(doc(db,"jobs",jobId));
+      if(!snap.exists()) return (timeline.innerHTML="<p style='text-align:center;color:#888;'>Job not found.</p>");
+      const j = snap.data();
+
+      timeline.innerHTML = `
+        <div class="timeline-item"><h3>${j.name}</h3><p>Job Name</p></div>
+        <div class="timeline-item"><h3>${j.type}</h3><p>Job Type</p></div>
+        <div class="timeline-item"><h3>${j.category}</h3><p>Category</p></div>
+      `;
+    }
+
+    loadJob();
+  </script>
+</body>
+</html>
