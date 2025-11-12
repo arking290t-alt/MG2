@@ -20,65 +20,17 @@
     .container{max-width:900px;margin:30px auto;background:var(--card);padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);}
     h1{text-align:center;color:var(--accent);margin-bottom:20px;}
     .form-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;justify-content:center;}
-    input,select{background:var(--panel);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;min-width:160px;}
+    input,select{background:var(--panel);border:1px solid rgba(255,255,255,0.1);color:white;padding:8px 10px;border-radius:8px;min-width:140px;}
     input[type="date"]{color:#ccc;}
     label{font-size:0.9rem;color:#a8c9e6;}
     .category-list,.job-list{margin-top:20px;}
     .category-item,.job-item{background:rgba(255,255,255,0.07);padding:10px 12px;border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;}
-    .delete-btn{background:#ef4444;border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;}
-    .view-btn{background:#00b4ff;border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;}
-    .job-item span{color:var(--accent);font-weight:600;}
+    .delete-btn{background:#ef4444;border:none;color:white;border-radius:6px;padding:5px 8px;cursor:pointer;}
+    .job-item span{color:var(--accent);font-weight:600;cursor:pointer;}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px;}
+    .checkbox-group label{display:flex;align-items:center;gap:6px;font-size:0.9rem;color:#cce5ff;background:rgba(255,255,255,0.05);padding:6px 10px;border-radius:8px;}
+    .checkbox-group input{accent-color:var(--accent);}
     hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;}
-    .category-grid {
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:12px;
-      margin:12px 0 18px;
-    }
-    .category-option {
-      background:rgba(255,255,255,0.07);
-      border:2px solid rgba(255,255,255,0.1);
-      color:#cce5ff;
-      border-radius:12px;
-      padding:10px 18px;
-      cursor:pointer;
-      transition:0.3s;
-      font-weight:500;
-      user-select:none;
-    }
-    .category-option.active {
-      background:var(--accent);
-      color:#fff;
-      border-color:var(--accent);
-      box-shadow:0 0 10px rgba(0,180,255,0.3);
-    }
-    .category-option:hover { border-color:var(--accent); }
-
-    .filter-row {
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:10px;
-      margin:20px 0;
-    }
-    .filter-row button {
-      background:transparent;
-      border:1px solid rgba(255,255,255,0.1);
-      padding:8px 12px;
-      color:#fff;
-      border-radius:8px;
-      cursor:pointer;
-    }
-    .filter-row button:hover {
-      border-color:var(--accent);
-      color:var(--accent);
-    }
-
-    @media(max-width:720px){
-      .form-row{gap:8px;}
-      input{min-width:120px;}
-    }
   </style>
 </head>
 <body>
@@ -97,21 +49,14 @@
       <input type="date" id="jobDate" />
     </div>
 
-    <label style="display:block;text-align:center;">Select Categories:</label>
-    <div id="categoryGrid" class="category-grid"></div>
+    <label style="display:block;text-align:center;">Select Job Categories:</label>
+    <div id="categoryCheckboxes" class="checkbox-group"></div>
 
     <div style="text-align:center;margin-top:10px;">
       <button id="addJob" class="btn">Add Job</button>
     </div>
 
     <hr/>
-
-    <!-- Job Filter -->
-    <h3 style="text-align:center;color:var(--accent);">Filter by Date</h3>
-    <div class="filter-row">
-      <input type="month" id="monthFilter" />
-      <button id="clearFilter">Clear</button>
-    </div>
 
     <!-- Job List -->
     <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">All Jobs</h3>
@@ -120,9 +65,9 @@
     <hr/>
 
     <!-- Category Manager -->
-    <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">Manage Categories</h3>
+    <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">Manage Job Categories</h3>
     <div class="form-row">
-      <input type="text" id="newCategory" placeholder="New Category" />
+      <input type="text" id="newCategory" placeholder="New Job Category" />
       <button id="addCategory" class="btn">Add Category</button>
     </div>
     <div id="categoryList" class="category-list"></div>
@@ -147,131 +92,110 @@
 
     const jobList = document.getElementById("jobList");
     const categoryList = document.getElementById("categoryList");
-    const categoryGrid = document.getElementById("categoryGrid");
-    const monthFilter = document.getElementById("monthFilter");
-    const clearFilter = document.getElementById("clearFilter");
+    const categoryCheckboxes = document.getElementById("categoryCheckboxes");
 
     let categories = [];
-    let selectedCategories = [];
-    let allJobs = [];
 
+    // Load Job Categories (from "jobCategories")
     async function loadCategories() {
-      const snap = await getDocs(collection(db, "categories"));
+      const snap = await getDocs(collection(db, "jobCategories"));
       categories = snap.docs.map(d => d.data().name);
       renderCategories();
     }
 
     function renderCategories() {
-      categoryGrid.innerHTML = categories.map(c => `
-        <div class="category-option" data-cat="${c}">${c}</div>
+      // Category checkboxes for job creation
+      categoryCheckboxes.innerHTML = categories.map(c => `
+        <label><input type="checkbox" value="${c}"> ${c}</label>
       `).join("");
 
+      // Category list for management
       categoryList.innerHTML = categories.map(c => `
         <div class="category-item">
           <span>${c}</span>
           <button class="delete-btn" onclick="deleteCategory('${c}')">Delete</button>
         </div>
       `).join("");
-
-      document.querySelectorAll(".category-option").forEach(el => {
-        el.addEventListener("click", () => {
-          el.classList.toggle("active");
-          const val = el.getAttribute("data-cat");
-          if (el.classList.contains("active")) selectedCategories.push(val);
-          else selectedCategories = selectedCategories.filter(v => v !== val);
-        });
-      });
     }
 
+    // Add Job Category
     document.getElementById("addCategory").onclick = async () => {
       const val = document.getElementById("newCategory").value.trim();
       if (!val) return alert("Enter category name");
       if (categories.includes(val)) return alert("Already exists");
-      await addDoc(collection(db, "categories"), { name: val });
+      await addDoc(collection(db, "jobCategories"), { name: val });
       document.getElementById("newCategory").value = "";
       loadCategories();
     };
 
+    // Delete Job Category
     window.deleteCategory = async (name) => {
-      if (!confirm(`Delete category "${name}"?`)) return;
-      const snap = await getDocs(collection(db, "categories"));
+      if (!confirm(`Delete job category "${name}"?`)) return;
+      const snap = await getDocs(collection(db, "jobCategories"));
       const docToDel = snap.docs.find(d => d.data().name === name);
-      if (docToDel) await deleteDoc(doc(db, "categories", docToDel.id));
+      if (docToDel) await deleteDoc(doc(db, "jobCategories", docToDel.id));
       loadCategories();
     };
 
+    // Add Job
     document.getElementById("addJob").onclick = async () => {
       const name = document.getElementById("jobName").value.trim();
       const type = document.getElementById("jobType").value.trim();
       const date = document.getElementById("jobDate").value;
+      const selectedCats = Array.from(document.querySelectorAll('#categoryCheckboxes input:checked')).map(el => el.value);
 
-      if (!name || !type || !date || selectedCategories.length === 0)
+      if (!name || !type || !date || selectedCats.length === 0)
         return alert("Please fill all fields and select at least one category.");
 
       await addDoc(collection(db, "jobs"), {
         name, type, date,
-        categories: selectedCategories,
+        categories: selectedCats.map(c => ({ name: c, done: false })),
         created: new Date().toISOString()
       });
 
       document.getElementById("jobName").value = "";
       document.getElementById("jobType").value = "";
       document.getElementById("jobDate").value = "";
-      selectedCategories = [];
       loadJobs();
-      renderCategories();
     };
 
+    // Load Jobs
     async function loadJobs() {
       const snap = await getDocs(collection(db, "jobs"));
-      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderJobs();
-    }
-
-    function renderJobs() {
-      jobList.innerHTML = "";
-      const filterMonth = monthFilter.value;
-
-      const jobsToShow = !filterMonth
-        ? allJobs
-        : allJobs.filter(j => j.date && j.date.startsWith(filterMonth));
-
-      if (jobsToShow.length === 0) {
-        jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs for selected date.</p>";
+      if (snap.empty) {
+        jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs yet.</p>";
         return;
       }
 
-      jobsToShow.forEach(j => {
+      jobList.innerHTML = "";
+      snap.forEach(d => {
+        const j = d.data();
         const div = document.createElement("div");
         div.className = "job-item";
         div.innerHTML = `
-          <div>
-            <span>${j.name}</span><br>
-            <small>${j.type} | ${j.date}</small><br>
-            <small>${j.categories.join(", ")}</small>
+          <span onclick="openJob('${d.id}')">${j.name}</span>
+          <div style="text-align:right;font-size:0.85rem;">
+            ${j.date}<br>
+            <small>${j.categories.map(c => c.name).join(", ")}</small>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button class="view-btn" onclick="openJob('${j.id}')">View</button>
-            <button class="delete-btn" onclick="deleteJob('${j.id}')">Delete</button>
-          </div>
+          <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
         `;
         jobList.appendChild(div);
       });
     }
 
+    // Delete Job
     window.deleteJob = async (id) => {
       if (!confirm("Delete this job?")) return;
       await deleteDoc(doc(db, "jobs", id));
       loadJobs();
     };
 
+    // Open Job Detail
     window.openJob = (id) => {
       localStorage.setItem("selectedJob", id);
       window.location.href = "job-detail.html";
     };
-
-    monthFilter.onchange = renderJobs;
-    clearFilter.onclick = () => { monthFilter.value = ""; renderJobs(); };
 
     loadCategories();
     loadJobs();
