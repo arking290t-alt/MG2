@@ -20,17 +20,50 @@
     .container{max-width:900px;margin:30px auto;background:var(--card);padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);}
     h1{text-align:center;color:var(--accent);margin-bottom:20px;}
     .form-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;justify-content:center;}
-    input,select{background:var(--panel);border:1px solid rgba(255,255,255,0.1);color:white;padding:8px 10px;border-radius:8px;min-width:140px;}
+    input,select{background:var(--panel);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;min-width:160px;}
     input[type="date"]{color:#ccc;}
     label{font-size:0.9rem;color:#a8c9e6;}
     .category-list,.job-list{margin-top:20px;}
     .category-item,.job-item{background:rgba(255,255,255,0.07);padding:10px 12px;border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;}
-    .delete-btn{background:#ef4444;border:none;color:white;border-radius:6px;padding:5px 8px;cursor:pointer;}
-    .job-item span{color:var(--accent);font-weight:600;cursor:pointer;}
-    .checkbox-group{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px;}
-    .checkbox-group label{display:flex;align-items:center;gap:6px;font-size:0.9rem;color:#cce5ff;}
-    .checkbox-group input{accent-color:var(--accent);}
+    .delete-btn{background:#ef4444;border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;}
+    .view-btn{background:#00b4ff;border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;}
+    .job-item span{color:var(--accent);font-weight:600;}
     hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;}
+
+    /* --- Category Selector --- */
+    .category-grid {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:12px;
+      margin:12px 0 18px;
+    }
+
+    .category-option {
+      background:rgba(255,255,255,0.07);
+      border:2px solid rgba(255,255,255,0.1);
+      color:#cce5ff;
+      border-radius:12px;
+      padding:10px 18px;
+      cursor:pointer;
+      transition:0.3s;
+      font-weight:500;
+      user-select:none;
+    }
+    .category-option.active {
+      background:var(--accent);
+      color:#fff;
+      border-color:var(--accent);
+      box-shadow:0 0 10px rgba(0,180,255,0.3);
+    }
+    .category-option:hover {
+      border-color:var(--accent);
+    }
+
+    @media(max-width:720px){
+      .form-row{gap:8px;}
+      input{min-width:120px;}
+    }
   </style>
 </head>
 <body>
@@ -50,7 +83,7 @@
     </div>
 
     <label style="display:block;text-align:center;">Select Categories:</label>
-    <div id="categoryCheckboxes" class="checkbox-group"></div>
+    <div id="categoryGrid" class="category-grid"></div>
 
     <div style="text-align:center;margin-top:10px;">
       <button id="addJob" class="btn">Add Job</button>
@@ -75,7 +108,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -92,11 +125,10 @@
 
     const jobList = document.getElementById("jobList");
     const categoryList = document.getElementById("categoryList");
-    const categoryCheckboxes = document.getElementById("categoryCheckboxes");
-
+    const categoryGrid = document.getElementById("categoryGrid");
     let categories = [];
+    let selectedCategories = [];
 
-    // Load categories
     async function loadCategories() {
       const snap = await getDocs(collection(db, "categories"));
       categories = snap.docs.map(d => d.data().name);
@@ -104,21 +136,27 @@
     }
 
     function renderCategories() {
-      // Category checkboxes
-      categoryCheckboxes.innerHTML = categories.map(c => `
-        <label><input type="checkbox" value="${c}"> ${c}</label>
+      categoryGrid.innerHTML = categories.map(c => `
+        <div class="category-option" data-cat="${c}">${c}</div>
       `).join("");
 
-      // Category list for delete
       categoryList.innerHTML = categories.map(c => `
         <div class="category-item">
           <span>${c}</span>
           <button class="delete-btn" onclick="deleteCategory('${c}')">Delete</button>
         </div>
       `).join("");
+
+      document.querySelectorAll(".category-option").forEach(el => {
+        el.addEventListener("click", () => {
+          el.classList.toggle("active");
+          const val = el.getAttribute("data-cat");
+          if (el.classList.contains("active")) selectedCategories.push(val);
+          else selectedCategories = selectedCategories.filter(v => v !== val);
+        });
+      });
     }
 
-    // Add Category
     document.getElementById("addCategory").onclick = async () => {
       const val = document.getElementById("newCategory").value.trim();
       if (!val) return alert("Enter category name");
@@ -128,7 +166,6 @@
       loadCategories();
     };
 
-    // Delete Category
     window.deleteCategory = async (name) => {
       if (!confirm(`Delete category "${name}"?`)) return;
       const snap = await getDocs(collection(db, "categories"));
@@ -137,61 +174,60 @@
       loadCategories();
     };
 
-    // Add Job
     document.getElementById("addJob").onclick = async () => {
       const name = document.getElementById("jobName").value.trim();
       const type = document.getElementById("jobType").value.trim();
       const date = document.getElementById("jobDate").value;
-      const selectedCats = Array.from(document.querySelectorAll('#categoryCheckboxes input:checked')).map(el => el.value);
 
-      if (!name || !type || !date || selectedCats.length === 0)
+      if (!name || !type || !date || selectedCategories.length === 0)
         return alert("Please fill all fields and select at least one category.");
 
       await addDoc(collection(db, "jobs"), {
         name, type, date,
-        categories: selectedCats,
+        categories: selectedCategories,
         created: new Date().toISOString()
       });
 
       document.getElementById("jobName").value = "";
       document.getElementById("jobType").value = "";
       document.getElementById("jobDate").value = "";
+      selectedCategories = [];
       loadJobs();
+      renderCategories();
     };
 
-    // Load Jobs
     async function loadJobs() {
       const snap = await getDocs(collection(db, "jobs"));
       if (snap.empty) {
         jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs yet.</p>";
         return;
       }
-
       jobList.innerHTML = "";
       snap.forEach(d => {
         const j = d.data();
         const div = document.createElement("div");
         div.className = "job-item";
         div.innerHTML = `
-          <span onclick="openJob('${d.id}')">${j.name}</span>
-          <div style="text-align:right;font-size:0.85rem;">
-            ${j.date}<br>
+          <div>
+            <span>${j.name}</span><br>
+            <small>${j.type} | ${j.date}</small><br>
             <small>${j.categories.join(", ")}</small>
           </div>
-          <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
+          <div style="display:flex;gap:8px;">
+            <button class="view-btn" onclick="openJob('${d.id}')">View</button>
+            <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
+          </div>
         `;
         jobList.appendChild(div);
       });
     }
 
-    // Delete Job
     window.deleteJob = async (id) => {
       if (!confirm("Delete this job?")) return;
       await deleteDoc(doc(db, "jobs", id));
       loadJobs();
     };
 
-    // Open Job Detail
     window.openJob = (id) => {
       localStorage.setItem("selectedJob", id);
       window.location.href = "job-detail.html";
