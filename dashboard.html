@@ -17,23 +17,45 @@
   <main class="dashboard-center">
     <div class="dashboard-box">
       <h2 class="welcome">Welcome</h2>
-      <p class="subtitle">Manage staff, attendance and payments</p>
+      <p class="subtitle">Manage staff, attendance, payments, and jobs</p>
 
       <div class="dashboard-grid">
-        <a href="staff.html" class="dashboard-card"><h3>Staff</h3><p>Manage & add staff</p></a>
-        <a href="attendance.html" class="dashboard-card"><h3>Attendance</h3><p>Open attendance</p></a>
-        <a href="expenses.html" class="dashboard-card"><h3>Expenses</h3><p>Track business expenses</p></a>
+        <a href="staff.html" class="dashboard-card">
+          <h3>Staff</h3>
+          <p>Manage & add staff</p>
+        </a>
+
+        <a href="attendance.html" class="dashboard-card">
+          <h3>Attendance</h3>
+          <p>Open attendance</p>
+        </a>
+
+        <a href="expenses.html" class="dashboard-card">
+          <h3>Expenses</h3>
+          <p>Track business expenses</p>
+        </a>
+
+        <a href="jobs.html" class="dashboard-card">
+          <h3>Job Update</h3>
+          <p>Add, manage & track job details</p>
+        </a>
       </div>
 
       <div style="margin-top:18px;">
-        <button id="migrateBtn" class="migrate-btn" style="display:none">Migrate Local Data → Firestore</button>
+        <button id="migrateBtn" class="migrate-btn" style="display:none">
+          Migrate Local Data → Firestore
+        </button>
         <span id="migrateStatus" class="small"></span>
       </div>
     </div>
   </main>
 
   <script type="module">
-    // firebase init
+    // Firebase initialization
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getFirestore, getDoc, doc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -43,9 +65,6 @@
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
     };
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -55,89 +74,88 @@
     const migrateBtn = document.getElementById("migrateBtn");
     const migrateStatus = document.getElementById("migrateStatus");
 
+    // Authentication check
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return location.href = "login.html";
-      // check role
-      const uDocRef = doc(db, "users", user.uid);
-      const uDoc = await (await uDocRef.get?.() ? uDocRef.get() : null).catch(()=>null);
-      // approach for browsers without get: use getDoc
-    });
-
-    // simpler safe approach:
-    import { getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-    onAuthStateChanged(auth, async (user)=> {
-      if (!user) return location.href="login.html";
-      const s = await getDoc(doc(db, "users", user.uid));
-      const role = s.exists() && s.data().role ? s.data().role : "staff";
+      if (!user) return (location.href = "login.html");
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const role = snap.exists() && snap.data().role ? snap.data().role : "staff";
       if (role === "owner") migrateBtn.style.display = "inline-block";
     });
 
-    logoutBtn.onclick = async () => { await signOut(auth); location.href = "login.html"; };
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      location.href = "login.html";
+    };
 
-    // MIGRATION: copy from localStorage into Firestore (one-time)
+    // Data migration (optional feature)
     migrateBtn.onclick = async () => {
       if (!confirm("This will upload your localStorage data to Firestore. Proceed?")) return;
       migrateStatus.textContent = "Migrating...";
       try {
-        // load local keys from old app
         const staffList = JSON.parse(localStorage.getItem("staffList")) || [];
         const attendanceData = JSON.parse(localStorage.getItem("attendanceData")) || {};
         const paymentListData = JSON.parse(localStorage.getItem("paymentListData")) || {};
-        const paymentData = JSON.parse(localStorage.getItem("paymentData")) || {};
         const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
         const categories = JSON.parse(localStorage.getItem("categories")) || [];
 
-        // upload staff
+        // Upload staff
         for (const s of staffList) {
-          await addDoc(collection(db, "staff"), { name: s.name, phone: s.phone || "", salary: s.salary || 0 });
+          await addDoc(collection(db, "staff"), {
+            name: s.name,
+            phone: s.phone || "",
+            salary: s.salary || 0,
+          });
         }
 
-        // upload attendance (attendanceData keys: staffName_year_month_day)
-        for (const k in attendanceData) {
-          try {
-            const parts = k.split("_");
-            const staffName = parts[0];
-            const year = parseInt(parts[1]);
-            const month = parseInt(parts[2]);
-            const day = parseInt(parts[3]);
-            const rec = attendanceData[k];
-            // find staffId by name
-            // simple approach: store staffName in doc for manual fix later
-            await addDoc(collection(db, "attendance"), {
-              staffName, year, month, day, status: rec.status, ot: rec.ot || 0, migratedAt: new Date().toISOString()
-            });
-          } catch(e){ console.warn(e); }
+        // Upload attendance
+        for (const key in attendanceData) {
+          const parts = key.split("_");
+          if (parts.length < 4) continue;
+          const staffName = parts[0];
+          const year = parseInt(parts[1]);
+          const month = parseInt(parts[2]);
+          const day = parseInt(parts[3]);
+          const rec = attendanceData[key];
+          await addDoc(collection(db, "attendance"), {
+            staffName,
+            year,
+            month,
+            day,
+            status: rec.status,
+            ot: rec.ot || 0,
+            migratedAt: new Date().toISOString(),
+          });
         }
 
-        // payments: paymentListData has arrays per staff_month
-        for (const k in paymentListData) {
-          const arr = paymentListData[k] || [];
+        // Upload payments
+        for (const key in paymentListData) {
+          const arr = paymentListData[key] || [];
+          const parts = key.split("_");
+          const staffName = parts[0];
+          const year = parseInt(parts[1]);
+          const month = parseInt(parts[2]);
           for (const p of arr) {
-            // k format: staffName_year_month
-            const parts = k.split("_");
-            const staffName = parts[0];
-            const year = parseInt(parts[1]);
-            const month = parseInt(parts[2]);
             await addDoc(collection(db, "payments"), {
-              staffName, year, month, amount: p.amount, type: p.amount < 0 ? "deduct" : "add", date: p.date || new Date().toISOString(), migratedAt: new Date().toISOString()
+              staffName,
+              year,
+              month,
+              amount: p.amount,
+              date: p.date || new Date().toISOString(),
+              migratedAt: new Date().toISOString(),
             });
           }
         }
 
-        // expenses & categories
-        for (const c of categories) {
-          await addDoc(collection(db, "categories"), { name: c });
-        }
-        for (const ex of expenses) {
-          await addDoc(collection(db, "expenses"), ex);
-        }
+        // Upload categories and expenses
+        for (const c of categories) await addDoc(collection(db, "categories"), { name: c });
+        for (const e of expenses) await addDoc(collection(db, "expenses"), e);
 
-        migrateStatus.textContent = "Migration complete — check data in Firestore.";
-        alert("Migration completed successfully.");
-      } catch (e) {
-        console.error(e);
-        migrateStatus.textContent = "Migration failed: " + e.message;
-        alert("Migration failed: " + e.message);
+        migrateStatus.textContent = "✅ Migration complete!";
+        alert("Migration successful!");
+      } catch (err) {
+        console.error(err);
+        migrateStatus.textContent = "❌ Migration failed!";
+        alert("Migration failed: " + err.message);
       }
     };
   </script>
