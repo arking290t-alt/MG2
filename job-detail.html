@@ -1,118 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Job Detail | MG</title>
   <style>
-    body {
-      background: #0b111b;
-      color: #fff;
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --panel:#0e1724;
+      --done:#22c55e;
     }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 25px;
-      background: rgba(255,255,255,0.05);
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{background:var(--bg);color:var(--text);margin:0;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);}
+    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
+    .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;cursor:pointer;}
+    .container{max-width:700px;margin:40px auto;background:var(--card);padding:30px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);text-align:center;}
+    h1{color:var(--accent);margin-bottom:10px;}
+    h2{color:var(--accent);margin-bottom:0;}
+    p{margin-top:2px;color:#ccc;}
+    .timeline{margin-top:30px;position:relative;padding-left:40px;text-align:left;}
+    .timeline::before{content:"";position:absolute;left:22px;top:0;bottom:0;width:2px;background:var(--accent);}
+    .stage{display:flex;align-items:center;margin-bottom:20px;position:relative;}
+    .dot{width:16px;height:16px;border-radius:50%;background:var(--accent);margin-right:10px;transition:0.3s;}
+    .dot.done{background:var(--done);}
+    .stage-content{display:flex;flex-direction:column;}
+    .stage-content span{font-weight:600;color:var(--accent);}
+    .btn-row{margin-top:6px;}
+    .mark-btn,.unmark-btn{
+      background:rgba(255,255,255,0.05);
+      border:1px solid var(--accent);
+      color:var(--accent);
+      padding:4px 10px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:0.8rem;
+      margin-right:5px;
     }
-
-    .logo {
-      color: #00b4ff;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .btn {
-      background: #00b4ff;
-      border: none;
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 25px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 14px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #00b4ff;
-      margin-bottom: 10px;
-      font-size: 1.8rem;
-    }
-
-    .job-main {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .job-name {
-      font-size: 1.5rem;
-      color: #00b4ff;
-      font-weight: 700;
-      text-transform: capitalize;
-    }
-
-    .job-type {
-      font-size: 1rem;
-      color: #9fc7e6;
-      margin-top: 5px;
-      text-transform: capitalize;
-    }
-
-    /* --- Category Timeline --- */
-    .timeline-wrapper {
-      display: flex;
-      justify-content: flex-start;
-      padding-left: 40px;
-    }
-
-    .timeline {
-      position: relative;
-      padding-left: 40px;
-      border-left: 3px solid #00b4ff;
-      width: fit-content;
-    }
-
-    .timeline-item {
-      position: relative;
-      margin: 25px 0;
-      padding-left: 25px;
-    }
-
-    .timeline-item::before {
-      content: "";
-      position: absolute;
-      left: -11px;
-      top: 4px;
-      width: 16px;
-      height: 16px;
-      background: #00b4ff;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #00b4ff;
-    }
-
-    .timeline-item h3 {
-      color: #00b4ff;
-      font-size: 1.1rem;
-      margin: 0;
-    }
-
-    .timeline-item p {
-      color: #ccc;
-      margin: 3px 0 0;
-      font-size: 0.95rem;
-    }
+    .mark-btn:hover{background:var(--done);color:#fff;border-color:var(--done);}
+    .unmark-btn:hover{background:rgba(255,255,255,0.08);}
   </style>
 </head>
 <body>
@@ -123,20 +52,15 @@
 
   <div class="container">
     <h1>Job Detail</h1>
+    <h2 id="jobName"></h2>
+    <p id="jobType"></p>
 
-    <div class="job-main">
-      <div class="job-name" id="jobName">Loading...</div>
-      <div class="job-type" id="jobType">Loading...</div>
-    </div>
-
-    <div class="timeline-wrapper">
-      <div id="timeline" class="timeline"></div>
-    </div>
+    <div class="timeline" id="categoryTimeline"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -151,30 +75,68 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const jobId = localStorage.getItem("selectedJob");
     const jobNameEl = document.getElementById("jobName");
     const jobTypeEl = document.getElementById("jobType");
-    const timeline = document.getElementById("timeline");
+    const categoryTimeline = document.getElementById("categoryTimeline");
 
     async function loadJob() {
-      const jobId = localStorage.getItem("selectedJob");
-      if (!jobId) return;
+      if (!jobId) {
+        categoryTimeline.innerHTML = "<p>No job selected.</p>";
+        return;
+      }
 
-      const snap = await getDoc(doc(db, "jobs", jobId));
-      if (!snap.exists()) return;
+      const docRef = doc(db, "jobs", jobId);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        categoryTimeline.innerHTML = "<p>Job not found.</p>";
+        return;
+      }
 
-      const j = snap.data();
-      jobNameEl.textContent = j.name;
-      jobTypeEl.textContent = j.type;
+      const job = snap.data();
+      jobNameEl.textContent = job.name;
+      jobTypeEl.textContent = job.type;
 
-      // handle multiple categories (array)
-      const categories = Array.isArray(j.categories) ? j.categories : [j.category];
+      if (!job.categories) return;
 
-      timeline.innerHTML = categories.map(c => `
-        <div class="timeline-item">
-          <h3>${c}</h3>
-          <p>Category</p>
-        </div>
-      `).join('');
+      // Support both array of strings or array of objects
+      const categories = job.categories.map(c => 
+        typeof c === "string" ? { name: c, done: false } : c
+      );
+
+      categoryTimeline.innerHTML = "";
+      categories.forEach((cat, i) => {
+        const div = document.createElement("div");
+        div.className = "stage";
+        div.innerHTML = `
+          <div class="dot ${cat.done ? "done" : ""}"></div>
+          <div class="stage-content">
+            <span>${cat.name}</span>
+            <small>Category</small>
+            <div class="btn-row">
+              <button class="mark-btn">Mark Done</button>
+              <button class="unmark-btn">Not Yet Done</button>
+            </div>
+          </div>
+        `;
+        const markBtn = div.querySelector(".mark-btn");
+        const unmarkBtn = div.querySelector(".unmark-btn");
+        const dot = div.querySelector(".dot");
+
+        markBtn.onclick = async () => {
+          categories[i].done = true;
+          dot.classList.add("done");
+          await updateDoc(docRef, { categories });
+        };
+
+        unmarkBtn.onclick = async () => {
+          categories[i].done = false;
+          dot.classList.remove("done");
+          await updateDoc(docRef, { categories });
+        };
+
+        categoryTimeline.appendChild(div);
+      });
     }
 
     loadJob();
