@@ -29,8 +29,6 @@
     .view-btn{background:#00b4ff;border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;}
     .job-item span{color:var(--accent);font-weight:600;}
     hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;}
-
-    /* --- Category Selector --- */
     .category-grid {
       display:flex;
       flex-wrap:wrap;
@@ -38,7 +36,6 @@
       gap:12px;
       margin:12px 0 18px;
     }
-
     .category-option {
       background:rgba(255,255,255,0.07);
       border:2px solid rgba(255,255,255,0.1);
@@ -56,8 +53,26 @@
       border-color:var(--accent);
       box-shadow:0 0 10px rgba(0,180,255,0.3);
     }
-    .category-option:hover {
+    .category-option:hover { border-color:var(--accent); }
+
+    .filter-row {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      margin:20px 0;
+    }
+    .filter-row button {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.1);
+      padding:8px 12px;
+      color:#fff;
+      border-radius:8px;
+      cursor:pointer;
+    }
+    .filter-row button:hover {
       border-color:var(--accent);
+      color:var(--accent);
     }
 
     @media(max-width:720px){
@@ -90,6 +105,13 @@
     </div>
 
     <hr/>
+
+    <!-- Job Filter -->
+    <h3 style="text-align:center;color:var(--accent);">Filter by Date</h3>
+    <div class="filter-row">
+      <input type="month" id="monthFilter" />
+      <button id="clearFilter">Clear</button>
+    </div>
 
     <!-- Job List -->
     <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">All Jobs</h3>
@@ -126,8 +148,12 @@
     const jobList = document.getElementById("jobList");
     const categoryList = document.getElementById("categoryList");
     const categoryGrid = document.getElementById("categoryGrid");
+    const monthFilter = document.getElementById("monthFilter");
+    const clearFilter = document.getElementById("clearFilter");
+
     let categories = [];
     let selectedCategories = [];
+    let allJobs = [];
 
     async function loadCategories() {
       const snap = await getDocs(collection(db, "categories"));
@@ -198,13 +224,24 @@
 
     async function loadJobs() {
       const snap = await getDocs(collection(db, "jobs"));
-      if (snap.empty) {
-        jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs yet.</p>";
+      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderJobs();
+    }
+
+    function renderJobs() {
+      jobList.innerHTML = "";
+      const filterMonth = monthFilter.value;
+
+      const jobsToShow = !filterMonth
+        ? allJobs
+        : allJobs.filter(j => j.date && j.date.startsWith(filterMonth));
+
+      if (jobsToShow.length === 0) {
+        jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs for selected date.</p>";
         return;
       }
-      jobList.innerHTML = "";
-      snap.forEach(d => {
-        const j = d.data();
+
+      jobsToShow.forEach(j => {
         const div = document.createElement("div");
         div.className = "job-item";
         div.innerHTML = `
@@ -214,8 +251,8 @@
             <small>${j.categories.join(", ")}</small>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="view-btn" onclick="openJob('${d.id}')">View</button>
-            <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
+            <button class="view-btn" onclick="openJob('${j.id}')">View</button>
+            <button class="delete-btn" onclick="deleteJob('${j.id}')">Delete</button>
           </div>
         `;
         jobList.appendChild(div);
@@ -232,6 +269,9 @@
       localStorage.setItem("selectedJob", id);
       window.location.href = "job-detail.html";
     };
+
+    monthFilter.onchange = renderJobs;
+    clearFilter.onclick = () => { monthFilter.value = ""; renderJobs(); };
 
     loadCategories();
     loadJobs();
