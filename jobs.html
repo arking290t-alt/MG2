@@ -1,1 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Jobs | MG</title>
+  <style>
+    body {
+      background:#0b111b;
+      color:#fff;
+      font-family:'Poppins',sans-serif;
+      margin:0;
+    }
+    header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:rgba(255,255,255,0.05);
+      padding:15px 25px;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    .logo {color:#00b4ff;font-size:1.5rem;font-weight:700;}
+    .btn {background:#00b4ff;border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;text-decoration:none;}
+    .container {max-width:900px;margin:30px auto;background:rgba(255,255,255,0.04);padding:25px;border-radius:14px;}
+    h1 {text-align:center;color:#00b4ff;}
+    input, select {
+      background:rgba(255,255,255,0.1);
+      border:none;
+      color:#fff;
+      padding:10px;
+      border-radius:8px;
+      width:100%;
+    }
+    .form-row {display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;}
+    .form-row input, .form-row select {flex:1;}
+    .job-list {margin-top:25px;}
+    .job-item {
+      background:rgba(255,255,255,0.06);
+      border-radius:8px;
+      padding:12px 15px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .job-item small {color:#a7c7e2;}
+    .delete-btn {background:#ef4444;border:none;color:white;padding:5px 10px;border-radius:5px;cursor:pointer;}
+    .category-list {display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;}
+    .cat-item {background:rgba(255,255,255,0.05);padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;}
+    .cat-item button {background:#ef4444;border:none;color:white;padding:3px 6px;border-radius:4px;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">MG</div>
+    <a href="dashboard.html" class="btn">← Dashboard</a>
+  </header>
 
+  <div class="container">
+    <h1>Job Update</h1>
+
+    <div class="form-row">
+      <input type="text" id="jobName" placeholder="Job Name" />
+      <input type="text" id="jobType" placeholder="Job Type" />
+      <select id="jobCategory"></select>
+      <button id="addJob" class="btn">Add Job</button>
+    </div>
+
+    <div style="text-align:center;margin-top:15px;">
+      <input type="text" id="newCategory" placeholder="New Category Name" style="padding:8px 10px;border-radius:6px;border:none;width:200px;background:rgba(255,255,255,0.1);color:#fff;">
+      <button id="addCategory" class="btn">Add Category</button>
+    </div>
+
+    <div class="category-list" id="categoryList"></div>
+    <div class="job-list" id="jobList"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const jobListEl = document.getElementById("jobList");
+    const jobCategory = document.getElementById("jobCategory");
+    const categoryListEl = document.getElementById("categoryList");
+
+    let categories = [];
+
+    async function loadCategories() {
+      const snap = await getDocs(collection(db, "jobCategories"));
+      categories = snap.docs.map(d => d.data().name);
+      renderCategories();
+    }
+
+    function renderCategories() {
+      jobCategory.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      categoryListEl.innerHTML = categories.map(c => `
+        <div class="cat-item">${c} <button onclick="deleteCategory('${c}')">x</button></div>
+      `).join('');
+    }
+
+    document.getElementById("addCategory").onclick = async () => {
+      const val = document.getElementById("newCategory").value.trim();
+      if(!val) return alert("Enter a category name");
+      await addDoc(collection(db, "jobCategories"), { name: val });
+      loadCategories();
+      document.getElementById("newCategory").value = "";
+    };
+
+    window.deleteCategory = async (name) => {
+      const snap = await getDocs(collection(db, "jobCategories"));
+      const del = snap.docs.find(d => d.data().name === name);
+      if(del) await deleteDoc(doc(db, "jobCategories", del.id));
+      loadCategories();
+    };
+
+    async function loadJobs() {
+      const snap = await getDocs(collection(db, "jobs"));
+      jobListEl.innerHTML = "";
+      if(snap.empty) {
+        jobListEl.innerHTML = "<p style='text-align:center;color:#888;'>No jobs added yet.</p>";
+        return;
+      }
+      snap.forEach(d => {
+        const j = d.data();
+        const div = document.createElement("div");
+        div.className = "job-item";
+        div.innerHTML = `
+          <div>
+            <strong>${j.name}</strong><br>
+            <small>${j.type} | ${j.category}</small>
+          </div>
+          <div>
+            <button class="btn" onclick="viewJob('${d.id}')">View</button>
+            <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
+          </div>`;
+        jobListEl.appendChild(div);
+      });
+    }
+
+    document.getElementById("addJob").onclick = async () => {
+      const name = document.getElementById("jobName").value.trim();
+      const type = document.getElementById("jobType").value.trim();
+      const cat = jobCategory.value;
+      if(!name || !type || !cat) return alert("Fill all fields!");
+      await addDoc(collection(db, "jobs"), { name, type, category: cat, created: new Date().toISOString() });
+      loadJobs();
+      document.getElementById("jobName").value = "";
+      document.getElementById("jobType").value = "";
+    };
+
+    window.deleteJob = async (id) => {
+      if(confirm("Delete this job?")) await deleteDoc(doc(db, "jobs", id));
+      loadJobs();
+    };
+
+    window.viewJob = (id) => {
+      localStorage.setItem("selectedJob", id);
+      location.href = "job-detail.html";
+    };
+
+    loadCategories();
+    loadJobs();
+  </script>
+</body>
+</html>
