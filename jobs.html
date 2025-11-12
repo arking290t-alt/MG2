@@ -1,53 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Jobs | MG</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Update | MG</title>
   <style>
-    body {
-      background:#0b111b;
-      color:#fff;
-      font-family:'Poppins',sans-serif;
-      margin:0;
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --panel:#0e1724;
     }
-    header {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      background:rgba(255,255,255,0.05);
-      padding:15px 25px;
-      border-bottom:1px solid rgba(255,255,255,0.1);
-    }
-    .logo {color:#00b4ff;font-size:1.5rem;font-weight:700;}
-    .btn {background:#00b4ff;border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;text-decoration:none;}
-    .container {max-width:900px;margin:30px auto;background:rgba(255,255,255,0.04);padding:25px;border-radius:14px;}
-    h1 {text-align:center;color:#00b4ff;}
-    input, select {
-      background:rgba(255,255,255,0.1);
-      border:none;
-      color:#fff;
-      padding:10px;
-      border-radius:8px;
-      width:100%;
-    }
-    .form-row {display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;}
-    .form-row input, .form-row select {flex:1;}
-    .job-list {margin-top:25px;}
-    .job-item {
-      background:rgba(255,255,255,0.06);
-      border-radius:8px;
-      padding:12px 15px;
-      margin-bottom:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    .job-item small {color:#a7c7e2;}
-    .delete-btn {background:#ef4444;border:none;color:white;padding:5px 10px;border-radius:5px;cursor:pointer;}
-    .category-list {display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;}
-    .cat-item {background:rgba(255,255,255,0.05);padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;}
-    .cat-item button {background:#ef4444;border:none;color:white;padding:3px 6px;border-radius:4px;cursor:pointer;}
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{background:var(--bg);color:var(--text);margin:0;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);}
+    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
+    .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;cursor:pointer;}
+    .container{max-width:900px;margin:30px auto;background:var(--card);padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);}
+    h1{text-align:center;color:var(--accent);margin-bottom:20px;}
+    .form-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;justify-content:center;}
+    input,select{background:var(--panel);border:1px solid rgba(255,255,255,0.1);color:white;padding:8px 10px;border-radius:8px;min-width:140px;}
+    input[type="date"]{color:#ccc;}
+    label{font-size:0.9rem;color:#a8c9e6;}
+    .category-list,.job-list{margin-top:20px;}
+    .category-item,.job-item{background:rgba(255,255,255,0.07);padding:10px 12px;border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;}
+    .delete-btn{background:#ef4444;border:none;color:white;border-radius:6px;padding:5px 8px;cursor:pointer;}
+    .job-item span{color:var(--accent);font-weight:600;cursor:pointer;}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px;}
+    .checkbox-group label{display:flex;align-items:center;gap:6px;font-size:0.9rem;color:#cce5ff;}
+    .checkbox-group input{accent-color:var(--accent);}
+    hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;}
   </style>
 </head>
 <body>
@@ -59,25 +42,40 @@
   <div class="container">
     <h1>Job Update</h1>
 
+    <!-- Add Job Form -->
     <div class="form-row">
       <input type="text" id="jobName" placeholder="Job Name" />
       <input type="text" id="jobType" placeholder="Job Type" />
-      <select id="jobCategory"></select>
+      <input type="date" id="jobDate" />
+    </div>
+
+    <label style="display:block;text-align:center;">Select Categories:</label>
+    <div id="categoryCheckboxes" class="checkbox-group"></div>
+
+    <div style="text-align:center;margin-top:10px;">
       <button id="addJob" class="btn">Add Job</button>
     </div>
 
-    <div style="text-align:center;margin-top:15px;">
-      <input type="text" id="newCategory" placeholder="New Category Name" style="padding:8px 10px;border-radius:6px;border:none;width:200px;background:rgba(255,255,255,0.1);color:#fff;">
+    <hr/>
+
+    <!-- Job List -->
+    <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">All Jobs</h3>
+    <div id="jobList" class="job-list"></div>
+
+    <hr/>
+
+    <!-- Category Manager -->
+    <h3 style="text-align:center;color:var(--accent);margin-bottom:10px;">Manage Categories</h3>
+    <div class="form-row">
+      <input type="text" id="newCategory" placeholder="New Category" />
       <button id="addCategory" class="btn">Add Category</button>
     </div>
-
-    <div class="category-list" id="categoryList"></div>
-    <div class="job-list" id="jobList"></div>
+    <div id="categoryList" class="category-list"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -92,83 +90,111 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const jobListEl = document.getElementById("jobList");
-    const jobCategory = document.getElementById("jobCategory");
-    const categoryListEl = document.getElementById("categoryList");
+    const jobList = document.getElementById("jobList");
+    const categoryList = document.getElementById("categoryList");
+    const categoryCheckboxes = document.getElementById("categoryCheckboxes");
 
     let categories = [];
 
+    // Load categories
     async function loadCategories() {
-      const snap = await getDocs(collection(db, "jobCategories"));
+      const snap = await getDocs(collection(db, "categories"));
       categories = snap.docs.map(d => d.data().name);
       renderCategories();
     }
 
     function renderCategories() {
-      jobCategory.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-      categoryListEl.innerHTML = categories.map(c => `
-        <div class="cat-item">${c} <button onclick="deleteCategory('${c}')">x</button></div>
-      `).join('');
+      // Category checkboxes
+      categoryCheckboxes.innerHTML = categories.map(c => `
+        <label><input type="checkbox" value="${c}"> ${c}</label>
+      `).join("");
+
+      // Category list for delete
+      categoryList.innerHTML = categories.map(c => `
+        <div class="category-item">
+          <span>${c}</span>
+          <button class="delete-btn" onclick="deleteCategory('${c}')">Delete</button>
+        </div>
+      `).join("");
     }
 
+    // Add Category
     document.getElementById("addCategory").onclick = async () => {
       const val = document.getElementById("newCategory").value.trim();
-      if(!val) return alert("Enter a category name");
-      await addDoc(collection(db, "jobCategories"), { name: val });
-      loadCategories();
+      if (!val) return alert("Enter category name");
+      if (categories.includes(val)) return alert("Already exists");
+      await addDoc(collection(db, "categories"), { name: val });
       document.getElementById("newCategory").value = "";
-    };
-
-    window.deleteCategory = async (name) => {
-      const snap = await getDocs(collection(db, "jobCategories"));
-      const del = snap.docs.find(d => d.data().name === name);
-      if(del) await deleteDoc(doc(db, "jobCategories", del.id));
       loadCategories();
     };
 
+    // Delete Category
+    window.deleteCategory = async (name) => {
+      if (!confirm(`Delete category "${name}"?`)) return;
+      const snap = await getDocs(collection(db, "categories"));
+      const docToDel = snap.docs.find(d => d.data().name === name);
+      if (docToDel) await deleteDoc(doc(db, "categories", docToDel.id));
+      loadCategories();
+    };
+
+    // Add Job
+    document.getElementById("addJob").onclick = async () => {
+      const name = document.getElementById("jobName").value.trim();
+      const type = document.getElementById("jobType").value.trim();
+      const date = document.getElementById("jobDate").value;
+      const selectedCats = Array.from(document.querySelectorAll('#categoryCheckboxes input:checked')).map(el => el.value);
+
+      if (!name || !type || !date || selectedCats.length === 0)
+        return alert("Please fill all fields and select at least one category.");
+
+      await addDoc(collection(db, "jobs"), {
+        name, type, date,
+        categories: selectedCats,
+        created: new Date().toISOString()
+      });
+
+      document.getElementById("jobName").value = "";
+      document.getElementById("jobType").value = "";
+      document.getElementById("jobDate").value = "";
+      loadJobs();
+    };
+
+    // Load Jobs
     async function loadJobs() {
       const snap = await getDocs(collection(db, "jobs"));
-      jobListEl.innerHTML = "";
-      if(snap.empty) {
-        jobListEl.innerHTML = "<p style='text-align:center;color:#888;'>No jobs added yet.</p>";
+      if (snap.empty) {
+        jobList.innerHTML = "<p style='text-align:center;color:#888;'>No jobs yet.</p>";
         return;
       }
+
+      jobList.innerHTML = "";
       snap.forEach(d => {
         const j = d.data();
         const div = document.createElement("div");
         div.className = "job-item";
         div.innerHTML = `
-          <div>
-            <strong>${j.name}</strong><br>
-            <small>${j.type} | ${j.category}</small>
+          <span onclick="openJob('${d.id}')">${j.name}</span>
+          <div style="text-align:right;font-size:0.85rem;">
+            ${j.date}<br>
+            <small>${j.categories.join(", ")}</small>
           </div>
-          <div>
-            <button class="btn" onclick="viewJob('${d.id}')">View</button>
-            <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
-          </div>`;
-        jobListEl.appendChild(div);
+          <button class="delete-btn" onclick="deleteJob('${d.id}')">Delete</button>
+        `;
+        jobList.appendChild(div);
       });
     }
 
-    document.getElementById("addJob").onclick = async () => {
-      const name = document.getElementById("jobName").value.trim();
-      const type = document.getElementById("jobType").value.trim();
-      const cat = jobCategory.value;
-      if(!name || !type || !cat) return alert("Fill all fields!");
-      await addDoc(collection(db, "jobs"), { name, type, category: cat, created: new Date().toISOString() });
-      loadJobs();
-      document.getElementById("jobName").value = "";
-      document.getElementById("jobType").value = "";
-    };
-
+    // Delete Job
     window.deleteJob = async (id) => {
-      if(confirm("Delete this job?")) await deleteDoc(doc(db, "jobs", id));
+      if (!confirm("Delete this job?")) return;
+      await deleteDoc(doc(db, "jobs", id));
       loadJobs();
     };
 
-    window.viewJob = (id) => {
+    // Open Job Detail
+    window.openJob = (id) => {
       localStorage.setItem("selectedJob", id);
-      location.href = "job-detail.html";
+      window.location.href = "job-detail.html";
     };
 
     loadCategories();
