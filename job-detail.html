@@ -71,17 +71,22 @@
     }
 
     /* --- Category Timeline --- */
+    .timeline-wrapper {
+      display: flex;
+      justify-content: flex-start;
+      padding-left: 40px;
+    }
+
     .timeline {
       position: relative;
-      margin: 30px auto;
-      padding-left: 50px;
+      padding-left: 40px;
       border-left: 3px solid #00b4ff;
       width: fit-content;
     }
 
     .timeline-item {
       position: relative;
-      margin: 30px 0;
+      margin: 25px 0;
       padding-left: 25px;
     }
 
@@ -108,15 +113,6 @@
       margin: 3px 0 0;
       font-size: 0.95rem;
     }
-
-    @media (max-width: 600px) {
-      .timeline {
-        padding-left: 35px;
-      }
-      .timeline-item {
-        padding-left: 15px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -133,7 +129,9 @@
       <div class="job-type" id="jobType">Loading...</div>
     </div>
 
-    <div id="timeline" class="timeline"></div>
+    <div class="timeline-wrapper">
+      <div id="timeline" class="timeline"></div>
+    </div>
   </div>
 
   <script type="module">
@@ -159,30 +157,24 @@
 
     async function loadJob() {
       const jobId = localStorage.getItem("selectedJob");
-      if (!jobId) {
-        jobNameEl.textContent = "No job selected";
-        jobTypeEl.textContent = "";
-        return;
-      }
+      if (!jobId) return;
 
       const snap = await getDoc(doc(db, "jobs", jobId));
-      if (!snap.exists()) {
-        jobNameEl.textContent = "Job not found";
-        jobTypeEl.textContent = "";
-        return;
-      }
+      if (!snap.exists()) return;
 
       const j = snap.data();
       jobNameEl.textContent = j.name;
       jobTypeEl.textContent = j.type;
 
-      // Only category under timeline
-      timeline.innerHTML = `
+      // handle multiple categories (array)
+      const categories = Array.isArray(j.categories) ? j.categories : [j.category];
+
+      timeline.innerHTML = categories.map(c => `
         <div class="timeline-item">
-          <h3>${j.category}</h3>
+          <h3>${c}</h3>
           <p>Category</p>
         </div>
-      `;
+      `).join('');
     }
 
     loadJob();
