@@ -3,32 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Staff Job Update | MG</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Staff | Job Update</title>
+
+  <style>
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --danger:#ef4444;
+    }
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{background:var(--bg);color:var(--text);margin:0;}
+
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:15px 25px;background:rgba(255,255,255,0.06);
+    }
+    .logo{font-size:1.4rem;color:var(--accent);font-weight:700;}
+    .btn-logout{
+      background:var(--danger);padding:8px 16px;border:none;
+      border-radius:8px;color:white;font-weight:600;cursor:pointer;
+    }
+
+    .container{
+      max-width:980px;margin:25px auto;background:var(--card);
+      padding:26px;border-radius:14px;
+    }
+
+    h1{text-align:center;color:var(--accent);margin-bottom:20px;}
+
+    .job-list{margin-top:20px;}
+    .job-item{
+      background:rgba(255,255,255,0.03);
+      padding:14px;border-radius:12px;margin:10px 0;
+      display:flex;justify-content:space-between;align-items:center;
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    .view-btn{
+      background:var(--accent);border:none;padding:8px 14px;
+      border-radius:8px;color:white;font-weight:600;cursor:pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-  <header>
-    <div class="logo">MG - Staff Panel</div>
-    <button class="btn" onclick="logout()">Logout</button>
-  </header>
+<header>
+  <div class="logo">MG – Staff Panel</div>
+  <button class="btn-logout" id="logoutBtn">Logout</button>
+</header>
 
-  <!-- SAME BODY AS jobs.html -->
-  <div id="jobsContainer"></div>
+<div class="container">
+  <h1>Job Update</h1>
 
-  <script type="module" src="script.js"></script>
+  <h3 style="color:var(--accent);text-align:center;">All Jobs</h3>
+  <div id="jobList" class="job-list"></div>
+</div>
 
-  <script>
-    // This tells script.js that we are on staff version
-    window.IS_STAFF = true;
+<script type="module">
 
-    // logout
-    function logout() {
-      localStorage.clear();
-      window.location.href = "login.html";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, doc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+    storageBucket: "mg-manager-3ab66.appspot.com",
+    messagingSenderId: "330667005987",
+    appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const jobList = document.getElementById("jobList");
+
+  async function loadJobs() {
+    const snap = await getDocs(collection(db, "jobs"));
+    jobList.innerHTML = "";
+
+    if (snap.empty) {
+      jobList.innerHTML = `<p style="text-align:center;color:#9bb9d9;">No jobs found.</p>`;
+      return;
     }
-  </script>
+
+    snap.forEach(docu => {
+      const j = docu.data();
+      const item = document.createElement("div");
+      item.className = "job-item";
+
+      item.innerHTML = `
+        <div>
+          <div style="font-weight:700;color:var(--accent);">${j.name}</div>
+          <div style="color:#9bb9d9;font-size:0.85rem;margin-top:4px;">${j.type}</div>
+        </div>
+        <button class="view-btn" onclick="viewJob('${docu.id}')">View</button>
+      `;
+
+      jobList.appendChild(item);
+    });
+  }
+
+  window.viewJob = (id) => {
+    localStorage.setItem("selectedJob", id);
+    window.location.href = "staff-job-detail.html";
+  };
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("loggedInUser");
+    window.location.href = "login.html";
+  };
+
+  loadJobs();
+</script>
 
 </body>
 </html>
