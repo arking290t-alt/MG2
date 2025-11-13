@@ -39,8 +39,7 @@
         flex-direction: column;
         gap: 10px;
     }
-    .login-form input,
-    .login-form select {
+    .login-form input {
         background: rgba(255,255,255,0.1);
         border: 1px solid rgba(255,255,255,0.2);
         color: white;
@@ -89,7 +88,6 @@
     </form>
 </div>
 
-<!-- FIREBASE LOGIN SCRIPT -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -117,10 +115,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     const errorBox = document.getElementById("error");
 
     try {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCred.user;
+        const login = await signInWithEmailAndPassword(auth, email, password);
+        const user = login.user;
 
-        // Fetch Firestore role
+        // Fetch user role from Firestore
         const roleDoc = await getDoc(doc(db, "users", user.uid));
 
         if (!roleDoc.exists()) {
@@ -130,13 +128,13 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
         const role = roleDoc.data().role;
 
-        // REDIRECT BASED ON ROLE
+        // Redirect Based on Role
         if (role === "owner") {
             window.location.href = "dashboard.html";
         } 
         else if (role === "staff") {
-            window.location.href = "jobs%20update.html";  // SPACE FIXED
-        }
+            window.location.href = "jobs.html";  // UPDATED ✔ STAFF ROUTE
+        } 
         else {
             errorBox.textContent = "Invalid role!";
         }
