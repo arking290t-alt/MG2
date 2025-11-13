@@ -1,129 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Login | MG</title>
-
   <style>
-    body {
-      background: #0b111b;
-      font-family: "Poppins", sans-serif;
-      color: #d4e1f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .login-container {
-      background: rgba(255,255,255,0.05);
-      padding: 30px;
-      border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
-      width: 320px;
-      text-align: center;
-    }
-    .logo { color:#00b4ff;font-size:2rem;margin-bottom:5px; }
-    .subtitle { color:#8aa3c2;margin-bottom:20px;font-size:0.95rem; }
-
-    .login-form { display:flex;flex-direction:column;gap:12px; }
-    .login-form input, .login-form select {
-      background:rgba(255,255,255,0.1);
-      border:1px solid rgba(255,255,255,0.2);
-      color:white;padding:10px;border-radius:8px;outline:none;
-    }
-    .btn-login {
-      background:#00b4ff;border:none;color:white;font-weight:600;
-      padding:10px;border-radius:8px;cursor:pointer;
-    }
-    .btn-login:hover { background:#0090d1; }
-    .error { color:#ef4444;font-size:0.85rem;margin-top:10px; }
+    body { background:#0b111b; font-family:"Poppins",sans-serif; color:#d4e1f0; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .login-container { background:rgba(255,255,255,0.05); padding:30px; border-radius:12px; width:340px; box-shadow:0 8px 30px rgba(0,180,255,0.08); text-align:center; }
+    .logo { color:#00b4ff; font-size:2rem; margin-bottom:6px; }
+    .subtitle { color:#9fb6d4; margin-bottom:18px; }
+    .login-form { display:flex; flex-direction:column; gap:10px; }
+    input { padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); color:white; outline:none; }
+    .btn { background:#00b4ff; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:600; cursor:pointer; }
+    .error { color:#ff7b7b; margin-top:10px; min-height:20px; }
+    .note { font-size:0.9rem; color:#9fb6d4; margin-top:6px; }
   </style>
 </head>
 <body>
-
   <div class="login-container">
-    <h1 class="logo">MG</h1>
-    <p class="subtitle">Sign in to continue</p>
+    <div class="logo">MG</div>
+    <div class="subtitle">Sign in to continue</div>
 
-    <form id="loginForm" class="login-form">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-
-      <select id="role" required>
-        <option value="owner">Owner</option>
-        <option value="staff">Staff</option>
-      </select>
-
-      <button type="submit" class="btn-login">Login</button>
-      <p id="error" class="error"></p>
+    <!-- NOTICE: no role dropdown — role comes from Firestore -->
+    <form id="loginForm" class="login-form" autocomplete="off">
+      <input id="email" type="email" placeholder="Email" required />
+      <input id="password" type="password" placeholder="Password" required />
+      <button class="btn" type="submit">Login</button>
     </form>
+
+    <div id="error" class="error"></div>
+    <div class="note">Signing in will use the role assigned to your account (owner or staff).</div>
   </div>
 
   <script type="module">
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain: "mg-manager-3ab66.firebaseapp.com",
-    projectId: "mg-manager-3ab66",
-    storageBucket: "mg-manager-3ab66.appspot.com",
-    messagingSenderId: "330667005987",
-    appId: "1:330667005987:web:95de27b6259ace9fc6b996"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  const loginForm = document.getElementById("loginForm");
-  const errorText = document.getElementById("error");
+    const loginForm = document.getElementById('loginForm');
+    const errEl = document.getElementById('error');
 
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.textContent = "";
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const selectedRole = document.getElementById("role").value;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
 
-    try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
-
-      // GET the actual role stored in Firestore
-      const userRoleDoc = await getDoc(doc(db, "users", user.uid));
-
-      if (!userRoleDoc.exists()) {
-        errorText.textContent = "No role found in database!";
+      if (!email || !password) {
+        errEl.textContent = "Enter email and password.";
         return;
       }
 
-      const realRole = userRoleDoc.data().role;
+      try {
+        // sign in
+        const uc = await signInWithEmailAndPassword(auth, email, password);
+        const uid = uc.user.uid;
 
-      // ❌ BLOCK incorrect role selection
-      if (realRole !== selectedRole) {
-        errorText.textContent = "Incorrect role selected!";
-        return;
+        // read role from Firestore users collection (document id = uid)
+        const userDocRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) {
+          // No role defined → deny access and sign out (safety)
+          errEl.textContent = "No role assigned to this account. Contact the owner.";
+          return;
+        }
+
+        const role = userSnap.data().role;
+
+        // store session info (real role from DB)
+        localStorage.setItem("loggedInUser", JSON.stringify({ email, role, uid }));
+
+        // redirect strictly by DB role
+        if (role === "owner") {
+          window.location.href = "dashboard.html";
+          return;
+        }
+        if (role === "staff") {
+          window.location.href = "jobs.html";
+          return;
+        }
+
+        // fallback
+        errEl.textContent = "Your account role is invalid. Contact admin.";
+
+      } catch (err) {
+        // show friendly error
+        errEl.textContent = "Login failed: " + (err.message || err.code || "unknown error");
       }
-
-      // ✔ ROLE CORRECT → Redirect properly
-      if (realRole === "owner") {
-        window.location.href = "dashboard.html";
-      }
-
-      if (realRole === "staff") {
-        window.location.href = "jobs.html";  // STAFF GOES TO JOBS
-      }
-
-    } catch (err) {
-      errorText.textContent = "Login failed: " + err.message;
-    }
-  });
-</script>
-
+    });
+  </script>
 </body>
 </html>
