@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Staff Jobs | MG</title>
+  <style>
+    :root{--bg:#0b111b;--accent:#00b4ff;--text:#e2e8f0}
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif}
+    body{background:var(--bg);color:var(--text);margin:0}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:rgba(255,255,255,0.03)}
+    .logo{color:var(--accent);font-weight:700}
+    .container{max-width:980px;margin:28px auto;padding:18px}
+    .controls{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
+    input[type="month"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#cfe9ff}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:#cfe9ff;cursor:pointer}
+    .job-item{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+    .job-left{display:flex;flex-direction:column}
+    .job-name{color:var(--accent);font-weight:700;cursor:pointer}
+    .meta{color:#b9cfe6;font-size:0.9rem}
+    .actions{display:flex;gap:8px}
+    .view-btn{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .back-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">MG - Staff Jobs</div>
+    <div>
+      <button id="back" class="back-btn">← Back</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="controls">
+      <input id="monthFilter" type="month" />
+      <button id="clearFilter" class="btn">Clear</button>
+    </div>
+
+    <div id="jobList"></div>
+  </div>
+
+  <script type="module">
+    // Role protection
+    const role = localStorage.getItem('loggedRole');
+    if (!role) location.href = 'login.html';
+    if (role !== 'staff' && role !== 'owner') location.href = 'login.html';
+
+    // Firebase init
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    document.getElementById('back').onclick = () => {
+      // staff dashboard for staff role; owner can go to main dashboard
+      if (localStorage.getItem('loggedRole') === 'owner') location.href = 'dashboard.html';
+      else location.href = 'staff-dashboard.html';
+    };
+
+    const jobListEl = document.getElementById('jobList');
+    const monthFilter = document.getElementById('monthFilter');
+    const clearFilter = document.getElementById('clearFilter');
+
+    let jobs = [];
+
+    async function loadJobs() {
+      jobListEl.innerHTML = '<p style="text-align:center;color:#9fbcdff0">Loading...</p>';
+      const snap = await getDocs(collection(db, 'jobs'));
+      jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderJobs();
+    }
+
+    function renderJobs() {
+      const filterMonth = monthFilter.value;
+      let show = jobs.slice();
+      if (filterMonth) show = show.filter(j => j.date && j.date.startsWith(filterMonth));
+      if (!show.length) {
+        jobListEl.innerHTML = '<p style="text-align:center;color:#9fbcdff0">No jobs found.</p>';
+        return;
+      }
+
+      jobListEl.innerHTML = '';
+      show.forEach(j => {
+        const div = document.createElement('div');
+        div.className = 'job-item';
+        const cats = Array.isArray(j.categories) ? j.categories.map(c => c.name || c).join(', ') : '';
+        div.innerHTML = `
+          <div class="job-left">
+            <div class="job-name" onclick="openJob('${j.id}')">${escapeHtml(j.name)}</div>
+            <div class="meta">${escapeHtml(j.type)} • ${escapeHtml(j.date || '')}</div>
+            <div class="meta" style="margin-top:6px">${escapeHtml(cats)}</div>
+          </div>
+          <div class="actions">
+            <button class="view-btn" onclick="openJob('${j.id}')">View</button>
+          </div>
+        `;
+        jobListEl.appendChild(div);
+      });
+    }
+
+    window.openJob = (id) => {
+      localStorage.setItem('selectedJob', id);
+      location.href = 'staff-job-detail.html';
+    };
+
+    clearFilter.onclick = () => { monthFilter.value=''; renderJobs(); };
+    monthFilter.onchange = renderJobs;
+
+    function escapeHtml(s){ if (!s && s !== 0) return ''; return String(s).replace(/[&<>"']/g,(m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+    await loadJobs();
+  </script>
+</body>
+</html>
