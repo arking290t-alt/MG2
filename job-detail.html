@@ -45,9 +45,14 @@
   </style>
 </head>
 <body>
-  <header>
+
+  <!-- HEADER -->
+  <header id="ownerHeader">
     <div class="logo">MG</div>
-    <a href="jobs.html" class="btn">← Back</a>
+    <div>
+      <a href="jobs.html" class="btn">← Back</a>
+      <button id="shareBtn" class="btn" style="margin-left:10px;">Share</button>
+    </div>
   </header>
 
   <div class="container">
@@ -75,10 +80,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const jobId = localStorage.getItem("selectedJob");
+    // CHECK IF CUSTOMER IS VIEWING SHARED LINK
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedJobId = urlParams.get("job");
+
+    const jobId = sharedJobId || localStorage.getItem("selectedJob");
+
     const jobNameEl = document.getElementById("jobName");
     const jobTypeEl = document.getElementById("jobType");
     const categoryTimeline = document.getElementById("categoryTimeline");
+    const ownerHeader = document.getElementById("ownerHeader");
+
+    // IF CUSTOMER → hide header & buttons
+    const isCustomer = sharedJobId ? true : false;
+    if (isCustomer) {
+      ownerHeader.style.display = "none";
+    }
 
     async function loadJob() {
       if (!jobId) {
@@ -99,10 +116,7 @@
 
       if (!job.categories) return;
 
-      // Support both array of strings or array of objects
-      const categories = job.categories.map(c => 
-        typeof c === "string" ? { name: c, done: false } : c
-      );
+      const categories = job.categories;
 
       categoryTimeline.innerHTML = "";
       categories.forEach((cat, i) => {
@@ -113,33 +127,55 @@
           <div class="stage-content">
             <span>${cat.name}</span>
             <small>Category</small>
-            <div class="btn-row">
-              <button class="mark-btn">Mark Done</button>
-              <button class="unmark-btn">Not Yet Done</button>
-            </div>
+            ${
+              isCustomer
+                ? "" 
+                : `
+                <div class="btn-row">
+                  <button class="mark-btn">Mark Done</button>
+                  <button class="unmark-btn">Not Yet Done</button>
+                </div>
+              `
+            }
           </div>
         `;
-        const markBtn = div.querySelector(".mark-btn");
-        const unmarkBtn = div.querySelector(".unmark-btn");
+
         const dot = div.querySelector(".dot");
 
-        markBtn.onclick = async () => {
-          categories[i].done = true;
-          dot.classList.add("done");
-          await updateDoc(docRef, { categories });
-        };
+        if (!isCustomer) {
+          const markBtn = div.querySelector(".mark-btn");
+          const unmarkBtn = div.querySelector(".unmark-btn");
 
-        unmarkBtn.onclick = async () => {
-          categories[i].done = false;
-          dot.classList.remove("done");
-          await updateDoc(docRef, { categories });
-        };
+          markBtn.onclick = async () => {
+            categories[i].done = true;
+            dot.classList.add("done");
+            await updateDoc(docRef, { categories });
+          };
+
+          unmarkBtn.onclick = async () => {
+            categories[i].done = false;
+            dot.classList.remove("done");
+            await updateDoc(docRef, { categories });
+          };
+        }
 
         categoryTimeline.appendChild(div);
       });
     }
 
     loadJob();
+
+    // SHARE BUTTON
+    const shareBtn = document.getElementById("shareBtn");
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        const shareURL = `${window.location.origin}${window.location.pathname}?job=${jobId}`;
+        navigator.clipboard.writeText(shareURL);
+        shareBtn.textContent = "Copied!";
+        setTimeout(() => shareBtn.textContent = "Share", 1500);
+      };
+    }
+
   </script>
 </body>
 </html>
