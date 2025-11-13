@@ -24,56 +24,21 @@
       width: 320px;
       text-align: center;
     }
-    .logo {
-      color: #00b4ff;
-      font-size: 2rem;
-      margin-bottom: 5px;
-    }
-    .subtitle {
-      margin-bottom: 20px;
-      color: #8aa3c2;
-      font-size: 0.95rem;
-    }
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .login-form label {
-      text-align: left;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #9fb6d4;
-    }
-    .login-form input,
-    .login-form select {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
-      border-radius: 8px;
-      padding: 10px;
-      outline: none;
-      font-size: 0.95rem;
+    .logo { color:#00b4ff;font-size:2rem;margin-bottom:5px; }
+    .subtitle { color:#8aa3c2;margin-bottom:20px;font-size:0.95rem; }
+
+    .login-form { display:flex;flex-direction:column;gap:12px; }
+    .login-form input, .login-form select {
+      background:rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,0.2);
+      color:white;padding:10px;border-radius:8px;outline:none;
     }
     .btn-login {
-      background: #00b4ff;
-      border: none;
-      color: white;
-      font-weight: 600;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: 0.2s;
+      background:#00b4ff;border:none;color:white;font-weight:600;
+      padding:10px;border-radius:8px;cursor:pointer;
     }
-    .btn-login:hover {
-      background: #0090d1;
-    }
-    .error {
-      color: #ef4444;
-      font-size: 0.85rem;
-      margin-top: 8px;
-    }
+    .btn-login:hover { background:#0090d1; }
+    .error { color:#ef4444;font-size:0.85rem;margin-top:10px; }
   </style>
 </head>
 <body>
@@ -83,13 +48,9 @@
     <p class="subtitle">Sign in to continue</p>
 
     <form id="loginForm" class="login-form">
-      <label for="email">Email</label>
-      <input type="email" id="email" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
 
-      <label for="password">Password</label>
-      <input type="password" id="password" required />
-
-      <label for="role">Role</label>
       <select id="role" required>
         <option value="owner">Owner</option>
         <option value="staff">Staff</option>
@@ -101,62 +62,50 @@
   </div>
 
   <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import {
-    getFirestore, doc, getDoc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.firebasestorage.app",
-  messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-  measurementId: "G-05HW0KSN38"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-const loginForm = document.getElementById("loginForm");
-const errorText = document.getElementById("error");
+    const loginForm = document.getElementById("loginForm");
+    const errorBox = document.getElementById("error");
 
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.textContent = "";
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const role = document.getElementById("role").value;
 
-  try {
-    // Sign in
-    await signInWithEmailAndPassword(auth, email, password);
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
 
-    // Fetch role from Firestore
-    const roleDoc = await getDoc(doc(db, "roles", email));
+        // Save user session
+        localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
 
-    if (!roleDoc.exists()) {
-      errorText.textContent = "User has no assigned role!";
-      return;
-    }
+        // Correct role based redirect
+        if (role === "owner") {
+          window.location.href = "dashboard.html";
+        } else {
+          window.location.href = "staff-jobs.html";
+        }
 
-    const role = roleDoc.data().role;
-
-    // Redirect based on REAL role
- if (role === "owner") window.location.href = "dashboard.html";
-else window.location.href = "jobs.html";
-
- // ⭐ FIXED
-    } else {
-      errorText.textContent = "Invalid role in database!";
-    }
-
-  } catch (err) {
-    errorText.textContent = "Login failed: " + err.message;
-  }
-});
+      } catch (error) {
+        errorBox.textContent = "Login failed: " + error.message;
+      }
+    });
   </script>
 
 </body>
