@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Order Tracking | MG</title>
+  <style>
+    body {
+      background:#0b111b;
+      font-family:Poppins, sans-serif;
+      color:white;
+      text-align:center;
+      padding:20px;
+    }
+    .container {
+      max-width:600px;
+      margin:auto;
+      background:rgba(255,255,255,0.05);
+      padding:20px;
+      border-radius:12px;
+    }
+    .category-item {
+      text-align:left;
+      background:rgba(255,255,255,0.05);
+      padding:15px;
+      border-radius:8px;
+      margin:10px 0;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .dot {
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:#00b4ff;
+    }
+    .dot.done {
+      background:#22c55e;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1 style="color:#00b4ff;">Order Tracking</h1>
+  <h2 id="jobName"></h2>
+  <h3 id="jobType" style="color:#9fbcd4;"></h3>
+
+  <div id="categories"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Read job ID from URL
+  const params = new URLSearchParams(location.search);
+  const jobId = params.get("job");
+
+  if (!jobId) {
+    document.body.innerHTML = "<h2>Invalid Tracking Link</h2>";
+    throw new Error("No job ID");
+  }
+
+  async function loadJob() {
+    const snap = await getDoc(doc(db, "jobs", jobId));
+
+    if (!snap.exists()) {
+      document.body.innerHTML = "<h2>Order Not Found</h2>";
+      return;
+    }
+
+    const data = snap.data();
+
+    document.getElementById("jobName").textContent = data.name;
+    document.getElementById("jobType").textContent = data.type;
+
+    let html = "";
+    data.categories.forEach(cat => {
+      html += `
+        <div class="category-item">
+          <div>
+            <strong>${cat.name}</strong><br>
+            <small>Category</small>
+          </div>
+          <div class="dot ${cat.done ? 'done' : ''}"></div>
+        </div>
+      `;
+    });
+
+    document.getElementById("categories").innerHTML = html;
+  }
+
+  loadJob();
+</script>
+
+</body>
+</html>
