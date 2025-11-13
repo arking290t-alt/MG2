@@ -90,16 +90,16 @@
       const role = document.getElementById("role").value;
 
       try {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, email, password);
 
-        // Save user session
+        // Save session
         localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
 
-        // Correct role based redirect
+        // Redirect based on role
         if (role === "owner") {
           window.location.href = "dashboard.html";
         } else {
-          window.location.href = "staff-jobs.html";
+          window.location.href = "jobs.html"; // <-- STAFF GOES HERE
         }
 
       } catch (error) {
