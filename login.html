@@ -101,8 +101,11 @@
   </div>
 
   <script type="module">
- import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import {
+    getFirestore, doc, getDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -116,6 +119,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 const loginForm = document.getElementById("loginForm");
 const errorText = document.getElementById("error");
@@ -125,17 +129,28 @@ loginForm.addEventListener("submit", async (e) => {
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-  const role = document.getElementById("role").value;
 
   try {
+    // Sign in
     await signInWithEmailAndPassword(auth, email, password);
 
-    localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
+    // Fetch role from Firestore
+    const roleDoc = await getDoc(doc(db, "roles", email));
 
+    if (!roleDoc.exists()) {
+      errorText.textContent = "User has no assigned role!";
+      return;
+    }
+
+    const role = roleDoc.data().role;
+
+    // Redirect based on REAL role
     if (role === "owner") {
       window.location.href = "dashboard.html";
+    } else if (role === "staff") {
+      window.location.href = "staff-jobs.html";  // ⭐ FIXED
     } else {
-      window.location.href = "staff-jobs.html";   // 🔥 FIXED STAFF REDIRECT
+      errorText.textContent = "Invalid role in database!";
     }
 
   } catch (err) {
