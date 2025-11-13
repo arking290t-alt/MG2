@@ -130,14 +130,12 @@ loginForm.addEventListener("submit", async (e) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
 
-    // Save session
     localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
 
-    // Redirect based on role selection
     if (role === "owner") {
       window.location.href = "dashboard.html";
     } else {
-      window.location.href = "attendance.html"; 
+      window.location.href = "staff-jobs.html";   // 🔥 FIXED STAFF REDIRECT
     }
 
   } catch (err) {
