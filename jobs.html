@@ -1,103 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | MG</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Update | MG</title>
+
   <style>
-    body {
-      background: #0b111b;
-      font-family: "Poppins", sans-serif;
-      color: #d4e1f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --panel:#0e1724;
+      --danger:#ef4444;
+      --done:#22c55e;
     }
-    .login-container {
-      background: rgba(255,255,255,0.05);
-      padding: 30px;
-      border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
-      width: 320px;
-      text-align: center;
+    *{ box-sizing:border-box; font-family:'Poppins',sans-serif; }
+    body{ background:var(--bg); color:var(--text); margin:0; }
+    header{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:15px 25px; background:rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.08);
     }
-    .logo {
-      color: #00b4ff;
-      font-size: 2rem;
-      margin-bottom: 5px;
+    .logo{ font-size:1.6rem; font-weight:700; color:var(--accent); }
+
+    .logout-btn{
+      background:#ef4444; padding:10px 16px; border:none;
+      color:white; border-radius:8px; cursor:pointer;
+      font-weight:600;
     }
-    .subtitle {
-      margin-bottom: 20px;
-      color: #8aa3c2;
-      font-size: 0.95rem;
+
+    .container{
+      max-width:960px; margin:25px auto; background:var(--card);
+      padding:25px; border-radius:16px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.3);
     }
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+
+    h1{ text-align:center; color:var(--accent); }
+
+    input, button{
+      padding:10px 14px; border-radius:10px; border:none;
+      outline:none; font-size:0.9rem;
     }
-    .login-form input,
-    .login-form select {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
-      border-radius: 8px;
-      padding: 10px;
-      outline: none;
-      font-size: 0.95rem;
+    input{
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,0.07);
+      color:white;
     }
-    .btn-login {
-      background: #00b4ff;
-      border: none;
-      color: white;
-      font-weight: 600;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: 0.2s;
+    button{
+      background:var(--accent); color:white; cursor:pointer;
+      font-weight:600;
     }
-    .btn-login:hover {
-      background: #0090d1;
+
+    .form-row{
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      margin-bottom:20px;
     }
-    .error {
-      color: #ef4444;
-      font-size: 0.85rem;
-      margin-top: 8px;
+
+    .checkbox-group{
+      display:flex; flex-wrap:wrap; gap:12px;
+      justify-content:center; margin:10px 0;
+    }
+
+    .checkbox-chip{
+      display:flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,0.06);
+      padding:10px 14px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      cursor:pointer;
+      user-select:none;
+      color:#d5eafe;
+    }
+    .checkbox-chip.active{
+      background:var(--accent);
+      color:black;
+      box-shadow:0 0 20px rgba(0,180,255,0.3);
+    }
+
+    .job-item{
+      background:rgba(255,255,255,0.04);
+      margin:10px 0; padding:14px;
+      border-radius:12px;
+      display:flex; justify-content:space-between; align-items:center;
+      border:1px solid rgba(255,255,255,0.05);
+    }
+
+    .job-left{ display:flex; flex-direction:column; gap:4px; }
+    .job-name{ font-size:1rem; color:var(--accent); font-weight:700; cursor:pointer; }
+    .job-type{ font-size:0.9rem; color:#9bbcd7; }
+
+    .job-meta{ font-size:0.85rem; text-align:right; color:#9bbcd7; }
+
+    .delete-btn{
+      background:var(--danger); padding:8px 10px;
+      border-radius:8px; border:none; cursor:pointer; color:white;
     }
   </style>
 </head>
+
 <body>
 
-  <div class="login-container">
-    <h1 class="logo">MG</h1>
-    <p class="subtitle">Sign in to continue</p>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">MG</div>
+    <button class="logout-btn" id="logout">Logout</button>
+  </header>
 
-    <form id="loginForm" class="login-form">
-      <label>Email</label>
-      <input type="email" id="email" required />
+  <div class="container">
 
-      <label>Password</label>
-      <input type="password" id="password" required />
+    <h1>Job Update</h1>
 
-      <label>Role</label>
-      <select id="role" required>
-        <option value="owner">Owner</option>
-        <option value="staff">Staff</option>
-      </select>
+    <!-- JOB FORM -->
+    <div class="form-row">
+      <input id="jobName" type="text" placeholder="Job Name" />
+      <input id="jobType" type="text" placeholder="Job Type" />
+      <input id="jobDate" type="date" />
+    </div>
 
-      <button type="submit" class="btn-login">Login</button>
-      <p id="error" class="error"></p>
-    </form>
+    <h3 style="text-align:center;color:#8ab9ff;">Select Categories</h3>
+    <div id="categoryGrid" class="checkbox-group"></div>
+
+    <div style="text-align:center;margin:10px;">
+      <button id="addJob">Add Job</button>
+    </div>
+
+    <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0"/>
+
+    <h3 style="text-align:center;color:#8ab9ff;">Filter by Month</h3>
+    <div style="text-align:center;">
+      <input type="month" id="monthFilter" style="width:180px;text-align:center;">
+    </div>
+
+    <h2 style="text-align:center;margin-top:20px;">All Jobs</h2>
+    <div id="jobList"></div>
+
+    <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0"/>
+
+    <h3 style="text-align:center;color:#8ab9ff;">Add New Category</h3>
+    <div class="form-row">
+      <input id="newCategory" type="text" placeholder="New Category">
+      <button id="addCategory">Add</button>
+    </div>
+
+    <div id="categoryList"></div>
+
   </div>
 
-  <!-- FIREBASE LOGIN LOGIC -->
+  <!-- FIREBASE JS -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      deleteDoc, doc, orderBy, query
+    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -106,54 +162,159 @@
       storageBucket: "mg-manager-3ab66.appspot.com",
       messagingSenderId: "330667005987",
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const loginForm = document.getElementById("loginForm");
-    const errorText = document.getElementById("error");
+    const categoryGrid = document.getElementById("categoryGrid");
+    const categoryList = document.getElementById("categoryList");
+    const jobList = document.getElementById("jobList");
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    let selectedCats = new Set();
+    let categories = [];
+    let allJobs = [];
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const selectedRole = document.getElementById("role").value;
+    // LOAD CATEGORIES
+    async function loadCategories() {
+      const q = query(collection(db, "jobCategories"), orderBy("createdAt", "asc"));
+      const snap = await getDocs(q);
 
-      try {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCred.user;
+      categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderCategoryGrid();
+      renderCategoryList();
+    }
 
-        // fetch role from Firestore
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+    function renderCategoryGrid() {
+      categoryGrid.innerHTML = categories.map(c => `
+        <div class="checkbox-chip" data-id="${c.id}" data-name="${c.name}">
+          <span>${c.name}</span>
+        </div>
+      `).join("");
 
-        if (!userDoc.exists()) {
-          errorText.textContent = "User role not found in database!";
-          return;
-        }
+      document.querySelectorAll(".checkbox-chip").forEach(chip => {
+        chip.onclick = () => {
+          let id = chip.dataset.id;
+          if (selectedCats.has(id)) {
+            selectedCats.delete(id);
+            chip.classList.remove("active");
+          } else {
+            selectedCats.add(id);
+            chip.classList.add("active");
+          }
+        };
+      });
+    }
 
-        const role = userDoc.data().role;
+    function renderCategoryList() {
+      categoryList.innerHTML = categories.map(c => `
+        <div class="job-item">
+          <span>${c.name}</span>
+          <button class="delete-btn" onclick="deleteCategory('${c.id}')">Delete</button>
+        </div>
+      `).join("");
+    }
 
-        // check if role matches selected role
-        if (role !== selectedRole) {
-          errorText.textContent = "Incorrect role selected!";
-          return;
-        }
+    window.deleteCategory = async (id) => {
+      if (!confirm("Delete category?")) return;
+      await deleteDoc(doc(db, "jobCategories", id));
+      loadCategories();
+    };
 
-        // redirect based on role
-        if (role === "owner") {
-          window.location.href = "dashboard.html";
-        } else if (role === "staff") {
-          window.location.href = "jobs.html";  // ✅ STAFF REDIRECT HERE
-        }
+    // ADD CATEGORY
+    document.getElementById("addCategory").onclick = async () => {
+      let name = document.getElementById("newCategory").value.trim();
+      if (!name) return alert("Enter category");
 
-      } catch (err) {
-        errorText.textContent = "Login failed: " + err.message;
-      }
-    });
+      await addDoc(collection(db, "jobCategories"), {
+        name,
+        createdAt: new Date().toISOString()
+      });
+
+      document.getElementById("newCategory").value = "";
+      loadCategories();
+    };
+
+    // ADD JOB
+    document.getElementById("addJob").onclick = async () => {
+      let name = document.getElementById("jobName").value.trim();
+      let type = document.getElementById("jobType").value.trim();
+      let date = document.getElementById("jobDate").value;
+
+      if (!name || !type || !date) return alert("Fill all fields");
+      if (selectedCats.size === 0) return alert("Select categories");
+
+      let selected = categories.filter(c => selectedCats.has(c.id));
+
+      await addDoc(collection(db, "jobs"), {
+        name,
+        type,
+        date,
+        categories: selected,
+        created: new Date().toISOString()
+      });
+
+      document.getElementById("jobName").value = "";
+      document.getElementById("jobType").value = "";
+      document.getElementById("jobDate").value = "";
+      selectedCats.clear();
+      loadCategories();
+      loadJobs();
+    };
+
+    // LOAD JOBS
+    async function loadJobs() {
+      const snap = await getDocs(collection(db, "jobs"));
+      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderJobs();
+    }
+
+    // RENDER JOB LIST
+    function renderJobs() {
+      let month = document.getElementById("monthFilter").value;
+
+      let jobsToShow = month
+        ? allJobs.filter(j => j.date.startsWith(month))
+        : allJobs;
+
+      jobList.innerHTML = jobsToShow.map(j => `
+        <div class="job-item">
+          <div class="job-left">
+            <div class="job-name" onclick="openJob('${j.id}')">${j.name}</div>
+            <div class="job-type">${j.type}</div>
+          </div>
+
+          <div class="job-meta">
+            <div>${j.date}</div>
+            <div>${j.categories.map(c => c.name).join(", ")}</div>
+          </div>
+
+          <button class="delete-btn" onclick="deleteJob('${j.id}')">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    // DELETE JOB
+    window.deleteJob = async (id) => {
+      if (!confirm("Delete job?")) return;
+      await deleteDoc(doc(db, "jobs", id));
+      loadJobs();
+    };
+
+    window.openJob = (id) => {
+      localStorage.setItem("selectedJob", id);
+      window.location.href = "job-detail.html";
+    };
+
+    document.getElementById("monthFilter").onchange = renderJobs;
+
+    document.getElementById("logout").onclick = () => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    };
+
+    loadCategories();
+    loadJobs();
   </script>
 
 </body>
