@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Staff Job Update | MG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">MG - Staff Panel</div>
+    <button class="btn" onclick="logout()">Logout</button>
+  </header>
+
+  <!-- SAME BODY AS jobs.html -->
+  <div id="jobsContainer"></div>
+
+  <script type="module" src="script.js"></script>
+
+  <script>
+    // This tells script.js that we are on staff version
+    window.IS_STAFF = true;
+
+    // logout
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  </script>
+
+</body>
+</html>
