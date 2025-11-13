@@ -1,66 +1,72 @@
-// ------------------------------
-// MG Login System (FULL FILE)
-// ------------------------------
-
+*// 🔥 Firebase Setup
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// ------------------------------------------
-// 🔥 FIREBASE CONFIG
-// ------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
   authDomain: "mg-manager-3ab66.firebaseapp.com",
   projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.appspot.com",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
   messagingSenderId: "330667005987",
   appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// ------------------------------------------
-// 🔑 LOGIN FORM HANDLER
-// ------------------------------------------
-const loginForm = document.getElementById("loginForm");
-const errorText = document.getElementById("error");
+// ---------------------------------------------------------------------------
+// 🔐 AUTO REDIRECT BASED ON ROLE (every page uses this except login.html)
+// ---------------------------------------------------------------------------
 
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+onAuthStateChanged(auth, () => {
+  const currentPage = window.location.pathname.split("/").pop();
+  const loggedUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  try {
-    // 🟦 SIGN IN USER
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-    const uid = userCred.user.uid;
-
-    // 🟩 FETCH ROLE FROM FIRESTORE
-    const snap = await getDoc(doc(db, "users", uid));
-
-    let role = "staff"; // default fallback for safety
-
-    if (snap.exists() && snap.data().role) {
-      role = snap.data().role;
+  // if not logged in → send to login
+  if (!loggedUser) {
+    if (currentPage !== "login.html") {
+      window.location.href = "login.html";
     }
+    return;
+  }
 
-    // save role locally
-    localStorage.setItem("loggedRole", role);
-    localStorage.setItem("loggedUID", uid);
-    localStorage.setItem("loggedEmail", email);
+  const role = loggedUser.role;
 
-    // 🟨 REDIRECT BASED ON ROLE
-    if (role === "owner") {
-      window.location.href = "dashboard.html";
-    } else {
-      window.location.href = "staffDashboard.html";
-    }
+  // OWNER PAGES SECURITY
+  const ownerPages = [
+    "dashboard.html",
+    "attendance.html",
+    "expenses.html",
+    "jobs.html",
+    "job-detail.html"
+  ];
 
-  } catch (err) {
-    errorText.textContent = "Login failed: " + err.message;
+  // STAFF PAGES SECURITY
+  const staffPages = [
+    "staff-jobs.html",
+    "staff-job-detail.html"
+  ];
+
+  // If staff tries to access owner pages → send to staff-jobs
+  if (role === "staff" && ownerPages.includes(currentPage)) {
+    window.location.href = "staff-jobs.html";
+    return;
+  }
+
+  // If owner tries to access staff pages → send back to dashboard
+  if (role === "owner" && staffPages.includes(currentPage)) {
+    window.location.href = "dashboard.html";
+    return;
   }
 });
+
+// ---------------------------------------------------------------------------
+// 🚪 LOGOUT FUNCTION (works for owner + staff pages)
+// ---------------------------------------------------------------------------
+
+window.logoutUser = async function () {
+  await signOut(auth);
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+};
