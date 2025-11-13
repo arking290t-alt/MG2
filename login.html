@@ -1,76 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | MG</title>
+
   <style>
-    :root {
-      --bg:#0b111b;
-      --card:#111827;
-      --accent:#00b4ff;
-      --text:#e2e8f0;
+    body {
+      background: #0b111b;
+      font-family: "Poppins", sans-serif;
+      color: #d4e1f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    body { background:var(--bg); margin:0; font-family:'Poppins',sans-serif; color:var(--text); }
-    .box {
-      max-width:420px;
-      margin:70px auto;
-      background:var(--card);
-      padding:35px;
-      border-radius:16px;
-      text-align:center;
-      box-shadow:0 0 25px rgba(0,180,255,0.06);
+    .login-container {
+      background: rgba(255,255,255,0.05);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+      width: 320px;
+      text-align: center;
     }
-    input, select {
-      width:100%;
-      padding:12px;
-      margin:10px 0;
-      background:#0f1625;
-      border:1px solid #1f2a3a;
-      border-radius:8px;
-      color:var(--text);
+    .logo {
+      color: #00b4ff;
+      font-size: 2rem;
+      margin-bottom: 5px;
     }
-    button {
-      width:100%;
-      background:var(--accent);
-      border:none;
-      padding:12px;
-      border-radius:8px;
-      font-weight:600;
-      color:white;
-      cursor:pointer;
+    .subtitle {
+      margin-bottom: 20px;
+      color: #8aa3c2;
+      font-size: 0.95rem;
     }
-    .error { margin-top:10px; color:#ff6b6b; font-size:0.9rem; }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .login-form label {
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #9fb6d4;
+    }
+    .login-form input,
+    .login-form select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+    .btn-login {
+      background: #00b4ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+    .btn-login:hover {
+      background: #0090d1;
+    }
+    .error {
+      color: #ef4444;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
 
-  <div class="box">
-    <h2 style="color:var(--accent);">MG</h2>
-    <p>Sign in to continue</p>
+  <div class="login-container">
+    <h1 class="logo">MG</h1>
+    <p class="subtitle">Sign in to continue</p>
 
-    <input id="email" type="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
+    <form id="loginForm" class="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
 
-    <select id="role">
-      <option>Owner</option>
-      <option>Staff</option>
-    </select>
+      <label for="password">Password</label>
+      <input type="password" id="password" required />
 
-    <button id="loginBtn">Login</button>
+      <label for="role">Role</label>
+      <select id="role" required>
+        <option value="owner">Owner</option>
+        <option value="staff">Staff</option>
+      </select>
 
-    <div id="errorMsg" class="error"></div>
+      <button type="submit" class="btn-login">Login</button>
+      <p id="error" class="error"></p>
+    </form>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
       projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.appspot.com",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
       messagingSenderId: "330667005987",
       appId: "1:330667005987:web:95de27b6259ace9fc6b996",
       measurementId: "G-05HW0KSN38"
@@ -79,34 +117,34 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    const loginBtn = document.getElementById('loginBtn');
-    const errorMsg = document.getElementById('errorMsg');
+    const loginForm = document.getElementById("loginForm");
+    const errorText = document.getElementById("error");
 
-    loginBtn.onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const role = document.getElementById('role').value;
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-      if (!email || !password) {
-        errorMsg.textContent = "Enter email and password";
-        return;
-      }
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const role = document.getElementById("role").value;
 
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, email, password);
 
-        // Redirect rules (OLD VERSION)
-        if (role === "Owner") {
+        localStorage.setItem(
+          "loggedInUser",
+          JSON.stringify({ email, role })
+        );
+
+        if (role === "owner") {
           window.location.href = "dashboard.html";
-        } 
-        else if (role === "Staff") {
-          window.location.href = "jobs.html";
+        } else {
+          window.location.href = "staff-jobs.html";
         }
 
       } catch (err) {
-        errorMsg.textContent = err.message;
+        errorText.textContent = "Login failed: " + err.message;
       }
-    };
+    });
   </script>
 
 </body>
