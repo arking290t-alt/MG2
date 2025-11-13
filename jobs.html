@@ -1,125 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Job Update | MG</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | MG</title>
   <style>
-    :root {
-      --bg:#0b111b;
-      --card:rgba(255,255,255,0.05);
-      --accent:#00b4ff;
-      --text:#e2e8f0;
-      --panel:#0e1724;
-      --danger:#ef4444;
-      --done:#22c55e;
+    body {
+      background: #0b111b;
+      font-family: "Poppins", sans-serif;
+      color: #d4e1f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
-    body{background:var(--bg);color:var(--text);margin:0;}
-    header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);}
-    .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
-    .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;cursor:pointer;}
-    .container{max-width:980px;margin:30px auto;background:var(--card);padding:28px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.08);}
-    h1{text-align:center;color:var(--accent);margin-bottom:22px;}
-    .form-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;justify-content:center;}
-    input,select,button{background:var(--panel);border:1px solid rgba(255,255,255,0.06);color:white;padding:10px 14px;border-radius:8px;min-width:160px;outline:none;}
-    input[type="date"], input[type="month"]{color:#ccc;}
-    label{font-size:0.95rem;color:#a8c9e6;display:block;text-align:center;margin-top:6px;}
-    .category-list,.job-list{margin-top:20px;}
-    .category-item,.job-item{
-      background:rgba(255,255,255,0.03);
-      padding:12px 14px;
-      border-radius:12px;
-      margin:10px 0;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border:1px solid rgba(255,255,255,0.02);
+    .login-container {
+      background: rgba(255,255,255,0.05);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,180,255,0.1);
+      width: 320px;
+      text-align: center;
     }
-    .job-item .left { display:flex; gap:12px; align-items:center; }
-    .job-item .meta { text-align:right; font-size:0.88rem; color:#b9cfe6; }
-    .delete-btn{background:var(--danger);border:none;color:white;border-radius:8px;padding:8px 10px;cursor:pointer;}
-    .view-btn{background:var(--accent);border:none;color:white;border-radius:8px;padding:8px 10px;cursor:pointer;}
-    .checkbox-group{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
-    .checkbox-chip{
-      display:flex;align-items:center;gap:8px;
-      background:rgba(255,255,255,0.02);
-      border:1px solid rgba(255,255,255,0.04);
-      border-radius:12px;padding:8px 12px;cursor:pointer;
-      color:#d3eefe;
-      user-select:none;
+    .logo {
+      color: #00b4ff;
+      font-size: 2rem;
+      margin-bottom: 5px;
     }
-    .checkbox-chip input{accent-color:var(--accent);}
-    .checkbox-chip.active{
-      background:var(--accent);
-      color:#001827;
-      border-color:var(--accent);
-      box-shadow:0 6px 18px rgba(0,180,255,0.08);
+    .subtitle {
+      margin-bottom: 20px;
+      color: #8aa3c2;
+      font-size: 0.95rem;
     }
-    hr{border:none;border-top:1px solid rgba(255,255,255,0.04);margin:22px 0;}
-    .small{font-size:0.9rem;color:#b9cfe6;}
-    .center { text-align:center; }
-    @media(max-width:760px){
-      .form-row{gap:8px;}
-      input,select{min-width:120px;}
-      .job-item .meta { display:block; text-align:left; }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .login-form input,
+    .login-form select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+    .btn-login {
+      background: #00b4ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+    .btn-login:hover {
+      background: #0090d1;
+    }
+    .error {
+      color: #ef4444;
+      font-size: 0.85rem;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">MG</div>
-    <a href="dashboard.html" class="btn">← Dashboard</a>
-  </header>
 
-  <div class="container">
-    <h1>Job Update</h1>
+  <div class="login-container">
+    <h1 class="logo">MG</h1>
+    <p class="subtitle">Sign in to continue</p>
 
-    <!-- ADD JOB -->
-    <div class="form-row">
-      <input id="jobName" type="text" placeholder="Job Name" />
-      <input id="jobType" type="text" placeholder="Job Type" />
-      <input id="jobDate" type="date" />
-    </div>
+    <form id="loginForm" class="login-form">
+      <label>Email</label>
+      <input type="email" id="email" required />
 
-    <label>Select Job Categories:</label>
-    <div id="categoryGrid" class="checkbox-group" aria-hidden="false"></div>
+      <label>Password</label>
+      <input type="password" id="password" required />
 
-    <div class="center" style="margin-top:12px;">
-      <button id="addJob" class="btn">Add Job</button>
-    </div>
+      <label>Role</label>
+      <select id="role" required>
+        <option value="owner">Owner</option>
+        <option value="staff">Staff</option>
+      </select>
 
-    <hr/>
-
-    <!-- FILTER -->
-    <div class="center">
-      <h3 style="color:var(--accent);margin-bottom:8px;">Filter by Month</h3>
-      <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
-        <input id="monthFilter" type="month" />
-        <button id="clearFilter" style="background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:9px 12px;color:#cfe9ff;cursor:pointer;">Clear</button>
-      </div>
-    </div>
-
-    <h3 class="center" style="color:var(--accent);margin-top:18px;">All Jobs</h3>
-    <div id="jobList" class="job-list"></div>
-
-    <hr/>
-
-    <!-- CATEGORY MANAGER -->
-    <h3 class="center" style="color:var(--accent);">Manage Job Categories</h3>
-    <div class="form-row" style="justify-content:center;">
-      <input id="newCategory" type="text" placeholder="New Job Category" />
-      <button id="addCategory" class="btn">Add Category</button>
-    </div>
-    <div id="categoryList" class="category-list"></div>
+      <button type="submit" class="btn-login">Login</button>
+      <p id="error" class="error"></p>
+    </form>
   </div>
 
+  <!-- FIREBASE LOGIN LOGIC -->
   <script type="module">
-    // Firebase SDK imports (Firestore)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import {
-      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -132,189 +110,51 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // DOM
-    const categoryGrid = document.getElementById('categoryGrid');
-    const categoryList = document.getElementById('categoryList');
-    const jobList = document.getElementById('jobList');
-    const monthFilter = document.getElementById('monthFilter');
-    const clearFilter = document.getElementById('clearFilter');
+    const loginForm = document.getElementById("loginForm");
+    const errorText = document.getElementById("error");
 
-    let categories = [];         // list of category names (ordered by createdAt asc)
-    let selectedCats = new Set();
-    let allJobs = [];
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    // Load categories from jobCategories collection, ordered by createdAt asc
-    async function loadCategories() {
-      const q = query(collection(db, 'jobCategories'), orderBy('createdAt', 'asc'));
-      const snap = await getDocs(q);
-      categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderCategoryGrid();
-      renderCategoryList();
-    }
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const selectedRole = document.getElementById("role").value;
 
-    function renderCategoryGrid() {
-      // show as selectable chips (preserve added order)
-      categoryGrid.innerHTML = categories.map(c => {
-        return `<div class="checkbox-chip" data-id="${escapeHtml(c.id)}" data-name="${escapeHtml(c.name)}">
-          <input type="checkbox" style="display:block;width:16px;height:16px;pointer-events:none;" aria-hidden="true"/>
-          <div>${escapeHtml(c.name)}</div>
-        </div>`;
-      }).join('');
-      // attach click listeners
-      document.querySelectorAll('.checkbox-chip').forEach(chip => {
-        chip.onclick = () => {
-          const name = chip.getAttribute('data-name');
-          const id = chip.getAttribute('data-id');
-          if (chip.classList.contains('active')) {
-            chip.classList.remove('active');
-            selectedCats.delete(id);
-          } else {
-            chip.classList.add('active');
-            selectedCats.add(id);
-          }
-        };
-      });
-    }
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCred.user;
 
-    function renderCategoryList() {
-      categoryList.innerHTML = categories.map(c => `
-        <div class="category-item">
-          <div style="font-weight:600;">${escapeHtml(c.name)}</div>
-          <div>
-            <button class="delete-btn" onclick="deleteCategory('${c.id}')">Delete</button>
-          </div>
-        </div>
-      `).join('');
-    }
+        // fetch role from Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
 
-    // add category (doc in jobCategories with createdAt)
-    document.getElementById('addCategory').onclick = async () => {
-      const val = document.getElementById('newCategory').value.trim();
-      if (!val) return alert('Enter category name');
-      // prevent duplicate names (case-insensitive)
-      if (categories.some(c => c.name.toLowerCase() === val.toLowerCase())) {
-        return alert('Category already exists');
+        if (!userDoc.exists()) {
+          errorText.textContent = "User role not found in database!";
+          return;
+        }
+
+        const role = userDoc.data().role;
+
+        // check if role matches selected role
+        if (role !== selectedRole) {
+          errorText.textContent = "Incorrect role selected!";
+          return;
+        }
+
+        // redirect based on role
+        if (role === "owner") {
+          window.location.href = "dashboard.html";
+        } else if (role === "staff") {
+          window.location.href = "jobs.html";  // ✅ STAFF REDIRECT HERE
+        }
+
+      } catch (err) {
+        errorText.textContent = "Login failed: " + err.message;
       }
-      await addDoc(collection(db, 'jobCategories'), { name: val, createdAt: new Date().toISOString() });
-      document.getElementById('newCategory').value = '';
-      await loadCategories();
-    };
-
-    // delete category (by doc id)
-    window.deleteCategory = async (catId) => {
-      if (!confirm('Delete this job category?')) return;
-      await deleteDoc(doc(db, 'jobCategories', catId));
-      await loadCategories();
-      // Note: existing jobs will still have the category name stored in their job docs.
-    };
-
-    // Add job
-    document.getElementById('addJob').onclick = async () => {
-      const name = (document.getElementById('jobName').value || '').trim();
-      const type = (document.getElementById('jobType').value || '').trim();
-      const date = document.getElementById('jobDate').value;
-
-      if (!name || !type || !date) return alert('Fill name, type and date');
-      if (selectedCats.size === 0) return alert('Select at least one job category');
-
-      // Build categories data for job doc in the order of selectedCats relative to master list order
-      // We want to preserve how categories are shown (master order). So produce array ordered by master categories.
-      const masterOrderIds = categories.map(c => c.id);
-      const selectedArrayIds = masterOrderIds.filter(id => selectedCats.has(id));
-
-      // create category objects with name and done:false and createdAt for each (copying from jobCategories doc)
-      const categoryObjs = selectedArrayIds.map(id => {
-        const entry = categories.find(c => c.id === id);
-        return { name: entry.name, done: false, createdAt: entry.createdAt || new Date().toISOString() };
-      });
-
-      await addDoc(collection(db, 'jobs'), {
-        name, type, date,
-        categories: categoryObjs,
-        created: new Date().toISOString()
-      });
-
-      // clear form
-      document.getElementById('jobName').value = '';
-      document.getElementById('jobType').value = '';
-      document.getElementById('jobDate').value = '';
-      selectedCats.clear();
-      renderCategoryGrid();
-      await loadJobs();
-    };
-
-    // Load all jobs into allJobs array
-    async function loadJobs() {
-      const snap = await getDocs(collection(db, 'jobs'));
-      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderJobs();
-    }
-
-    // Render jobs; if monthFilter is set, show only jobs with date starting with yyyy-mm
-    function renderJobs() {
-      const filterMonth = monthFilter.value; // format yyyy-mm
-      let jobsToShow = allJobs.slice();
-
-      if (filterMonth) {
-        jobsToShow = jobsToShow.filter(j => j.date && j.date.startsWith(filterMonth));
-      }
-
-      if (!jobsToShow.length) {
-        jobList.innerHTML = '<p style="text-align:center;color:#9fbcdff0;">No jobs found.</p>';
-        return;
-      }
-
-      jobList.innerHTML = '';
-      jobsToShow.forEach(j => {
-        const div = document.createElement('div');
-        div.className = 'job-item';
-        const catsText = Array.isArray(j.categories) ? j.categories.map(c => c.name).join(', ') : '';
-        div.innerHTML = `
-          <div class="left">
-            <div style="font-weight:700;color:var(--accent);cursor:pointer" onclick="openJob('${j.id}')">${escapeHtml(j.name)}</div>
-            <div class="small" style="margin-top:6px;">${escapeHtml(j.type)}</div>
-          </div>
-          <div class="meta">
-            <div>${escapeHtml(j.date || '')}</div>
-            <div style="margin-top:6px;font-size:0.86rem;color:#b9cfe6">${escapeHtml(catsText)}</div>
-          </div>
-          <div style="display:flex;gap:10px;margin-left:12px;">
-            <button class="view-btn" onclick="openJob('${j.id}')">View</button>
-            <button class="delete-btn" onclick="deleteJob('${j.id}')">Delete</button>
-          </div>
-        `;
-        jobList.appendChild(div);
-      });
-    }
-
-    // delete job
-    window.deleteJob = async (jobId) => {
-      if (!confirm('Delete this job?')) return;
-      await deleteDoc(doc(db, 'jobs', jobId));
-      await loadJobs();
-    };
-
-    // open job-detail page
-    window.openJob = (jobId) => {
-      localStorage.setItem('selectedJob', jobId);
-      window.location.href = 'job-detail.html';
-    };
-
-    // filter handlers
-    monthFilter.onchange = renderJobs;
-    clearFilter.onclick = () => { monthFilter.value = ''; renderJobs(); };
-
-    // simple escape to prevent accidental HTML injection displayed in UI
-    function escapeHtml(s) {
-      if (!s && s !== 0) return '';
-      return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
-    }
-
-    // initialize
-    await loadCategories();
-    await loadJobs();
+    });
   </script>
+
 </body>
 </html>
