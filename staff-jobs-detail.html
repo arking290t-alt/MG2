@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Job Detail | MG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">MG - Staff Panel</div>
+    <button class="btn" onclick="logout()">Logout</button>
+  </header>
+
+  <div id="jobDetailContainer"></div>
+
+  <script type="module" src="script.js"></script>
+
+  <script>
+    window.IS_STAFF = true;
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  </script>
+
+</body>
+</html>
