@@ -145,8 +145,9 @@ loginForm.addEventListener("submit", async (e) => {
     const role = roleDoc.data().role;
 
     // Redirect based on REAL role
-   if (role === "owner") window.location.href = "dashboard.html";
-else (role === "staff") window.location.href = "jobs.html";
+ if (role === "owner") window.location.href = "dashboard.html";
+else window.location.href = "jobs.html";
+
  // ⭐ FIXED
     } else {
       errorText.textContent = "Invalid role in database!";
