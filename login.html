@@ -62,51 +62,68 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-      authDomain: "mg-manager-3ab66.firebaseapp.com",
-      projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.appspot.com",
-      messagingSenderId: "330667005987",
-      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+    storageBucket: "mg-manager-3ab66.appspot.com",
+    messagingSenderId: "330667005987",
+    appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    const loginForm = document.getElementById("loginForm");
-    const errorBox = document.getElementById("error");
+  const loginForm = document.getElementById("loginForm");
+  const errorText = document.getElementById("error");
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorBox.textContent = "";
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const role = document.getElementById("role").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const selectedRole = document.getElementById("role").value;
 
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCred.user;
 
-        // Save session
-        localStorage.setItem("loggedInUser", JSON.stringify({ email, role }));
+      // GET the actual role stored in Firestore
+      const userRoleDoc = await getDoc(doc(db, "users", user.uid));
 
-        // Redirect based on role
-        if (role === "owner") {
-          window.location.href = "dashboard.html";
-        } else {
-          window.location.href = "jobs.html"; // <-- STAFF GOES HERE
-        }
-
-      } catch (error) {
-        errorBox.textContent = "Login failed: " + error.message;
+      if (!userRoleDoc.exists()) {
+        errorText.textContent = "No role found in database!";
+        return;
       }
-    });
-  </script>
+
+      const realRole = userRoleDoc.data().role;
+
+      // ❌ BLOCK incorrect role selection
+      if (realRole !== selectedRole) {
+        errorText.textContent = "Incorrect role selected!";
+        return;
+      }
+
+      // ✔ ROLE CORRECT → Redirect properly
+      if (realRole === "owner") {
+        window.location.href = "dashboard.html";
+      }
+
+      if (realRole === "staff") {
+        window.location.href = "jobs.html";  // STAFF GOES TO JOBS
+      }
+
+    } catch (err) {
+      errorText.textContent = "Login failed: " + err.message;
+    }
+  });
+</script>
 
 </body>
 </html>
