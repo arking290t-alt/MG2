@@ -18,7 +18,7 @@
     header{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:rgba(255,255,255,0.05);}
     .logo{color:var(--accent);font-size:1.5rem;font-weight:700;}
     .btn{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:600;cursor:pointer;}
-    .container{max-width:700px;margin:40px auto;background:var(--card);padding:30px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);text-align:center;}
+    .container{max-width:700px;margin:40px auto;background:var(--card);padding:30px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.1);text-align:center;position:relative;}
     h1{color:var(--accent);margin-bottom:10px;}
     h2{color:var(--accent);margin-bottom:0;}
     p{margin-top:2px;color:#ccc;}
@@ -42,6 +42,31 @@
     }
     .mark-btn:hover{background:var(--done);color:#fff;border-color:var(--done);}
     .unmark-btn:hover{background:rgba(255,255,255,0.08);}
+
+    /* Delivery Date Box */
+    .delivery-box{
+      margin-top:40px;
+      text-align:right;
+      padding-top:20px;
+      border-top:1px solid rgba(255,255,255,0.1);
+    }
+    .delivery-box input{
+      padding:6px 10px;
+      border-radius:6px;
+      border:1px solid var(--accent);
+      background:var(--panel);
+      color:white;
+    }
+    .saveDateBtn{
+      background:var(--accent);
+      border:none;
+      padding:6px 12px;
+      color:white;
+      border-radius:6px;
+      cursor:pointer;
+      margin-left:6px;
+    }
+
   </style>
 </head>
 <body>
@@ -61,6 +86,13 @@
     <p id="jobType"></p>
 
     <div class="timeline" id="categoryTimeline"></div>
+
+    <!-- Expected Delivery Section -->
+    <div class="delivery-box" id="deliverySection">
+      <h3 style="color:var(--accent);margin-bottom:8px;">Expected Delivery</h3>
+      <div id="deliveryContent"></div>
+    </div>
+
   </div>
 
   <script type="module">
@@ -80,48 +112,45 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // CHECK IF CUSTOMER IS VIEWING SHARED LINK
+    // Check if customer mode
     const urlParams = new URLSearchParams(window.location.search);
     const sharedJobId = urlParams.get("job");
-
     const jobId = sharedJobId || localStorage.getItem("selectedJob");
+    const isCustomer = sharedJobId ? true : false;
 
     const jobNameEl = document.getElementById("jobName");
     const jobTypeEl = document.getElementById("jobType");
     const categoryTimeline = document.getElementById("categoryTimeline");
     const ownerHeader = document.getElementById("ownerHeader");
+    const deliverySection = document.getElementById("deliverySection");
+    const deliveryContent = document.getElementById("deliveryContent");
 
-    // IF CUSTOMER → hide header & buttons
-    const isCustomer = sharedJobId ? true : false;
     if (isCustomer) {
       ownerHeader.style.display = "none";
     }
 
     async function loadJob() {
-      if (!jobId) {
-        categoryTimeline.innerHTML = "<p>No job selected.</p>";
-        return;
-      }
-
       const docRef = doc(db, "jobs", jobId);
       const snap = await getDoc(docRef);
+
       if (!snap.exists()) {
         categoryTimeline.innerHTML = "<p>Job not found.</p>";
         return;
       }
 
       const job = snap.data();
+
       jobNameEl.textContent = job.name;
       jobTypeEl.textContent = job.type;
 
-      if (!job.categories) return;
-
-      const categories = job.categories;
-
+      // RENDER CATEGORIES
+      const categories = job.categories || [];
       categoryTimeline.innerHTML = "";
+
       categories.forEach((cat, i) => {
         const div = document.createElement("div");
         div.className = "stage";
+
         div.innerHTML = `
           <div class="dot ${cat.done ? "done" : ""}"></div>
           <div class="stage-content">
@@ -129,13 +158,12 @@
             <small>Category</small>
             ${
               isCustomer
-                ? "" 
+                ? ""
                 : `
                 <div class="btn-row">
                   <button class="mark-btn">Mark Done</button>
                   <button class="unmark-btn">Not Yet Done</button>
-                </div>
-              `
+                </div>`
             }
           </div>
         `;
@@ -143,16 +171,13 @@
         const dot = div.querySelector(".dot");
 
         if (!isCustomer) {
-          const markBtn = div.querySelector(".mark-btn");
-          const unmarkBtn = div.querySelector(".unmark-btn");
-
-          markBtn.onclick = async () => {
+          div.querySelector(".mark-btn").onclick = async () => {
             categories[i].done = true;
             dot.classList.add("done");
             await updateDoc(docRef, { categories });
           };
 
-          unmarkBtn.onclick = async () => {
+          div.querySelector(".unmark-btn").onclick = async () => {
             categories[i].done = false;
             dot.classList.remove("done");
             await updateDoc(docRef, { categories });
@@ -161,6 +186,28 @@
 
         categoryTimeline.appendChild(div);
       });
+
+      // EXPECTED DELIVERY DATE
+      const savedDate = job.expectedDate;
+
+      if (isCustomer) {
+        deliveryContent.innerHTML = `
+          <p style="font-size:1.1rem;color:#fff">
+            📅 ${savedDate ? savedDate : "Not Provided"}
+          </p>
+        `;
+      } else {
+        deliveryContent.innerHTML = `
+          <input type="date" id="deliveryDate" value="${savedDate || ""}">
+          <button class="saveDateBtn" id="saveDateBtn">Save</button>
+        `;
+
+        document.getElementById("saveDateBtn").onclick = async () => {
+          const newDate = document.getElementById("deliveryDate").value;
+          await updateDoc(docRef, { expectedDate: newDate });
+          alert("Delivery date updated!");
+        };
+      }
     }
 
     loadJob();
@@ -177,5 +224,6 @@
     }
 
   </script>
+
 </body>
 </html>
