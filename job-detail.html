@@ -96,134 +96,115 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-      authDomain: "mg-manager-3ab66.firebaseapp.com",
-      projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.appspot.com",
-      messagingSenderId: "330667005987",
-      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.appspot.com",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    // Check if customer mode
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedJobId = urlParams.get("job");
-    const jobId = sharedJobId || localStorage.getItem("selectedJob");
-    const isCustomer = sharedJobId ? true : false;
+// CUSTOMER OR OWNER VIEW CHECK
+const urlParams = new URLSearchParams(window.location.search);
+const sharedJobId = urlParams.get("job");
+const jobId = sharedJobId || localStorage.getItem("selectedJob");
+const isCustomer = sharedJobId ? true : false;
 
-    const jobNameEl = document.getElementById("jobName");
-    const jobTypeEl = document.getElementById("jobType");
-    const categoryTimeline = document.getElementById("categoryTimeline");
-    const ownerHeader = document.getElementById("ownerHeader");
-    const deliverySection = document.getElementById("deliverySection");
-    const deliveryContent = document.getElementById("deliveryContent");
+const jobNameEl = document.getElementById("jobName");
+const jobTypeEl = document.getElementById("jobType");
+const categoryTimeline = document.getElementById("categoryTimeline");
+const ownerHeader = document.getElementById("ownerHeader");
 
-    if (isCustomer) {
-      ownerHeader.style.display = "none";
-    }
+if (isCustomer) ownerHeader.style.display = "none";
 
-    async function loadJob() {
-      const docRef = doc(db, "jobs", jobId);
-      const snap = await getDoc(docRef);
+async function loadJob() {
+  const docRef = doc(db, "jobs", jobId);
+  const snap = await getDoc(docRef);
 
-      if (!snap.exists()) {
-        categoryTimeline.innerHTML = "<p>Job not found.</p>";
-        return;
-      }
+  if (!snap.exists()) {
+    categoryTimeline.innerHTML = "<p>Job not found.</p>";
+    return;
+  }
 
-      const job = snap.data();
+  const job = snap.data();
+  jobNameEl.textContent = job.name;
+  jobTypeEl.textContent = job.type;
 
-      jobNameEl.textContent = job.name;
-      jobTypeEl.textContent = job.type;
+  const categories = job.categories || [];
 
-      // RENDER CATEGORIES
-      const categories = job.categories || [];
-      categoryTimeline.innerHTML = "";
+  categoryTimeline.innerHTML = "";
 
-      categories.forEach((cat, i) => {
-        const div = document.createElement("div");
-        div.className = "stage";
+  categories.forEach((cat, i) => {
+    // Default old format support
+    if (!cat.status) cat.status = cat.done ? "done" : "pending";
 
-        div.innerHTML = `
-          <div class="dot ${cat.done ? "done" : ""}"></div>
-          <div class="stage-content">
-            <span>${cat.name}</span>
-            <small>Category</small>
-            ${
-              isCustomer
-                ? ""
-                : `
-                <div class="btn-row">
-                  <button class="mark-btn">Mark Done</button>
-                  <button class="unmark-btn">Not Yet Done</button>
-                </div>`
-            }
+    const div = document.createElement("div");
+    div.className = "stage";
+
+    let dotColor = "var(--accent)"; // blue default
+    if (cat.status === "done") dotColor = "var(--done)";
+    if (cat.status === "processing") dotColor = "yellow";
+
+    div.innerHTML = `
+      <div class="dot" style="background:${dotColor};"></div>
+      <div class="stage-content">
+        <span>${cat.name}</span>
+        <small>Category</small>
+
+        ${
+          isCustomer
+            ? ""
+            : `
+          <div class="btn-row">
+            <button class="mark-btn">Mark Done</button>
+            <button class="process-btn" style="border-color:yellow;color:yellow;">Processing</button>
+            <button class="unmark-btn">Not Yet Done</button>
           </div>
-        `;
-
-        const dot = div.querySelector(".dot");
-
-        if (!isCustomer) {
-          div.querySelector(".mark-btn").onclick = async () => {
-            categories[i].done = true;
-            dot.classList.add("done");
-            await updateDoc(docRef, { categories });
-          };
-
-          div.querySelector(".unmark-btn").onclick = async () => {
-            categories[i].done = false;
-            dot.classList.remove("done");
-            await updateDoc(docRef, { categories });
-          };
+        `
         }
+      </div>
+    `;
 
-        categoryTimeline.appendChild(div);
-      });
+    const dot = div.querySelector(".dot");
 
-      // EXPECTED DELIVERY DATE
-      const savedDate = job.expectedDate;
+    if (!isCustomer) {
+      const markBtn = div.querySelector(".mark-btn");
+      const processBtn = div.querySelector(".process-btn");
+      const unmarkBtn = div.querySelector(".unmark-btn");
 
-      if (isCustomer) {
-        deliveryContent.innerHTML = `
-          <p style="font-size:1.1rem;color:#fff">
-            📅 ${savedDate ? savedDate : "Not Provided"}
-          </p>
-        `;
-      } else {
-        deliveryContent.innerHTML = `
-          <input type="date" id="deliveryDate" value="${savedDate || ""}">
-          <button class="saveDateBtn" id="saveDateBtn">Save</button>
-        `;
+      markBtn.onclick = async () => {
+        categories[i].status = "done";
+        dot.style.background = "var(--done)";
+        await updateDoc(docRef, { categories });
+      };
 
-        document.getElementById("saveDateBtn").onclick = async () => {
-          const newDate = document.getElementById("deliveryDate").value;
-          await updateDoc(docRef, { expectedDate: newDate });
-          alert("Delivery date updated!");
-        };
-      }
-    }
+      processBtn.onclick = async () => {
+        categories[i].status = "processing";
+        dot.style.background = "yellow";
+        await updateDoc(docRef, { categories });
+      };
 
-    loadJob();
-
-    // SHARE BUTTON
-    const shareBtn = document.getElementById("shareBtn");
-    if (shareBtn) {
-      shareBtn.onclick = () => {
-        const shareURL = `${window.location.origin}${window.location.pathname}?job=${jobId}`;
-        navigator.clipboard.writeText(shareURL);
-        shareBtn.textContent = "Copied!";
-        setTimeout(() => shareBtn.textContent = "Share", 1500);
+      unmarkBtn.onclick = async () => {
+        categories[i].status = "pending";
+        dot.style.background = "var(--accent)";
+        await updateDoc(docRef, { categories });
       };
     }
 
-  </script>
+    categoryTimeline.appendChild(div);
+  });
+}
+
+loadJob();
+</script>
 
 </body>
 </html>
