@@ -100,7 +100,6 @@
 
 <body>
 
-  <!-- HEADER -->
   <header>
     <div class="logo">MG</div>
     <button class="logout-btn" id="logout">Logout</button>
@@ -146,9 +145,8 @@
 
   </div>
 
-  <!-- FIREBASE JS -->
+  <!-- FIREBASE LOGIC -->
   <script type="module">
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
     import {
       getFirestore, collection, addDoc, getDocs,
@@ -167,15 +165,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const categoryGrid = document.getElementById("categoryGrid");
-    const categoryList = document.getElementById("categoryList");
-    const jobList = document.getElementById("jobList");
-
     let selectedCats = new Set();
     let categories = [];
     let allJobs = [];
 
-    // LOAD CATEGORIES
+    const categoryGrid = document.getElementById("categoryGrid");
+    const categoryList = document.getElementById("categoryList");
+    const jobList = document.getElementById("jobList");
+
+    /* ---------------- LOAD CATEGORIES ---------------- */
     async function loadCategories() {
       const q = query(collection(db, "jobCategories"), orderBy("createdAt", "asc"));
       const snap = await getDocs(q);
@@ -187,8 +185,8 @@
 
     function renderCategoryGrid() {
       categoryGrid.innerHTML = categories.map(c => `
-        <div class="checkbox-chip" data-id="${c.id}" data-name="${c.name}">
-          <span>${c.name}</span>
+        <div class="checkbox-chip" data-id="${c.id}">
+          ${c.name}
         </div>
       `).join("");
 
@@ -221,7 +219,7 @@
       loadCategories();
     };
 
-    // ADD CATEGORY
+    /* ---------------- ADD CATEGORY ---------------- */
     document.getElementById("addCategory").onclick = async () => {
       let name = document.getElementById("newCategory").value.trim();
       if (!name) return alert("Enter category");
@@ -235,7 +233,7 @@
       loadCategories();
     };
 
-    // ADD JOB
+    /* ---------------- ADD JOB ---------------- */
     document.getElementById("addJob").onclick = async () => {
       let name = document.getElementById("jobName").value.trim();
       let type = document.getElementById("jobType").value.trim();
@@ -246,6 +244,9 @@
 
       let selected = categories.filter(c => selectedCats.has(c.id));
 
+      // NEW FORMAT: add default "pending" status
+      selected = selected.map(c => ({ ...c, status: "pending" }));
+
       await addDoc(collection(db, "jobs"), {
         name,
         type,
@@ -254,22 +255,23 @@
         created: new Date().toISOString()
       });
 
+      selectedCats.clear();
       document.getElementById("jobName").value = "";
       document.getElementById("jobType").value = "";
       document.getElementById("jobDate").value = "";
-      selectedCats.clear();
+
       loadCategories();
       loadJobs();
     };
 
-    // LOAD JOBS
+    /* ---------------- LOAD JOBS ---------------- */
     async function loadJobs() {
       const snap = await getDocs(collection(db, "jobs"));
       allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderJobs();
     }
 
-    // RENDER JOB LIST
+    /* ---------------- RENDER JOBS (PROCESSING SORT + YELLOW DOT) ---------------- */
     function renderJobs() {
       let month = document.getElementById("monthFilter").value;
 
@@ -277,11 +279,41 @@
         ? allJobs.filter(j => j.date.startsWith(month))
         : allJobs;
 
+      // FIND PROCESSING CATEGORIES
+      jobsToShow = jobsToShow.map(job => {
+        let processing = [];
+
+        if (job.categories) {
+          job.categories.forEach(c => {
+            if (c.status === "processing") processing.push(c.name);
+          });
+        }
+
+        return { ...job, processing };
+      });
+
+      // SORT → processing jobs go first
+      jobsToShow.sort((a, b) => {
+        if (a.processing.length > 0 && b.processing.length === 0) return -1;
+        if (a.processing.length === 0 && b.processing.length > 0) return 1;
+        return a.date.localeCompare(b.date);
+      });
+
       jobList.innerHTML = jobsToShow.map(j => `
         <div class="job-item">
+          
           <div class="job-left">
             <div class="job-name" onclick="openJob('${j.id}')">${j.name}</div>
             <div class="job-type">${j.type}</div>
+
+            ${j.processing.length > 0 ? `
+              <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+                <div style="width:10px;height:10px;background:yellow;border-radius:50%;"></div>
+                <span style="color:yellow;font-size:0.85rem;">
+                  Processing: ${j.processing.join(", ")}
+                </span>
+              </div>
+            ` : ""}
           </div>
 
           <div class="job-meta">
@@ -294,7 +326,7 @@
       `).join("");
     }
 
-    // DELETE JOB
+    /* ---------------- DELETE JOB ---------------- */
     window.deleteJob = async (id) => {
       if (!confirm("Delete job?")) return;
       await deleteDoc(doc(db, "jobs", id));
