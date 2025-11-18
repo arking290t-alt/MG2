@@ -6,6 +6,7 @@
   <title>Dashboard | MG</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body class="dashboard-body">
   <header class="top-bar">
     <h1 class="logo">MG</h1>
@@ -16,10 +17,19 @@
 
   <main class="dashboard-center">
     <div class="dashboard-box">
-      <h2 class="welcome">Welcome</h2>
-      <p class="subtitle">Manage staff, attendance, payments, and jobs</p>
 
-      <div class="dashboard-grid">
+      <h2 class="welcome">Welcome</h2>
+      <p class="subtitle">Manage staff, attendance, payments, jobs & inventory</p>
+
+      <!-- 🔥 HORIZONTAL CARD GRID -->
+      <div class="dashboard-grid" style="
+        display:flex;
+        gap:20px;
+        justify-content:center;
+        flex-wrap:wrap;
+        margin-top:20px;
+      ">
+
         <a href="staff.html" class="dashboard-card">
           <h3>Staff</h3>
           <p>Manage & add staff</p>
@@ -39,6 +49,13 @@
           <h3>Job Update</h3>
           <p>Add, manage & track job details</p>
         </a>
+
+        <!-- 🚀 NEW INVENTORY CARD -->
+        <a href="inventory.html" class="dashboard-card">
+          <h3>Inventory</h3>
+          <p>Manage & track stock</p>
+        </a>
+
       </div>
 
       <div style="margin-top:18px;">
@@ -47,6 +64,7 @@
         </button>
         <span id="migrateStatus" class="small"></span>
       </div>
+
     </div>
   </main>
 
@@ -54,7 +72,7 @@
     // Firebase initialization
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, getDoc, doc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -86,78 +104,7 @@
       await signOut(auth);
       location.href = "login.html";
     };
-
-    // Data migration (optional feature)
-    migrateBtn.onclick = async () => {
-      if (!confirm("This will upload your localStorage data to Firestore. Proceed?")) return;
-      migrateStatus.textContent = "Migrating...";
-      try {
-        const staffList = JSON.parse(localStorage.getItem("staffList")) || [];
-        const attendanceData = JSON.parse(localStorage.getItem("attendanceData")) || {};
-        const paymentListData = JSON.parse(localStorage.getItem("paymentListData")) || {};
-        const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
-        const categories = JSON.parse(localStorage.getItem("categories")) || [];
-
-        // Upload staff
-        for (const s of staffList) {
-          await addDoc(collection(db, "staff"), {
-            name: s.name,
-            phone: s.phone || "",
-            salary: s.salary || 0,
-          });
-        }
-
-        // Upload attendance
-        for (const key in attendanceData) {
-          const parts = key.split("_");
-          if (parts.length < 4) continue;
-          const staffName = parts[0];
-          const year = parseInt(parts[1]);
-          const month = parseInt(parts[2]);
-          const day = parseInt(parts[3]);
-          const rec = attendanceData[key];
-          await addDoc(collection(db, "attendance"), {
-            staffName,
-            year,
-            month,
-            day,
-            status: rec.status,
-            ot: rec.ot || 0,
-            migratedAt: new Date().toISOString(),
-          });
-        }
-
-        // Upload payments
-        for (const key in paymentListData) {
-          const arr = paymentListData[key] || [];
-          const parts = key.split("_");
-          const staffName = parts[0];
-          const year = parseInt(parts[1]);
-          const month = parseInt(parts[2]);
-          for (const p of arr) {
-            await addDoc(collection(db, "payments"), {
-              staffName,
-              year,
-              month,
-              amount: p.amount,
-              date: p.date || new Date().toISOString(),
-              migratedAt: new Date().toISOString(),
-            });
-          }
-        }
-
-        // Upload categories and expenses
-        for (const c of categories) await addDoc(collection(db, "categories"), { name: c });
-        for (const e of expenses) await addDoc(collection(db, "expenses"), e);
-
-        migrateStatus.textContent = "✅ Migration complete!";
-        alert("Migration successful!");
-      } catch (err) {
-        console.error(err);
-        migrateStatus.textContent = "❌ Migration failed!";
-        alert("Migration failed: " + err.message);
-      }
-    };
   </script>
+
 </body>
 </html>
