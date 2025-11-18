@@ -1,6 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Used Inventory | MG</title>
+
+<style>
+:root{
+  --bg:#0b111b;
+  --panel:#0e1724;
+  --accent:#00b4ff;
+  --muted:#9aa9b6;
+  --card:#0f1417;
+  --danger:#ef4444;
+  --text:#e2e8f0;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Poppins, sans-serif;
+  background:var(--bg);
+  color:var(--muted);
+  padding:28px;
+}
+
+h1{
+  text-align:center;
+  color:var(--accent);
+  margin:6px 0 18px;
+  font-size:2rem;
+}
+
+/* top controls */
+.top-row{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+}
+.btn{
+  padding:8px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+}
+.back-btn{background:#0ea5a0;color:#021014}
+.filter-select, .filter-date{
+  background:#11181d;
+  border:1px solid rgba(255,255,255,0.06);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:8px;
+  outline:none;
+}
+
+/* container + list */
+.container{max-width:1100px;margin:0 auto}
+.used-card{
+  background:var(--card);
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  border:1px solid rgba(255,255,255,0.03);
+  color:#e6f2ff;
+}
+.used-left{line-height:1.45}
+.used-actions{display:flex;gap:8px;align-items:center}
+
+/* small buttons */
+.small-btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+.view-btn{background:#60a5fa;color:#021022}
+.delete-btn{background:var(--danger);color:white}
+
+/* modal */
+.modal-back{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.modal{
+  background:#0f1720;
+  width:90%;
+  max-width:420px;
+  max-height:90vh;
+  overflow-y:auto;
+  padding:18px;
+  border-radius:12px;
+  color:var(--text);
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+}
+.modal h3{color:var(--accent);margin:0 0 12px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:10px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
+.modal-footer{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+.modal .btn-close{background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:none}
+.modal .btn-del{background:var(--danger);color:#fff;padding:8px 12px;border-radius:8px;border:none}
+
+/* responsive */
+@media (max-width:520px){
+  .used-card{flex-direction:column;gap:10px}
+  .used-actions{justify-content:flex-start}
+}
+.empty-msg{text-align:center;color:#64748b;margin-top:40px;font-size:1rem}
+</style>
+</head>
+<body>
+
+<h1>Used Inventory History</h1>
+
+<div class="top-row">
+  <a href="inventory.html"><button class="btn back-btn">Back to Inventory</button></a>
+  <select id="filterCategory" class="filter-select" aria-label="Filter by category">
+    <option value="all">All Categories</option>
+  </select>
+  <input id="filterMonth" type="month" class="filter-date" aria-label="Filter by month">
+</div>
+
+<div class="container">
+  <div id="usedList"></div>
+</div>
+
+<!-- Modal (view-only fields) -->
 <div class="modal-back" id="modalBack">
-  <div class="modal">
-    <h3 style="color:var(--accent); margin-bottom:14px;">Item Details</h3>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Item Details</h3>
 
     <div class="field"><label>Item Name</label><input id="v_name" readonly></div>
     <div class="field"><label>Invoice Number</label><input id="v_invoice" readonly></div>
@@ -11,14 +144,249 @@
     <div class="field"><label>Used Quantity</label><input id="v_usedAmount" readonly></div>
     <div class="field"><label>Unit</label><input id="v_unit" readonly></div>
     <div class="field"><label>Used For</label><input id="v_usedFor" readonly></div>
-    <div class="field"><label>Original Price (₹)</label><input id="v_price" readonly></div>
+    <div class="field"><label>Original Purchase Price (₹)</label><input id="v_price" readonly></div>
     <div class="field"><label>Category</label><input id="v_category" readonly></div>
     <div class="field"><label>Original Date</label><input id="v_date" readonly></div>
     <div class="field"><label>Used At</label><input id="v_usedAt" readonly></div>
 
-    <div class="actions" style="display:flex; justify-content:space-between; margin-top:12px;">
-      <button id="modalDelete" class="small-btn" style="background:#ef4444; color:#fff;">Delete</button>
-      <button id="modalClose" class="small-btn" style="background:#333; color:#fff;">Close</button>
+    <div class="modal-footer">
+      <button id="modalDelete" class="btn-del">Delete</button>
+      <button id="modalClose" class="btn-close">Close</button>
     </div>
   </div>
 </div>
+
+<script type="module">
+  // Firebase v11 imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, deleteDoc, doc
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Elements
+  const usedListEl = document.getElementById('usedList');
+  const filterCategory = document.getElementById('filterCategory');
+  const filterMonth = document.getElementById('filterMonth');
+
+  const modalBack = document.getElementById('modalBack');
+  const modalClose = document.getElementById('modalClose');
+  const modalDelete = document.getElementById('modalDelete');
+
+  // modal fields
+  const v_name = document.getElementById('v_name');
+  const v_invoice = document.getElementById('v_invoice');
+  const v_reel = document.getElementById('v_reel');
+  const v_supplier = document.getElementById('v_supplier');
+  const v_gsm = document.getElementById('v_gsm');
+  const v_bf = document.getElementById('v_bf');
+  const v_usedAmount = document.getElementById('v_usedAmount');
+  const v_unit = document.getElementById('v_unit');
+  const v_usedFor = document.getElementById('v_usedFor');
+  const v_price = document.getElementById('v_price');
+  const v_category = document.getElementById('v_category');
+  const v_date = document.getElementById('v_date');
+  const v_usedAt = document.getElementById('v_usedAt');
+
+  // Data cache
+  let usedRecords = []; // array of { id, ...data }
+  let currentModalId = null;
+
+  // --- Utilities for flexible field names ---
+  function getField(o, candidates){
+    for(const k of candidates){
+      if(o && typeof o[k] !== 'undefined') return o[k];
+    }
+    return undefined;
+  }
+
+  // convert ISO-ish timestamp to readable
+  function prettyDate(iso){
+    try{
+      if(!iso) return '-';
+      const d = new Date(iso);
+      if(isNaN(d)) return iso;
+      return d.toLocaleString();
+    }catch(e){return iso}
+  }
+
+  // Load used records from Firestore collection 'inventoryUsed'
+  async function loadUsedRecords(){
+    usedListEl.innerHTML = "<p class='empty-msg'>Loading...</p>";
+    usedRecords = [];
+
+    const snap = await getDocs(collection(db, "inventoryUsed"));
+    snap.forEach(s => usedRecords.push({ id: s.id, ...s.data() }));
+
+    // populate category filter based on records
+    populateCategoryFilter();
+
+    renderList();
+  }
+
+  function populateCategoryFilter(){
+    const cats = Array.from(new Set(usedRecords.map(r => r.category).filter(Boolean)));
+    filterCategory.innerHTML = '<option value="all">All Categories</option>';
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      filterCategory.appendChild(opt);
+    });
+  }
+
+  // Render list with minimal columns: name, qty+unit, category, usedAt
+  function renderList(){
+    usedListEl.innerHTML = '';
+    const selCat = filterCategory.value || 'all';
+    const selMonth = filterMonth.value; // 'YYYY-MM' or ''
+
+    // sort newest first by usedAt or usedDate or usedAt-like
+    const list = usedRecords.slice().sort((a,b)=>{
+      const da = (getField(a, ['usedAt','usedDate','used_at','used_on'])||'').toString();
+      const db = (getField(b, ['usedAt','usedDate','used_at','used_on'])||'').toString();
+      return (db.localeCompare(da));
+    });
+
+    const filtered = list.filter(r=>{
+      if(selCat !== 'all' && (r.category || '') !== selCat) return false;
+      if(selMonth){
+        const usedTs = (getField(r, ['usedAt','usedDate','used_at','used_on']) || r.usedAt || r.usedDate || '').toString();
+        // allow both ISO or "YYYY-MM-DDTHH..." and also fallback to date string
+        if(!usedTs.startsWith(selMonth)) return false;
+      }
+      return true;
+    });
+
+    if(filtered.length === 0){
+      usedListEl.innerHTML = '<p class="empty-msg">No used items found.</p>';
+      return;
+    }
+
+    filtered.forEach(rec=>{
+      const name = rec.name || rec.itemName || '-';
+      const qty = (getField(rec, ['usedAmount','used_quantity','amount','qty']) ?? '-');
+      const unit = rec.unit || 'PCS';
+      const cat = rec.category || '-';
+      const usedAtRaw = getField(rec, ['usedAt','usedDate','used_at','used_on']) || '';
+      const usedAt = usedAtRaw ? prettyDate(usedAtRaw) : (rec.usedAt ? prettyDate(rec.usedAt) : '-');
+
+      const card = document.createElement('div');
+      card.className = 'used-card';
+
+      const left = document.createElement('div');
+      left.className = 'used-left';
+      left.innerHTML = `<strong style="color:#fff">${name}</strong>
+                        <div style="margin-top:6px">Used: ${qty} ${unit}<br>Category: ${cat}<br>At: ${usedAt}</div>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'used-actions';
+
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'small-btn view-btn';
+      viewBtn.innerText = 'View Details';
+      viewBtn.onclick = ()=> openModal(rec.id);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'small-btn delete-btn';
+      delBtn.innerText = 'Delete';
+      delBtn.onclick = ()=> confirmDelete(rec.id);
+
+      actions.appendChild(viewBtn);
+      actions.appendChild(delBtn);
+
+      card.appendChild(left);
+      card.appendChild(actions);
+
+      usedListEl.appendChild(card);
+    });
+  }
+
+  // Open modal and fill fields (read-only)
+  async function openModal(id){
+    const rec = usedRecords.find(r => r.id === id);
+    if(!rec) return alert('Record not found');
+
+    currentModalId = id;
+
+    // flexible mapping: prefer known names, but try multiple keys
+    const name = getField(rec, ['name','itemName','item','title']) || '-';
+    const invoice = getField(rec, ['invoice','invoiceNo','invoice_number']) || '-';
+    const reel = getField(rec, ['reel','reelNumber','reel_no']) || '-';
+    const supplier = getField(rec, ['supplier']) || '-';
+    const gsm = getField(rec, ['gsm']) ?? '-';
+    const bf = getField(rec, ['bf']) ?? '-';
+    const usedAmount = getField(rec, ['usedAmount','amount','used_quantity','qty']) ?? '-';
+    const unit = getField(rec, ['unit']) || '-';
+    const usedFor = getField(rec, ['usedFor','used_for','for','purpose']) || '-';
+    const price = getField(rec, ['price','purchasePrice','purchase_price']) ?? '-';
+    const category = getField(rec, ['category']) || '-';
+    const originalDate = getField(rec, ['date','originalDate','original_date']) || '-';
+    const usedAt = getField(rec, ['usedAt','usedDate','used_at','used_on']) || rec.usedAt || rec.usedDate || '-';
+
+    v_name.value = name;
+    v_invoice.value = invoice;
+    v_reel.value = reel;
+    v_supplier.value = supplier;
+    v_gsm.value = (gsm === null ? '-' : gsm);
+    v_bf.value = (bf === null ? '-' : bf);
+    v_usedAmount.value = (usedAmount !== '-' ? `${usedAmount} ${unit}` : '-');
+    v_unit.value = unit;
+    v_usedFor.value = usedFor;
+    v_price.value = (price === null ? '-' : price);
+    v_category.value = category;
+    v_date.value = originalDate;
+    v_usedAt.value = usedAt ? prettyDate(usedAt) : '-';
+
+    modalBack.style.display = 'flex';
+  }
+
+  // Confirm delete from list (not restoring inventory)
+  async function confirmDelete(id){
+    if(!confirm('Delete this used record? This will not restore inventory.')) return;
+    await deleteDoc(doc(db, 'inventoryUsed', id));
+    // remove from local cache and re-render
+    usedRecords = usedRecords.filter(r => r.id !== id);
+    renderList();
+    // if modal open for same id, close it
+    if(currentModalId === id) modalBack.style.display = 'none';
+  }
+
+  // Delete button inside modal
+  modalDelete.addEventListener('click', async ()=>{
+    if(!currentModalId) return;
+    if(!confirm('Delete this used record? This will not restore inventory.')) return;
+    await deleteDoc(doc(db, 'inventoryUsed', currentModalId));
+    usedRecords = usedRecords.filter(r => r.id !== currentModalId);
+    modalBack.style.display = 'none';
+    renderList();
+  });
+
+  // Close modal
+  modalClose.addEventListener('click', ()=> {
+    modalBack.style.display = 'none';
+    currentModalId = null;
+  });
+
+  // filters
+  filterCategory.addEventListener('change', renderList);
+  filterMonth.addEventListener('change', renderList);
+
+  // initial load
+  await loadUsedRecords();
+
+  // expose small helpers for debugging in console
+  window.__reloadUsed = loadUsedRecords;
+  window.__usedRecords = usedRecords;
+
+</script>
+</body>
+</html>
