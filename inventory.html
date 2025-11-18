@@ -95,6 +95,11 @@ button {
   margin: 25px 0 10px;
 }
 
+.flex-row {
+  display: flex;
+  gap: 12px;
+}
+
 </style>
 </head>
 
@@ -105,9 +110,18 @@ button {
 <!-- ADD ITEM -->
 <div>
   <input id="itemName" type="text" placeholder="Item Name">
-  <input id="itemQty" type="number" placeholder="Quantity">
+
+  <div class="flex-row">
+    <input id="itemQty" type="number" placeholder="Quantity">
+
+    <select id="qtyUnit">
+      <option value="PCS">PCS</option>
+      <option value="KGS">KGS</option>
+    </select>
+  </div>
+
   <input id="purchasePrice" type="number" placeholder="Purchase Price (₹)">
-  <input id="itemDate" type="date" placeholder="Date">
+  <input id="itemDate" type="date">
 
   <select id="itemCategory">
     <option value="">Select Category</option>
@@ -121,7 +135,7 @@ button {
 <!-- MANAGE CATEGORIES -->
 <h2 class="section-title">Manage Categories</h2>
 
-<div style="display:flex;gap:10px;">
+<div class="flex-row">
   <input id="newCat" type="text" placeholder="New Category Name">
   <button class="add-btn" id="addCat">Add Category</button>
 </div>
@@ -168,6 +182,7 @@ const db = getFirestore(app);
 /* ELEMENTS */
 const itemName = document.getElementById("itemName");
 const itemQty = document.getElementById("itemQty");
+const qtyUnit = document.getElementById("qtyUnit");
 const purchasePrice = document.getElementById("purchasePrice");
 const itemDate = document.getElementById("itemDate");
 const itemCategory = document.getElementById("itemCategory");
@@ -190,18 +205,14 @@ async function loadCategories() {
   snap.forEach(d => {
     const c = d.data().name;
 
-    // item dropdown
     itemCategory.innerHTML += `<option value="${c}">${c}</option>`;
-
-    // filter dropdown
     filterCat.innerHTML += `<option value="${c}">${c}</option>`;
 
-    // category list
     const row = document.createElement("div");
     row.className = "item-card";
     row.innerHTML = `
       ${c}
-      <button class="red-btn" onclick="deleteCategory('${d.id}')">Delete</button>
+      <button class="red-btn" onclick="confirmDeleteCategory('${d.id}')">Delete</button>
     `;
     categoryList.appendChild(row);
   });
@@ -221,8 +232,9 @@ document.getElementById("addCat").onclick = async () => {
 };
 
 
-/* DELETE CATEGORY */
-window.deleteCategory = async (id) => {
+/* DELETE CATEGORY WITH CONFIRM */
+window.confirmDeleteCategory = async (id) => {
+  if (!confirm("Are you sure you want to delete this category?")) return;
   await deleteDoc(doc(db, "inventoryCategories", id));
   loadCategories();
 };
@@ -258,7 +270,7 @@ function createItemCard(item, id) {
   div.innerHTML = `
     <strong>${item.name}</strong>  
     <br>
-    Qty: ${item.qty}  
+    Qty: ${item.qty} ${item.unit}
     <br>
     Price: ₹${item.price}
     <br>
@@ -267,9 +279,9 @@ function createItemCard(item, id) {
     Date: ${item.date}
     <br><br>
 
-    <button class="edit-btn" onclick="editItem('${id}', '${item.name}', '${item.qty}', '${item.price}', '${item.category}', '${item.date}')">Edit</button>
+    <button class="edit-btn" onclick="editItem('${id}', '${item.name}', '${item.qty}', '${item.unit}', '${item.price}', '${item.category}', '${item.date}')">Edit</button>
 
-    <button class="red-btn" onclick="deleteItem('${id}')">Delete</button>
+    <button class="red-btn" onclick="confirmDeleteItem('${id}')">Delete</button>
   `;
 
   inventoryList.appendChild(div);
@@ -284,6 +296,7 @@ document.getElementById("addItem").onclick = async () => {
   await addDoc(collection(db, "inventory"), {
     name: itemName.value.trim(),
     qty: parseInt(itemQty.value),
+    unit: qtyUnit.value,
     price: parseFloat(purchasePrice.value),
     category: itemCategory.value,
     date: itemDate.value
@@ -299,25 +312,29 @@ document.getElementById("addItem").onclick = async () => {
 };
 
 
-/* DELETE ITEM */
-window.deleteItem = async (id) => {
+/* CONFIRM DELETE ITEM */
+window.confirmDeleteItem = async (id) => {
+  if (!confirm("Are you sure you want to delete this item?")) return;
   await deleteDoc(doc(db, "inventory", id));
   loadItems();
 };
 
 
 /* EDIT ITEM */
-window.editItem = async (id, name, qty, price, category, date) => {
+window.editItem = async (id, name, qty, unit, price, category, date) => {
+
   const newName = prompt("Item Name:", name);
   const newQty = prompt("Quantity:", qty);
+  const newUnit = prompt("Unit (PCS/KGS):", unit);
   const newPrice = prompt("Price:", price);
   const newDate = prompt("Date (YYYY-MM-DD):", date);
 
-  if (!newName || !newQty || !newPrice || !newDate) return;
+  if (!newName || !newQty || !newUnit || !newPrice || !newDate) return;
 
   await updateDoc(doc(db, "inventory", id), {
     name: newName,
     qty: parseInt(newQty),
+    unit: newUnit,
     price: parseFloat(newPrice),
     date: newDate
   });
