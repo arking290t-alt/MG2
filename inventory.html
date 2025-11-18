@@ -1,288 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Inventory | MG</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Inventory | MG</title>
 
-  <style>
-    body {
-      background:#0b111b;
-      color:white;
-      font-family:Poppins,sans-serif;
-      padding:30px;
-    }
-    .container {
-      max-width:850px;
-      margin:auto;
-      background:rgba(255,255,255,0.05);
-      padding:25px;
-      border-radius:16px;
-      box-shadow:0 0 25px rgba(0,180,255,0.2);
-    }
-    h1 {
-      text-align:center;
-      color:#00b4ff;
-      margin-bottom:25px;
-      font-size:2rem;
-    }
-    input, select {
-      padding:10px;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,0.1);
-      background:rgba(255,255,255,0.08);
-      color:white;
-      outline:none;
-      width:100%;
-    }
-    .row {
-      display:flex;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    button {
-      padding:10px 15px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:600;
-    }
-    .add-btn {
-      background:#00b4ff;
-      color:white;
-      width:150px;
-    }
-    .item-box {
-      background:rgba(255,255,255,0.05);
-      padding:15px;
-      margin-top:15px;
-      border-radius:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      border:1px solid rgba(255,255,255,0.09);
-    }
-    .item-actions button {
-      margin:3px;
-      padding:5px 12px;
-      font-size:0.8rem;
-    }
-    .delete-btn { background:#ef4444; color:white; }
-    .edit-btn { background:#ffd400; color:black; }
+<style>
 
-    /* Category pills */
-    .cat-pill {
-      background:rgba(255,255,255,0.08);
-      border:1px solid rgba(255,255,255,0.2);
-      padding:6px 10px;
-      border-radius:8px;
-      margin:5px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .cat-delete-btn {
-      background:#ef4444;
-      border:none;
-      color:white;
-      padding:5px 8px;
-      border-radius:5px;
-    }
-  </style>
+:root {
+  --bg:#0b111b;
+  --panel:rgba(255,255,255,0.05);
+  --accent:#00b4ff;
+  --red:#ef4444;
+  --text:#e2e8f0;
+}
+
+/* BASE */
+body {
+  background: var(--bg);
+  font-family: Poppins, sans-serif;
+  color: var(--text);
+  padding: 20px;
+}
+
+/* HEADER */
+h1 {
+  text-align: center;
+  color: var(--accent);
+  margin-bottom: 25px;
+  font-size: 2rem;
+}
+
+/* INPUTS */
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #1a1f27 !important;
+  color: white !important;
+  outline: none;
+}
+
+select option {
+  background: #1a1f27 !important;
+  color: white !important;
+  padding: 10px;
+}
+
+/* BUTTONS */
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.add-btn {
+  background: var(--accent);
+  color: white;
+  width: 100%;
+}
+
+.red-btn {
+  background: var(--red);
+  color: white;
+}
+
+.edit-btn {
+  background: #4ade80;
+  color: black;
+  margin-right: 8px;
+}
+
+/* ITEM CARD */
+.item-card {
+  background: rgba(255,255,255,0.08);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+/* CATEGORY TAG */
+.category-tag {
+  color: var(--accent);
+}
+
+/* SECTION TITLE */
+.section-title {
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin: 25px 0 10px;
+}
+
+</style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>Inventory Management</h1>
+<h1>Inventory Management</h1>
 
-  <!-- ADD ITEM -->
-  <div class="row">
-    <input id="itemName" placeholder="Item Name">
-    <input id="itemQty" placeholder="Quantity" type="number">
-  </div>
+<!-- ADD ITEM -->
+<div>
+  <input id="itemName" type="text" placeholder="Item Name">
+  <input id="itemQty" type="number" placeholder="Quantity">
+  <input id="purchasePrice" type="number" placeholder="Purchase Price (₹)">
+  <input id="itemDate" type="date" placeholder="Date">
 
-  <div class="row">
-    <input id="itemPurchase" placeholder="Purchase Price (₹)" type="number">
-  </div>
-
-  <div class="row">
-    <select id="itemCategory">
-      <option value="">Select Category</option>
-    </select>
-  </div>
-
-  <button class="add-btn" id="addItemBtn">Add Item</button>
-
-  <hr style="margin:25px 0; border-color:rgba(255,255,255,0.1);">
-
-  <!-- CATEGORY MANAGEMENT -->
-  <h2 style="color:#00b4ff;">Manage Categories</h2>
-
-  <div class="row">
-    <input id="newCategory" placeholder="New Category Name">
-    <button class="add-btn" id="addCategoryBtn">Add Category</button>
-  </div>
-
-  <div id="categoryList" style="margin-top:10px;"></div>
-
-  <hr style="margin:25px 0; border-color:rgba(255,255,255,0.1);">
-
-  <!-- CATEGORY FILTER -->
-  <h2 style="color:#00b4ff;">Filter Inventory</h2>
-  <select id="filterCategory" style="width:200px; margin-bottom:20px;">
-    <option value="all">All Categories</option>
+  <select id="itemCategory">
+    <option value="">Select Category</option>
   </select>
 
-  <!-- INVENTORY LIST -->
-  <div id="inventoryList"></div>
+  <button class="add-btn" id="addItem">Add Item</button>
 </div>
 
+<hr style="border-color:rgba(255,255,255,0.1);margin:25px 0"/>
+
+<!-- MANAGE CATEGORIES -->
+<h2 class="section-title">Manage Categories</h2>
+
+<div style="display:flex;gap:10px;">
+  <input id="newCat" type="text" placeholder="New Category Name">
+  <button class="add-btn" id="addCat">Add Category</button>
+</div>
+
+<div id="categoryList" style="margin-top:15px;"></div>
 
 
-<!-- FIREBASE SCRIPT -->
+<hr style="border-color:rgba(255,255,255,0.1);margin:25px 0"/>
+
+<!-- FILTER INVENTORY -->
+<h2 class="section-title">Filter Inventory</h2>
+
+<select id="filterCat">
+  <option value="all">All Categories</option>
+</select>
+
+<br><br>
+
+<input id="filterDate" type="date">
+
+<br><br>
+
+<!-- INVENTORY LIST -->
+<div id="inventoryList"></div>
+
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import {
-    getFirestore, collection, addDoc, getDocs,
-    deleteDoc, setDoc, doc
-  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain: "mg-manager-3ab66.firebaseapp.com",
-    projectId: "mg-manager-3ab66",
-  };
+/* FIREBASE */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+};
 
-  const itemName = document.getElementById("itemName");
-  const itemQty = document.getElementById("itemQty");
-  const itemPurchase = document.getElementById("itemPurchase");
-  const itemCategory = document.getElementById("itemCategory");
-  const categoryList = document.getElementById("categoryList");
-  const inventoryList = document.getElementById("inventoryList");
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  /* -------------------- LOAD CATEGORIES -------------------- */
-  async function loadCategories() {
-    const snap = await getDocs(collection(db, "inventoryCategories"));
-    itemCategory.innerHTML = `<option value="">Select Category</option>`;
-    filterCategory.innerHTML = `<option value="all">All Categories</option>`;
-    categoryList.innerHTML = "";
+/* ELEMENTS */
+const itemName = document.getElementById("itemName");
+const itemQty = document.getElementById("itemQty");
+const purchasePrice = document.getElementById("purchasePrice");
+const itemDate = document.getElementById("itemDate");
+const itemCategory = document.getElementById("itemCategory");
 
-    snap.forEach(d => {
-      const c = d.data().name;
+const newCat = document.getElementById("newCat");
+const categoryList = document.getElementById("categoryList");
 
-      itemCategory.innerHTML += `<option value="${c}">${c}</option>`;
-      filterCategory.innerHTML += `<option value="${c}">${c}</option>`;
+const filterCat = document.getElementById("filterCat");
+const filterDate = document.getElementById("filterDate");
+const inventoryList = document.getElementById("inventoryList");
 
-      categoryList.innerHTML += `
-        <div class="cat-pill">
-          ${c}
-          <button class="cat-delete-btn" onclick="deleteCategory('${d.id}')">Delete</button>
-        </div>
-      `;
-    });
-  }
 
-  /* -------------------- ADD CATEGORY -------------------- */
-  document.getElementById("addCategoryBtn").onclick = async () => {
-    const val = newCategory.value.trim();
-    if (!val) return alert("Enter category name");
-    await addDoc(collection(db, "inventoryCategories"), { name: val });
-    newCategory.value = "";
-    loadCategories();
-  };
+/* LOAD CATEGORIES */
+async function loadCategories() {
+  const snap = await getDocs(collection(db, "inventoryCategories"));
+  itemCategory.innerHTML = `<option value="">Select Category</option>`;
+  filterCat.innerHTML = `<option value="all">All Categories</option>`;
+  categoryList.innerHTML = "";
 
-  window.deleteCategory = async (id) => {
-    await deleteDoc(doc(db, "inventoryCategories", id));
-    loadCategories();
-    loadItems();
-  };
+  snap.forEach(d => {
+    const c = d.data().name;
 
-  /* -------------------- LOAD ITEMS -------------------- */
-  async function loadItems() {
-    const snap = await getDocs(collection(db, "inventory"));
-    inventoryList.innerHTML = "";
-    const filter = filterCategory.value;
+    // item dropdown
+    itemCategory.innerHTML += `<option value="${c}">${c}</option>`;
 
-    snap.forEach(d => {
-      const item = d.data();
-      if (filter !== "all" && item.category !== filter) return;
+    // filter dropdown
+    filterCat.innerHTML += `<option value="${c}">${c}</option>`;
 
-      inventoryList.innerHTML += `
-        <div class="item-box">
-          <div>
-            <strong style="font-size:1.1rem;">${item.name}</strong><br>
-            ${item.category}<br>
-            Qty: ${item.qty}<br>
-            Purchase: ₹${item.purchase}
-          </div>
+    // category list
+    const row = document.createElement("div");
+    row.className = "item-card";
+    row.innerHTML = `
+      ${c}
+      <button class="red-btn" onclick="deleteCategory('${d.id}')">Delete</button>
+    `;
+    categoryList.appendChild(row);
+  });
+}
 
-          <div class="item-actions">
-            <button class="edit-btn" onclick="editItem('${d.id}')">Edit</button>
-            <button class="delete-btn" onclick="deleteItem('${d.id}')">Delete</button>
-          </div>
-        </div>
-      `;
-    });
-  }
 
-  /* -------------------- ADD ITEM -------------------- */
-  document.getElementById("addItemBtn").onclick = async () => {
-    const name = itemName.value.trim();
-    const qty = itemQty.value.trim();
-    const purchase = itemPurchase.value.trim();
-    const cat = itemCategory.value.trim();
+/* ADD CATEGORY */
+document.getElementById("addCat").onclick = async () => {
+  if (!newCat.value.trim()) return alert("Enter category name");
 
-    if (!name || !qty || !purchase || !cat)
-      return alert("Fill all fields");
+  await addDoc(collection(db, "inventoryCategories"), {
+    name: newCat.value.trim()
+  });
 
-    await addDoc(collection(db, "inventory"), {
-      name, qty: Number(qty), purchase: Number(purchase), category: cat
-    });
-
-    itemName.value = "";
-    itemQty.value = "";
-    itemPurchase.value = "";
-
-    loadItems();
-  };
-
-  /* -------------------- DELETE ITEM -------------------- */
-  window.deleteItem = async (id) => {
-    await deleteDoc(doc(db, "inventory", id));
-    loadItems();
-  };
-
-  /* -------------------- EDIT ITEM -------------------- */
-  window.editItem = async (id) => {
-    const snap = await getDocs(collection(db, "inventory"));
-    snap.forEach(async d => {
-      if (d.id === id) {
-        const item = d.data();
-        const newName = prompt("Item Name", item.name);
-        const newQty = prompt("Quantity", item.qty);
-        const newPurchase = prompt("Purchase Price", item.purchase);
-
-        await setDoc(doc(db, "inventory", id), {
-          name: newName,
-          qty: Number(newQty),
-          purchase: Number(newPurchase),
-          category: item.category
-        });
-
-        loadItems();
-      }
-    });
-  };
-
-  filterCategory.onchange = loadItems;
-
+  newCat.value = "";
   loadCategories();
+};
+
+
+/* DELETE CATEGORY */
+window.deleteCategory = async (id) => {
+  await deleteDoc(doc(db, "inventoryCategories", id));
+  loadCategories();
+};
+
+
+/* LOAD ITEMS */
+async function loadItems() {
+  const snap = await getDocs(collection(db, "inventory"));
+  inventoryList.innerHTML = "";
+
+  const filterCategory = filterCat.value;
+  const filterD = filterDate.value;
+
+  snap.forEach(d => {
+    const item = d.data();
+
+    // category filter
+    if (filterCategory !== "all" && item.category !== filterCategory) return;
+
+    // date filter
+    if (filterD && item.date !== filterD) return;
+
+    createItemCard(item, d.id);
+  });
+}
+
+
+/* CREATE ITEM CARD */
+function createItemCard(item, id) {
+  const div = document.createElement("div");
+  div.className = "item-card";
+
+  div.innerHTML = `
+    <strong>${item.name}</strong>  
+    <br>
+    Qty: ${item.qty}  
+    <br>
+    Price: ₹${item.price}
+    <br>
+    <span class="category-tag">Category: ${item.category}</span> 
+    <br>
+    Date: ${item.date}
+    <br><br>
+
+    <button class="edit-btn" onclick="editItem('${id}', '${item.name}', '${item.qty}', '${item.price}', '${item.category}', '${item.date}')">Edit</button>
+
+    <button class="red-btn" onclick="deleteItem('${id}')">Delete</button>
+  `;
+
+  inventoryList.appendChild(div);
+}
+
+
+/* ADD ITEM */
+document.getElementById("addItem").onclick = async () => {
+  if (!itemName.value.trim() || !itemQty.value || !purchasePrice.value || !itemCategory.value || !itemDate.value)
+    return alert("Fill all fields");
+
+  await addDoc(collection(db, "inventory"), {
+    name: itemName.value.trim(),
+    qty: parseInt(itemQty.value),
+    price: parseFloat(purchasePrice.value),
+    category: itemCategory.value,
+    date: itemDate.value
+  });
+
+  itemName.value = "";
+  itemQty.value = "";
+  purchasePrice.value = "";
+  itemCategory.value = "";
+  itemDate.value = "";
+
   loadItems();
+};
+
+
+/* DELETE ITEM */
+window.deleteItem = async (id) => {
+  await deleteDoc(doc(db, "inventory", id));
+  loadItems();
+};
+
+
+/* EDIT ITEM */
+window.editItem = async (id, name, qty, price, category, date) => {
+  const newName = prompt("Item Name:", name);
+  const newQty = prompt("Quantity:", qty);
+  const newPrice = prompt("Price:", price);
+  const newDate = prompt("Date (YYYY-MM-DD):", date);
+
+  if (!newName || !newQty || !newPrice || !newDate) return;
+
+  await updateDoc(doc(db, "inventory", id), {
+    name: newName,
+    qty: parseInt(newQty),
+    price: parseFloat(newPrice),
+    date: newDate
+  });
+
+  loadItems();
+};
+
+
+/* FILTER CHANGES */
+filterCat.onchange = loadItems;
+filterDate.onchange = loadItems;
+
+
+/* INIT */
+loadCategories();
+loadItems();
+
 </script>
 
 </body>
