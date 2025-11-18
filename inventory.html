@@ -1,350 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MG Inventory</title>
-
   <link rel="stylesheet" href="style.css">
+
   <style>
-    body { background:#0b111b; color:#e5eaf0; font-family: Poppins, sans-serif; }
+    body { color:white; }
 
-    .page-title { font-size:2rem; font-weight:700; color:#00b4ff; text-align:center; margin:20px 0; }
-
-    .container { max-width:900px; margin:auto; padding:20px; background:rgba(255,255,255,0.05); border-radius:16px; }
-
-    input, select {
-      width:100%; padding:12px; margin-top:10px;
-      border-radius:8px; border:1px solid rgba(255,255,255,0.1);
-      background:rgba(255,255,255,0.05); color:white;
+    .inv-container {
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 15px;
+      margin: auto;
+      width: 95%;
+      max-width: 1200px;
+      margin-top: 20px;
     }
 
-    .btn { padding:10px 16px; border-radius:10px; border:none; cursor:pointer; font-weight:600; }
-    .btn-add { background:#00b4ff; color:white; width:100%; margin-top:14px; }
-    .btn-delete { background:#ef4444; color:white; padding:6px 12px; border-radius:6px; }
-    .btn-edit { background:#facc15; color:black; padding:6px 12px; border-radius:6px; }
-    .btn-used { background:#3b82f6; color:white; padding:6px 12px; border-radius:6px; }
-
-    .item-box {
-      background:rgba(255,255,255,0.07);
-      padding:16px; border-radius:12px; margin-top:12px;
-      display:flex; justify-content:space-between; align-items:center;
-      border:1px solid rgba(255,255,255,0.08);
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #00b4ff;
+      margin-bottom: 15px;
+      text-align: left;
     }
 
-    .filters { margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; }
-    .clear-btn {
-      background:#ef4444; color:white; border:none;
-      padding:10px 20px; border-radius:8px; font-weight:600;
+    /* 🔥 Horizontal row */
+    .row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
     }
 
-    /* Modal */
-    .modal-bg {
-      position:fixed; inset:0; background:rgba(0,0,0,0.6);
-      display:flex; justify-content:center; align-items:center;
-      visibility:hidden; opacity:0; transition:0.2s;
+    .input-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
     }
-    .modal-bg.active { visibility:visible; opacity:1; }
 
-    .modal-box {
-      background:#1a2332; padding:20px; border-radius:14px;
-      width:90%; max-width:450px;
+    .input-box label {
+      font-size: 0.85rem;
+      color: #9ab;
+      margin-bottom: 5px;
     }
-    .modal-title { color:#00b4ff; font-size:1.3rem; margin-bottom:10px; text-align:center; }
+
+    .input-box input,
+    .input-box select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
+      color: white;
+      width: 100%;
+      outline: none;
+    }
+
+    .input-box input:focus,
+    .input-box select:focus {
+      border-color: #00b4ff;
+      box-shadow: 0 0 8px #00b4ff;
+    }
+
+    #addItemBtn {
+      width: 100%;
+      padding: 12px;
+      background:#00b4ff;
+      border:none;
+      border-radius:10px;
+      font-size:1rem;
+      font-weight:600;
+      margin-top:10px;
+      cursor:pointer;
+    }
+
+    /* Category Manager */
+    .cat-box {
+      background: rgba(0,0,0,0.3);
+      padding:15px;
+      border-radius:12px;
+      margin-top:25px;
+    }
+
+    .cat-item {
+      display:flex;
+      justify-content:space-between;
+      padding:10px;
+      background:rgba(255,255,255,0.08);
+      border-radius:8px;
+      margin-top:5px;
+    }
+
+    .delete-btn {
+      background:red;
+      border:none;
+      color:white;
+      padding:5px 12px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+
+    /* Inventory cards */
+    .inventory-item {
+      background: rgba(255,255,255,0.06);
+      padding: 15px;
+      margin-top: 12px;
+      border-radius: 12px;
+    }
+
+    .actions { margin-top:10px; display:flex; gap:10px; }
+
+    .btn {
+      padding:7px 15px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      color:white;
+      font-weight:600;
+    }
+
+    .btn-view { background:#3b82f6; }
+    .btn-edit { background:#facc15; color:black; }
+    .btn-delete { background:#ef4444; }
+
+    /* Filters */
+    .filter-row { display:flex; gap:15px; flex-wrap:wrap; margin-top:20px; }
+
   </style>
 </head>
 
 <body>
 
-<h1 class="page-title">MG Inventory</h1>
+<h1 style="text-align:center; color:#00b4ff; margin-top:20px;">MG Inventory</h1>
 
-<div class="container">
+<div class="inv-container">
 
-  <!-- ADD ITEM FORM -->
-  <h2 style="color:#00b4ff; margin-bottom:10px;">Inventory Management</h2>
+  <!-- 🔥 INVENTORY MANAGEMENT -->
+  <div class="section-title">Inventory Management</div>
 
-  <input id="itemName" placeholder="Item Name">
-  <input id="quantity" placeholder="Quantity" type="number">
+  <div class="row">
+    <div class="input-box">
+      <label>Item Name</label>
+      <input id="itemName">
+    </div>
 
-  <select id="unit">
-    <option value="PCS">PCS</option>
-    <option value="KGS">KGS</option>
-  </select>
+    <div class="input-box">
+      <label>Quantity</label>
+      <input id="quantity" type="number">
+    </div>
 
-  <input id="price" placeholder="Purchase Price (₹)" type="number">
-
-  <input id="invoice" placeholder="Invoice Number">
-  <input id="reel" placeholder="Reel Number">
-  <input id="supplier" placeholder="Supplier">
-  <input id="gsm" placeholder="GSM">
-  <input id="bf" placeholder="BF">
-
-  <input id="date" type="date">
-
-  <select id="categorySelect"></select>
-
-  <button id="addItemBtn" class="btn btn-add">Add Item</button>
-
-  <p style="text-align:right; margin-top:6px;">Manage categories below</p>
-
-  <!-- CATEGORY MANAGEMENT -->
-  <h2 style="color:#00b4ff; margin-top:30px;">Manage Categories</h2>
-
-  <input id="newCategory" placeholder="New Category Name">
-  <button id="addCategoryBtn" class="btn btn-add" style="margin-top:10px;">Add Category</button>
-
-  <div id="categoryList"></div>
-
-  <!-- FILTERS AREA -->
-  <h2 style="color:#00b4ff; margin-top:30px;">Filter Inventory</h2>
-
-  <div class="filters">
-    <select id="filterCategory"><option value="">All Categories</option></select>
-    <input id="filterDate" type="date">
-    <select id="filterItemName"><option value="">All Items</option></select>
-    <button id="clearFilters" class="clear-btn">Clear</button>
+    <div class="input-box">
+      <label>Unit</label>
+      <select id="unit">
+        <option value="PCS">PCS</option>
+        <option value="KGS">KGS</option>
+      </select>
+    </div>
   </div>
 
+  <div class="row">
+    <div class="input-box">
+      <label>Purchase Price (₹)</label>
+      <input id="price" type="number">
+    </div>
+
+    <div class="input-box">
+      <label>Invoice Number</label>
+      <input id="invoice">
+    </div>
+
+    <div class="input-box">
+      <label>Reel Number</label>
+      <input id="reel">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="input-box">
+      <label>Supplier</label>
+      <input id="supplier">
+    </div>
+
+    <div class="input-box">
+      <label>GSM</label>
+      <input id="gsm" type="number">
+    </div>
+
+    <div class="input-box">
+      <label>BF</label>
+      <input id="bf" type="number">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="input-box">
+      <label>Date</label>
+      <input id="date" type="date">
+    </div>
+
+    <div class="input-box">
+      <label>Select Category</label>
+      <select id="categorySelect"></select>
+    </div>
+  </div>
+
+  <button id="addItemBtn">Add Item</button>
+
+  <!-- 🔥 CATEGORY MANAGER -->
+  <div class="section-title" style="margin-top:30px;">Manage Categories</div>
+
+  <div class="cat-box">
+    <div class="row">
+      <div class="input-box">
+        <label>New Category</label>
+        <input id="newCategoryName">
+      </div>
+      <button class="btn" style="background:#00b4ff; height:45px; margin-top:22px;" id="addCategoryBtn">
+        Add Category
+      </button>
+    </div>
+
+    <div id="categoryList"></div>
+  </div>
+
+  <!-- 🔥 FILTERS -->
+  <div class="section-title" style="margin-top:25px;">Filter Inventory</div>
+
+  <div class="filter-row">
+    <select id="filterCategory" class="input-box" style="flex:1;">
+      <option value="all">All Categories</option>
+    </select>
+
+    <select id="filterItemName" class="input-box" style="flex:1;">
+      <option value="all">All Items</option>
+    </select>
+
+    <input id="filterDate" type="date" class="input-box" style="flex:1;">
+    
+    <button class="btn btn-delete" id="clearFilters">Clear</button>
+  </div>
+
+  <!-- 🔥 INVENTORY ITEMS LIST -->
   <div id="inventoryList" style="margin-top:20px;"></div>
-  <p id="emptyMessage" style="text-align:center; margin-top:20px; color:#aaa;">No items found.</p>
+
 </div>
 
-<!-- VIEW DETAILS MODAL -->
-<div class="modal-bg" id="modalView">
-  <div class="modal-box">
-    <h2 class="modal-title">Item Details</h2>
-
-    <div id="detailFields"></div>
-
-    <button id="closeModal" class="btn" style="margin-top:10px; width:100%; background:#00b4ff;">Close</button>
-  </div>
-</div>
-
-<!-- FIREBASE + MAIN SCRIPT -->
-<script type="module">
-
-/* FIREBASE IMPORTS */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.firebasestorage.app",
-  messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* LOAD CATEGORIES */
-async function loadCategories() {
-  const snap = await getDocs(collection(db, "inventoryCategories"));
-  const list = document.getElementById("categorySelect");
-  const filterList = document.getElementById("filterCategory");
-  const catList = document.getElementById("categoryList");
-
-  list.innerHTML = "";
-  filterList.innerHTML = `<option value="">All Categories</option>`;
-  catList.innerHTML = "";
-
-  snap.forEach(d => {
-    const c = d.data();
-
-    list.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    filterList.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-
-    catList.innerHTML += `
-      <div class="item-box">
-        <span>${c.name}</span>
-        <button class="btn-delete" onclick="deleteCategory('${d.id}')">Delete</button>
-      </div>`;
-  });
-}
-
-/* ADD CATEGORY */
-document.getElementById("addCategoryBtn").onclick = async () => {
-  const name = document.getElementById("newCategory").value.trim();
-  if (!name) return;
-
-  await addDoc(collection(db, "inventoryCategories"), { name });
-  document.getElementById("newCategory").value = "";
-  loadCategories();
-};
-
-/* DELETE CATEGORY */
-window.deleteCategory = async function (id) {
-  if (!confirm("Delete this category?")) return;
-  await deleteDoc(doc(db, "inventoryCategories", id));
-  loadCategories();
-};
-
-/* ADD ITEM */
-document.getElementById("addItemBtn").onclick = async () => {
-  let data = {
-    itemName: itemName.value.trim(),
-    quantity: Number(quantity.value),
-    unit: unit.value,
-    price: Number(price.value),
-    invoice: invoice.value,
-    reel: reel.value,
-    supplier: supplier.value,
-    gsm: gsm.value,
-    bf: bf.value,
-    date: date.value,
-    category: categorySelect.value
-  };
-
-  await addDoc(collection(db, "inventory"), data);
-
-  itemName.value = quantity.value = price.value = invoice.value =
-  reel.value = supplier.value = gsm.value = bf.value = "";
-
-  loadInventory();
-  loadItemNames();
-};
-
-/* LOAD ITEM NAMES FOR FILTER */
-async function loadItemNames() {
-  const snap = await getDocs(collection(db, "inventory"));
-  const nameSet = new Set();
-
-  snap.forEach(d => nameSet.add(d.data().itemName));
-
-  const list = document.getElementById("filterItemName");
-  list.innerHTML = `<option value="">All Items</option>`;
-
-  nameSet.forEach(n => list.innerHTML += `<option value="${n}">${n}</option>`);
-}
-
-/* LOAD INVENTORY */
-let cacheInventory = [];
-
-async function loadInventory() {
-  const snap = await getDocs(collection(db, "inventory"));
-  cacheInventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderInventory(cacheInventory);
-  loadItemNames();
-}
-
-/* RENDER INVENTORY */
-function renderInventory(list) {
-  const box = document.getElementById("inventoryList");
-  const msg = document.getElementById("emptyMessage");
-
-  box.innerHTML = "";
-
-  if (!list.length) {
-    msg.style.display = "block";
-    return;
-  }
-
-  msg.style.display = "none";
-
-  list.forEach(item => {
-    box.innerHTML += `
-      <div class="item-box">
-        <div>
-          <strong>${item.itemName}</strong><br>
-          Qty: ${item.quantity} ${item.unit}<br>
-          Date: ${item.date}<br>
-          Category: ${item.category}
-        </div>
-
-        <div>
-          <button class="btn-used" onclick="useItem('${item.id}')">Used</button>
-          <button class="btn-edit" onclick="viewItemDetails('${item.id}')">View</button>
-          <button class="btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
-        </div>
-      </div>`;
-  });
-}
-
-/* FILTERING */
-function applyFilters() {
-  const cat = filterCategory.value;
-  const dt = filterDate.value;
-  const name = filterItemName.value;
-
-  const f = cacheInventory.filter(it =>
-    (cat === "" || it.category === cat) &&
-    (dt === "" || it.date === dt) &&
-    (name === "" || it.itemName === name)
-  );
-
-  renderInventory(f);
-}
-
-filterCategory.onchange = applyFilters;
-filterDate.onchange = applyFilters;
-filterItemName.onchange = applyFilters;
-
-document.getElementById("clearFilters").onclick = () => {
-  filterCategory.value = "";
-  filterDate.value = "";
-  filterItemName.value = "";
-  renderInventory(cacheInventory);
-};
-
-/* DELETE ITEM */
-window.deleteItem = async (id) => {
-  if (!confirm("Delete this item?")) return;
-  await deleteDoc(doc(db, "inventory", id));
-  loadInventory();
-};
-
-/* USE ITEM */
-window.useItem = async (id) => {
-  const item = cacheInventory.find(x => x.id === id);
-
-  await addDoc(collection(db, "inventoryUsed"), {
-    itemName: item.itemName,
-    usedQty: item.quantity,
-    unit: item.unit,
-    usedFor: "-",
-    category: item.category,
-    originalDate: item.date,
-    at: new Date().toISOString()
-  });
-
-  await deleteDoc(doc(db, "inventory", id));
-  loadInventory();
-};
-
-/* VIEW DETAILS (MODAL) */
-window.viewItemDetails = function(id) {
-  const item = cacheInventory.find(x => x.id === id);
-  const modal = document.getElementById("modalView");
-  const box = document.getElementById("detailFields");
-
-  box.innerHTML = `
-    <p><strong>Item Name:</strong> ${item.itemName}</p>
-    <p><strong>Invoice:</strong> ${item.invoice}</p>
-    <p><strong>Reel:</strong> ${item.reel}</p>
-    <p><strong>Supplier:</strong> ${item.supplier}</p>
-    <p><strong>GSM:</strong> ${item.gsm}</p>
-    <p><strong>BF:</strong> ${item.bf}</p>
-    <p><strong>Qty:</strong> ${item.quantity} ${item.unit}</p>
-    <p><strong>Price:</strong> ₹${item.price}</p>
-    <p><strong>Category:</strong> ${item.category}</p>
-    <p><strong>Date:</strong> ${item.date}</p>
-  `;
-
-  modal.classList.add("active");
-};
-
-document.getElementById("closeModal").onclick = () =>
-  document.getElementById("modalView").classList.remove("active");
-
-loadCategories();
-loadInventory();
-
-</script>
+<script type="module" src="inventory.js"></script>
 
 </body>
 </html>
