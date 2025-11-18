@@ -266,6 +266,9 @@
       category: categorySelect.value || '',
       createdAt: new Date().toISOString()
     };
+    // compute amount and store
+    payload.amount = Number(payload.qty) * Number(payload.price);
+
     if (!payload.name){ alert('Enter item name'); return;}
     if (!payload.category){ alert('Select category'); return;}
     await addDoc(collection(db,'inventory'), payload);
@@ -306,7 +309,8 @@
     }
 
     items.forEach(item => {
-      const amount = Number(item.qty) * Number(item.price);
+      // prefer stored amount, else compute fallback
+      const amount = (typeof item.amount !== 'undefined') ? Number(item.amount) : (Number(item.qty) * Number(item.price));
       const card = document.createElement('div'); card.className='inventory-item';
       card.innerHTML = `
         <div style="max-width:78%">
@@ -352,7 +356,7 @@
         <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name||'')}</span></div>
         <div class="detail-row"><strong>Quantity</strong><span>${it.qty || 0} ${escapeHtml(it.unit||'')}</span></div>
         <div class="detail-row"><strong>Price (₹)</strong><span>₹${Number(it.price||0).toFixed(2)}</span></div>
-        <div class="detail-row"><strong>Amount (₹)</strong><span>₹${amount.toFixed(2)}</span></div>
+        <div class="detail-row"><strong>Amount (₹)</strong><span>₹${(typeof it.amount !== 'undefined') ? Number(it.amount).toFixed(2) : amount.toFixed(2)}</span></div>
         <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice||'')}</span></div>
         <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel||'')}</span></div>
         <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier||'')}</span></div>
@@ -427,6 +431,8 @@
         category: document.getElementById('e_category').value || '',
         date: document.getElementById('e_date').value || new Date().toISOString().slice(0,10)
       };
+      // recalc amount and store
+      updated.amount = Number(updated.qty) * Number(updated.price);
       await updateDoc(ref, updated);
       hideModal();
       await loadInventory();
@@ -434,6 +440,7 @@
   }
 
   // ------------------ USED (Slide-up B) ------------------
+  // NOTE: removed USED QUANTITY input. We'll copy original item's qty & price and save amount = qty * price.
   let usedTargetId = null;
   async function showUsed(id){
     const ref = doc(db,'inventory',id);
@@ -442,45 +449,39 @@
     const it = snap.data();
     usedTargetId = id;
 
-    // modal body
+    // modal body — NO used quantity; only Used For + Notes
     const body = `
       <div style="font-weight:700;margin-bottom:10px">Use Item — ${escapeHtml(it.name||'')}</div>
-      <div class="input"><label>Used Quantity</label><input id="u_qty" type="number" placeholder="Enter quantity used" /></div>
+
       <div class="row" style="margin-top:8px">
-        <div class="input"><label>Unit</label>
-          <select id="u_unit"><option ${it.unit==='PCS'?'selected':''}>PCS</option><option ${it.unit==='KGS'?'selected':''}>KGS</option></select>
-        </div>
         <div class="input"><label>Used For</label><input id="u_for" placeholder="job/purpose" /></div>
+        <div class="input"><label>Notes (optional)</label><input id="u_notes" placeholder="notes" /></div>
       </div>
-      <div class="input" style="margin-top:8px"><label>Notes (optional)</label><input id="u_notes" placeholder="notes" /></div>
+
+      <div style="margin-top:12px;color:var(--muted)">
+        When you save, the full item (Qty: ${it.qty || 0}) will be moved to Used Inventory.
+        Amount copied = Qty × Purchase Price = ₹${(Number(it.qty) * Number(it.price)).toFixed(2)}
+      </div>
     `;
     const footer = `<button class="btn-close" id="usedCancel">Cancel</button><button class="btn-save" id="usedSave">Save Used</button>`;
     openModal('Mark Item as Used', body, footer);
 
     document.getElementById('usedCancel').onclick = hideModal;
     document.getElementById('usedSave').onclick = async ()=>{
-      if (!confirm('Mark as USED?')) return;
-      const uQty = Number(document.getElementById('u_qty').value) || 0;
-      const uUnit = document.getElementById('u_unit').value || it.unit || 'PCS';
+      if (!confirm('Mark item as USED? This will move the full item to Used Inventory.')) return;
       const uFor = (document.getElementById('u_for').value||'').trim();
       const uNotes = (document.getElementById('u_notes').value||'').trim();
 
-      const originalQty = Number(it.qty) || 0;
-      if (uQty <= 0){ alert('Enter used quantity'); return; }
-      if (uQty > originalQty){
-        if (!confirm('Used quantity is greater than available qty. Proceed and move full item to used?')) return;
-      }
-
-      // create used record
+      // build used record by copying the original item
       const usedPayload = {
         originalItemId: id,
         name: it.name || '',
-        usedQuantity: uQty,
-        unit: uUnit,
+        qty: Number(it.qty) || 0,            // full original quantity
+        unit: it.unit || 'PCS',
+        price: Number(it.price) || 0,
+        amount: (Number(it.qty) || 0) * (Number(it.price) || 0), // amount = qty * price
         usedFor: uFor,
         notes: uNotes,
-        originalQty: originalQty,
-        price: it.price || 0,
         invoice: it.invoice || '',
         reel: it.reel || '',
         supplier: it.supplier || '',
@@ -490,20 +491,15 @@
         originalDate: it.date || '',
         usedAt: new Date().toISOString()
       };
+      // save used record
       await addDoc(collection(db,'inventoryUsed'), usedPayload);
 
-      const remaining = originalQty - uQty;
-      if (remaining <= 0){
-        // remove original
-        await deleteDoc(doc(db,'inventory',id));
-      } else {
-        // update qty
-        await updateDoc(doc(db,'inventory',id), { qty: remaining });
-      }
+      // remove original from inventory (because full item moved)
+      await deleteDoc(doc(db,'inventory',id));
 
       hideModal();
       await loadInventory();
-      alert('Saved used record.');
+      alert('Saved used record and removed item from inventory.');
     };
   }
 
