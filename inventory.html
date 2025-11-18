@@ -1,492 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Inventory | MG</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MG Inventory</title>
 
-<style>
-:root{
-  --bg:#0b111b; --panel:#0e1724; --accent:#00b4ff; --muted:#9aa9b6;
-  --card:#0f1417; --danger:#ef4444; --text:#e2e8f0;
-}
-*{box-sizing:border-box}
-body{ margin:0; font-family:Poppins, sans-serif; background:var(--bg); color:var(--muted); padding:26px; }
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background:#0b111b; color:#e5eaf0; font-family: Poppins, sans-serif; }
 
-/* Header */
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.logo{color:var(--accent);font-weight:700;font-size:1.4rem}
-.top-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .page-title { font-size:2rem; font-weight:700; color:#00b4ff; text-align:center; margin:20px 0; }
 
-/* Form */
-.form{max-width:1100px;margin:0 auto 18px;background:var(--card);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
-.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.input, select, input[type="date"]{padding:12px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text);min-width:140px;outline:none}
-.input-large{flex:1;min-width:220px}
-.btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-.add-btn{background:linear-gradient(135deg,var(--accent),#39c8ff);color:#fff}
+    .container { max-width:900px; margin:auto; padding:20px; background:rgba(255,255,255,0.05); border-radius:16px; }
 
-/* Filters & list */
-.controls{max-width:1100px;margin:18px auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
-.filter-select, .filter-month{padding:10px;border-radius:8px;background:#11181d;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
+    input, select {
+      width:100%; padding:12px; margin-top:10px;
+      border-radius:8px; border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.05); color:white;
+    }
 
-.container{max-width:1100px;margin:12px auto}
-.item-card{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;color:var(--text)}
-.item-left{line-height:1.4}
-.item-actions{display:flex;gap:8px;align-items:center}
-.small-btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-.view-btn{background:#60a5fa;color:#021022}
-.used-btn{background:#3b82f6;color:#fff}
-.edit-btn{background:#fbbf24;color:#111}
-.del-btn{background:var(--danger);color:#fff}
+    .btn { padding:10px 16px; border-radius:10px; border:none; cursor:pointer; font-weight:600; }
+    .btn-add { background:#00b4ff; color:white; width:100%; margin-top:14px; }
+    .btn-delete { background:#ef4444; color:white; padding:6px 12px; border-radius:6px; }
+    .btn-edit { background:#facc15; color:black; padding:6px 12px; border-radius:6px; }
+    .btn-used { background:#3b82f6; color:white; padding:6px 12px; border-radius:6px; }
 
-/* modal */
-.modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:9999}
-.modal{background:#0f1720;width:92%;max-width:420px;max-height:90vh;overflow:auto;padding:18px;border-radius:12px;color:var(--text);box-shadow:0 12px 40px rgba(0,0,0,0.6)}
-.modal h3{color:var(--accent);margin:0 0 12px}
-.field{margin-bottom:10px}
-.field label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
-.field input, .field select{width:100%;padding:10px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
-.modal-footer{display:flex;justify-content:space-between;margin-top:12px;gap:8px}
+    .item-box {
+      background:rgba(255,255,255,0.07);
+      padding:16px; border-radius:12px; margin-top:12px;
+      display:flex; justify-content:space-between; align-items:center;
+      border:1px solid rgba(255,255,255,0.08);
+    }
 
-/* small text */
-.empty-msg{text-align:center;color:#64748b;margin-top:36px;font-size:1rem}
+    .filters { margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; }
+    .clear-btn {
+      background:#ef4444; color:white; border:none;
+      padding:10px 20px; border-radius:8px; font-weight:600;
+    }
 
-/* responsive */
-@media (max-width:620px){
-  .item-card{flex-direction:column;gap:10px}
-  .form-row{flex-direction:column}
-}
-</style>
+    /* Modal */
+    .modal-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,0.6);
+      display:flex; justify-content:center; align-items:center;
+      visibility:hidden; opacity:0; transition:0.2s;
+    }
+    .modal-bg.active { visibility:visible; opacity:1; }
+
+    .modal-box {
+      background:#1a2332; padding:20px; border-radius:14px;
+      width:90%; max-width:450px;
+    }
+    .modal-title { color:#00b4ff; font-size:1.3rem; margin-bottom:10px; text-align:center; }
+  </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="logo">MG Inventory</div>
-  <div class="top-controls">
-    <a href="dashboard.html"><button class="btn" style="background:#0ea5a0;color:#021014">← Dashboard</button></a>
-    <button id="logoutBtn" class="btn" style="background:var(--danger);color:#fff">Logout</button>
-  </div>
-</div>
+<h1 class="page-title">MG Inventory</h1>
 
-<!-- Add Item Form -->
-<div class="form" id="addForm">
-  <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Inventory Management</div>
-
-  <div class="form-row">
-    <input id="itemName" class="input input-large" placeholder="Item Name">
-    <input id="qty" class="input" placeholder="Quantity">
-    <select id="unit" class="input" style="min-width:110px">
-      <option>PCS</option>
-      <option>KGS</option>
-    </select>
-  </div>
-
-  <div class="form-row">
-    <input id="price" class="input input-large" placeholder="Purchase Price (₹)">
-    <input id="date" type="date" class="input" style="min-width:160px">
-    <input id="invoice" class="input" placeholder="Invoice Number">
-    <input id="reel" class="input" placeholder="Reel Number">
-  </div>
-
-  <div class="form-row">
-    <input id="supplier" class="input" placeholder="Supplier">
-    <input id="gsm" class="input" placeholder="GSM">
-    <input id="bf" class="input" placeholder="BF">
-    <select id="categorySelect" class="input" style="min-width:180px">
-      <option value="">Select Category</option>
-    </select>
-  </div>
-
-  <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-    <button id="addItemBtn" class="btn add-btn">Add Item</button>
-    <div style="margin-left:auto;color:var(--muted);font-size:0.9rem">Manage categories below</div>
-  </div>
-</div>
-
-<!-- Category management -->
-<div class="form" style="max-width:1100px;margin:16px auto">
-  <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Manage Categories</div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <input id="newCategory" class="input input-large" placeholder="New Category Name">
-    <button id="addCategoryBtn" class="btn" style="background:linear-gradient(135deg,var(--accent),#39c8ff);color:#fff">Add Category</button>
-  </div>
-
-  <div id="categoryList" style="margin-top:12px"></div>
-</div>
-
-<!-- Filters -->
-<div class="controls">
-  <select id="filterCategory" class="filter-select">
-    <option value="all">All Categories</option>
-  </select>
-  <input id="filterMonth" type="month" class="filter-month">
-  <button id="clearFilters" class="btn" style="background:#334155;color:#fff">Clear</button>
-</div>
-
-<!-- Inventory List -->
 <div class="container">
-  <div id="inventoryList"></div>
+
+  <!-- ADD ITEM FORM -->
+  <h2 style="color:#00b4ff; margin-bottom:10px;">Inventory Management</h2>
+
+  <input id="itemName" placeholder="Item Name">
+  <input id="quantity" placeholder="Quantity" type="number">
+
+  <select id="unit">
+    <option value="PCS">PCS</option>
+    <option value="KGS">KGS</option>
+  </select>
+
+  <input id="price" placeholder="Purchase Price (₹)" type="number">
+
+  <input id="invoice" placeholder="Invoice Number">
+  <input id="reel" placeholder="Reel Number">
+  <input id="supplier" placeholder="Supplier">
+  <input id="gsm" placeholder="GSM">
+  <input id="bf" placeholder="BF">
+
+  <input id="date" type="date">
+
+  <select id="categorySelect"></select>
+
+  <button id="addItemBtn" class="btn btn-add">Add Item</button>
+
+  <p style="text-align:right; margin-top:6px;">Manage categories below</p>
+
+  <!-- CATEGORY MANAGEMENT -->
+  <h2 style="color:#00b4ff; margin-top:30px;">Manage Categories</h2>
+
+  <input id="newCategory" placeholder="New Category Name">
+  <button id="addCategoryBtn" class="btn btn-add" style="margin-top:10px;">Add Category</button>
+
+  <div id="categoryList"></div>
+
+  <!-- FILTERS AREA -->
+  <h2 style="color:#00b4ff; margin-top:30px;">Filter Inventory</h2>
+
+  <div class="filters">
+    <select id="filterCategory"><option value="">All Categories</option></select>
+    <input id="filterDate" type="date">
+    <select id="filterItemName"><option value="">All Items</option></select>
+    <button id="clearFilters" class="clear-btn">Clear</button>
+  </div>
+
+  <div id="inventoryList" style="margin-top:20px;"></div>
+  <p id="emptyMessage" style="text-align:center; margin-top:20px; color:#aaa;">No items found.</p>
 </div>
 
-<!-- View Modal (same style as you requested - editable in inventory page) -->
-<div class="modal-back" id="modalBack">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <h3 id="modalTitle">Item Details</h3>
+<!-- VIEW DETAILS MODAL -->
+<div class="modal-bg" id="modalView">
+  <div class="modal-box">
+    <h2 class="modal-title">Item Details</h2>
 
-    <div class="field"><label>Item Name</label><input id="m_name"></div>
-    <div class="field"><label>Invoice Number</label><input id="m_invoice"></div>
-    <div class="field"><label>Reel Number</label><input id="m_reel"></div>
-    <div class="field"><label>Supplier</label><input id="m_supplier"></div>
-    <div class="field"><label>GSM</label><input id="m_gsm"></div>
-    <div class="field"><label>BF</label><input id="m_bf"></div>
-    <div class="field"><label>Quantity</label><input id="m_qty"></div>
-    <div class="field"><label>Unit</label><input id="m_unit"></div>
-    <div class="field"><label>Purchase Price (₹)</label><input id="m_price"></div>
-    <div class="field"><label>Category</label><select id="m_category"></select></div>
-    <div class="field"><label>Date</label><input id="m_date" type="date"></div>
+    <div id="detailFields"></div>
 
-    <div class="modal-footer">
-      <button id="m_save" class="btn" style="background:linear-gradient(135deg,var(--accent),#39c8ff);color:#fff">Save Changes</button>
-      <button id="m_close" class="btn" style="background:#444;color:#fff">Close</button>
-    </div>
+    <button id="closeModal" class="btn" style="margin-top:10px; width:100%; background:#00b4ff;">Close</button>
   </div>
 </div>
 
+<!-- FIREBASE + MAIN SCRIPT -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import {
-    getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, updateDoc, query, where, orderBy
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain: "mg-manager-3ab66.firebaseapp.com",
-    projectId: "mg-manager-3ab66",
+/* FIREBASE IMPORTS */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* LOAD CATEGORIES */
+async function loadCategories() {
+  const snap = await getDocs(collection(db, "inventoryCategories"));
+  const list = document.getElementById("categorySelect");
+  const filterList = document.getElementById("filterCategory");
+  const catList = document.getElementById("categoryList");
+
+  list.innerHTML = "";
+  filterList.innerHTML = `<option value="">All Categories</option>`;
+  catList.innerHTML = "";
+
+  snap.forEach(d => {
+    const c = d.data();
+
+    list.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    filterList.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+
+    catList.innerHTML += `
+      <div class="item-box">
+        <span>${c.name}</span>
+        <button class="btn-delete" onclick="deleteCategory('${d.id}')">Delete</button>
+      </div>`;
+  });
+}
+
+/* ADD CATEGORY */
+document.getElementById("addCategoryBtn").onclick = async () => {
+  const name = document.getElementById("newCategory").value.trim();
+  if (!name) return;
+
+  await addDoc(collection(db, "inventoryCategories"), { name });
+  document.getElementById("newCategory").value = "";
+  loadCategories();
+};
+
+/* DELETE CATEGORY */
+window.deleteCategory = async function (id) {
+  if (!confirm("Delete this category?")) return;
+  await deleteDoc(doc(db, "inventoryCategories", id));
+  loadCategories();
+};
+
+/* ADD ITEM */
+document.getElementById("addItemBtn").onclick = async () => {
+  let data = {
+    itemName: itemName.value.trim(),
+    quantity: Number(quantity.value),
+    unit: unit.value,
+    price: Number(price.value),
+    invoice: invoice.value,
+    reel: reel.value,
+    supplier: supplier.value,
+    gsm: gsm.value,
+    bf: bf.value,
+    date: date.value,
+    category: categorySelect.value
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+  await addDoc(collection(db, "inventory"), data);
 
-  // Elements
-  const inventoryList = document.getElementById('inventoryList');
-  const addItemBtn = document.getElementById('addItemBtn');
-  const itemName = document.getElementById('itemName');
-  const qty = document.getElementById('qty');
-  const unit = document.getElementById('unit');
-  const price = document.getElementById('price');
-  const date = document.getElementById('date');
-  const categorySelect = document.getElementById('categorySelect');
-  const invoice = document.getElementById('invoice');
-  const reel = document.getElementById('reel');
-  const supplier = document.getElementById('supplier');
-  const gsm = document.getElementById('gsm');
-  const bf = document.getElementById('bf');
+  itemName.value = quantity.value = price.value = invoice.value =
+  reel.value = supplier.value = gsm.value = bf.value = "";
 
-  const newCategory = document.getElementById('newCategory');
-  const addCategoryBtn = document.getElementById('addCategoryBtn');
-  const categoryList = document.getElementById('categoryList');
+  loadInventory();
+  loadItemNames();
+};
 
-  const filterCategory = document.getElementById('filterCategory');
-  const filterMonth = document.getElementById('filterMonth');
-  const clearFilters = document.getElementById('clearFilters');
+/* LOAD ITEM NAMES FOR FILTER */
+async function loadItemNames() {
+  const snap = await getDocs(collection(db, "inventory"));
+  const nameSet = new Set();
 
-  const modalBack = document.getElementById('modalBack');
-  const m_name = document.getElementById('m_name');
-  const m_invoice = document.getElementById('m_invoice');
-  const m_reel = document.getElementById('m_reel');
-  const m_supplier = document.getElementById('m_supplier');
-  const m_gsm = document.getElementById('m_gsm');
-  const m_bf = document.getElementById('m_bf');
-  const m_qty = document.getElementById('m_qty');
-  const m_unit = document.getElementById('m_unit');
-  const m_price = document.getElementById('m_price');
-  const m_category = document.getElementById('m_category');
-  const m_date = document.getElementById('m_date');
-  const m_save = document.getElementById('m_save');
-  const m_close = document.getElementById('m_close');
+  snap.forEach(d => nameSet.add(d.data().itemName));
 
-  const logoutBtn = document.getElementById('logoutBtn');
+  const list = document.getElementById("filterItemName");
+  list.innerHTML = `<option value="">All Items</option>`;
 
-  let categories = [];
-  let inventory = []; // local cache
-  let currentEditId = null;
+  nameSet.forEach(n => list.innerHTML += `<option value="${n}">${n}</option>`);
+}
 
-  // Helpers
-  const showEmpty = () => inventoryList.innerHTML = '<p class="empty-msg">No items found.</p>';
-  const nowISO = ()=> new Date().toISOString();
-  const prettyDate = d => d ? new Date(d).toLocaleDateString() : '-';
+/* LOAD INVENTORY */
+let cacheInventory = [];
 
-  // Load categories (inventoryCategories collection)
-  async function loadCategories(){
-    categorySelect.innerHTML = '<option value="">Select Category</option>';
-    filterCategory.innerHTML = '<option value="all">All Categories</option>';
-    m_category.innerHTML = '<option value="">Select Category</option>';
-    categories = [];
-    const snap = await getDocs(collection(db, "inventoryCategories"));
-    snap.forEach(s => {
-      const n = s.data().name;
-      categories.push({ id: s.id, name: n });
-    });
-    // if none exist, keep empty
-    categories.forEach(c => {
-      const o = document.createElement('option'); o.value = c.name; o.textContent = c.name;
-      categorySelect.appendChild(o);
-      filterCategory.appendChild(o.cloneNode(true));
-      m_category.appendChild(o.cloneNode(true));
-    });
-    renderCategoryList();
+async function loadInventory() {
+  const snap = await getDocs(collection(db, "inventory"));
+  cacheInventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderInventory(cacheInventory);
+  loadItemNames();
+}
+
+/* RENDER INVENTORY */
+function renderInventory(list) {
+  const box = document.getElementById("inventoryList");
+  const msg = document.getElementById("emptyMessage");
+
+  box.innerHTML = "";
+
+  if (!list.length) {
+    msg.style.display = "block";
+    return;
   }
 
-  function renderCategoryList(){
-    categoryList.innerHTML = categories.map(c => `
-      <div style="display:flex;justify-content:space-between;align-items:center;background:#0b1115;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.03)">
-        <div style="color:var(--text)">${c.name}</div>
-        <button style="background:var(--danger);color:white;padding:6px 8px;border-radius:6px;border:none" onclick="deleteCategory('${c.id}')">Delete</button>
-      </div>
-    `).join('');
-  }
+  msg.style.display = "none";
 
-  window.deleteCategory = async (id) => {
-    if(!confirm('Delete this category?')) return;
-    await deleteDoc(doc(db, 'inventoryCategories', id));
-    await loadCategories();
-  };
+  list.forEach(item => {
+    box.innerHTML += `
+      <div class="item-box">
+        <div>
+          <strong>${item.itemName}</strong><br>
+          Qty: ${item.quantity} ${item.unit}<br>
+          Date: ${item.date}<br>
+          Category: ${item.category}
+        </div>
 
-  addCategoryBtn.onclick = async ()=>{
-    const val = newCategory.value.trim();
-    if(!val) return alert('Enter category name');
-    // add to collection
-    await addDoc(collection(db, 'inventoryCategories'), { name: val });
-    newCategory.value = '';
-    await loadCategories();
-  };
+        <div>
+          <button class="btn-used" onclick="useItem('${item.id}')">Used</button>
+          <button class="btn-edit" onclick="viewItemDetails('${item.id}')">View</button>
+          <button class="btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
+        </div>
+      </div>`;
+  });
+}
 
-  // Add item
-  addItemBtn.onclick = async ()=>{
-    const data = {
-      name: itemName.value.trim(),
-      qty: qty.value.trim(),
-      unit: unit.value,
-      price: price.value.trim(),
-      date: date.value || nowISO().slice(0,10),
-      invoice: invoice.value.trim(),
-      reel: reel.value.trim(),
-      supplier: supplier.value.trim(),
-      gsm: gsm.value.trim(),
-      bf: bf.value.trim(),
-      category: categorySelect.value || ''
-    };
-    if(!data.name) return alert('Enter item name');
-    // add doc then set staffId-like id field
-    const docRef = await addDoc(collection(db, "inventory"), data);
-    // also set id as inventoryId if you like (not necessary)
-    await updateDoc(doc(db, "inventory", docRef.id), { inventoryId: docRef.id });
-    // clear form and reload
-    itemName.value = ''; qty.value=''; price.value=''; date.value=''; invoice.value=''; reel.value=''; supplier.value=''; gsm.value=''; bf.value=''; categorySelect.value='';
-    await loadInventory();
-  };
+/* FILTERING */
+function applyFilters() {
+  const cat = filterCategory.value;
+  const dt = filterDate.value;
+  const name = filterItemName.value;
 
-  // Load inventory
-  async function loadInventory(){
-    inventoryList.innerHTML = '<p class="empty-msg">Loading...</p>';
-    inventory = [];
-    const snap = await getDocs(collection(db, "inventory"));
-    snap.forEach(s => inventory.push({ id: s.id, ...s.data() }));
-    renderInventory();
-  }
+  const f = cacheInventory.filter(it =>
+    (cat === "" || it.category === cat) &&
+    (dt === "" || it.date === dt) &&
+    (name === "" || it.itemName === name)
+  );
 
-  // Render inventory list
-  function renderInventory(){
-    inventoryList.innerHTML = '';
-    const selCat = filterCategory.value || 'all';
-    const selMonth = filterMonth.value;
+  renderInventory(f);
+}
 
-    const list = inventory.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+filterCategory.onchange = applyFilters;
+filterDate.onchange = applyFilters;
+filterItemName.onchange = applyFilters;
 
-    const filtered = list.filter(i=>{
-      if(selCat !== 'all' && (i.category || '') !== selCat) return false;
-      if(selMonth){
-        const itemDate = (i.date || '').toString();
-        if(!itemDate.startsWith(selMonth)) return false;
-      }
-      return true;
-    });
+document.getElementById("clearFilters").onclick = () => {
+  filterCategory.value = "";
+  filterDate.value = "";
+  filterItemName.value = "";
+  renderInventory(cacheInventory);
+};
 
-    if(filtered.length === 0) return showEmpty();
+/* DELETE ITEM */
+window.deleteItem = async (id) => {
+  if (!confirm("Delete this item?")) return;
+  await deleteDoc(doc(db, "inventory", id));
+  loadInventory();
+};
 
-    filtered.forEach(i=>{
-      const name = i.name || '-';
-      const q = i.qty ?? '-';
-      const unitVal = i.unit || 'PCS';
-      const category = i.category || '-';
-      const d = i.date || '-';
+/* USE ITEM */
+window.useItem = async (id) => {
+  const item = cacheInventory.find(x => x.id === id);
 
-      const card = document.createElement('div');
-      card.className = 'item-card';
-
-      const left = document.createElement('div');
-      left.className = 'item-left';
-      left.innerHTML = `<strong style="color:#fff">${name}</strong><div style="margin-top:6px">Qty: ${q} ${unitVal}<br>Date: ${d}<br>Category: ${category}</div>`;
-
-      const actions = document.createElement('div');
-      actions.className = 'item-actions';
-
-      // view button
-      const viewBtn = document.createElement('button');
-      viewBtn.className = 'small-btn view-btn';
-      viewBtn.innerText = 'View';
-      viewBtn.onclick = ()=> openView(i.id);
-
-      // used button
-      const usedBtn = document.createElement('button');
-      usedBtn.className = 'small-btn used-btn';
-      usedBtn.innerText = 'Used';
-      usedBtn.onclick = ()=> markUsed(i.id);
-
-      // edit button
-      const editBtn = document.createElement('button');
-      editBtn.className = 'small-btn edit-btn';
-      editBtn.innerText = 'Edit';
-      editBtn.onclick = ()=> openEdit(i.id);
-
-      // delete
-      const delBtn = document.createElement('button');
-      delBtn.className = 'small-btn del-btn';
-      delBtn.innerText = 'Delete';
-      delBtn.onclick = ()=> deleteItem(i.id);
-
-      actions.appendChild(viewBtn);
-      actions.appendChild(usedBtn);
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-
-      card.appendChild(left);
-      card.appendChild(actions);
-      inventoryList.appendChild(card);
-    });
-  }
-
-  // Open view modal (fields editable here as inventory page uses m_save)
-  async function openView(id){
-    const snap = await getDoc(doc(db, 'inventory', id));
-    if(!snap.exists()) return alert('Not found');
-    const d = snap.data();
-    currentEditId = id;
-    m_name.value = d.name || '';
-    m_invoice.value = d.invoice || '';
-    m_reel.value = d.reel || '';
-    m_supplier.value = d.supplier || '';
-    m_gsm.value = d.gsm || '';
-    m_bf.value = d.bf || '';
-    m_qty.value = d.qty || '';
-    m_unit.value = d.unit || 'PCS';
-    m_price.value = d.price || '';
-    m_category.value = d.category || '';
-    m_date.value = d.date || '';
-    modalBack.style.display = 'flex';
-  }
-
-  // Save changes in modal to inventory doc
-  m_save.onclick = async ()=>{
-    if(!currentEditId) return;
-    const update = {
-      name: m_name.value.trim(),
-      invoice: m_invoice.value.trim(),
-      reel: m_reel.value.trim(),
-      supplier: m_supplier.value.trim(),
-      gsm: m_gsm.value.trim(),
-      bf: m_bf.value.trim(),
-      qty: m_qty.value.trim(),
-      unit: m_unit.value,
-      price: m_price.value.trim(),
-      category: m_category.value,
-      date: m_date.value
-    };
-    await updateDoc(doc(db, 'inventory', currentEditId), update);
-    modalBack.style.display = 'none';
-    await loadInventory();
-  };
-
-  m_close.onclick = ()=> { modalBack.style.display = 'none'; currentEditId = null; };
-
-  // Delete inventory item (with confirm)
-  async function deleteItem(id){
-    if(!confirm('Delete this inventory item? This will permanently remove it.')) return;
-    await deleteDoc(doc(db, 'inventory', id));
-    await loadInventory();
-  }
-
-  // Mark used — NO validation, proceed always (store ALL details to inventoryUsed, then delete original)
-  async function markUsed(id){
-    // open a small prompt UI to get usedAmount and usedFor
-    const usedAmount = prompt('Enter used amount (number):', '1');
-    if(usedAmount === null) return; // cancelled
-    const usedFor = prompt('Used for (description):', '') || '';
-
-    // fetch the item
-    const snap = await getDoc(doc(db, 'inventory', id));
-    if(!snap.exists()) return alert('Item not found');
-
-    const item = snap.data();
-
-    // create used record with ALL details + used fields
-    const usedRecord = {
-      name: item.name || '',
-      invoice: item.invoice || '',
-      reel: item.reel || '',
-      supplier: item.supplier || '',
-      gsm: item.gsm || '',
-      bf: item.bf || '',
-      qty: item.qty || '',
-      unit: item.unit || 'PCS',
-      price: item.price || '',
-      category: item.category || '',
-      date: item.date || '',
-      // used-specific
-      usedAmount: usedAmount,
-      usedFor: usedFor,
-      usedAt: new Date().toISOString()
-    };
-
-    // add to inventoryUsed collection
-    await addDoc(collection(db, 'inventoryUsed'), usedRecord);
-
-    // remove the original inventory doc (no subtraction, just delete)
-    await deleteDoc(doc(db, 'inventory', id));
-
-    // reload
-    await loadInventory();
-    // optionally reload used-list if user is on used page via window.__reloadUsed (helper)
-    try{ if(window.__reloadUsed) window.__reloadUsed(); }catch(e){}
-  }
-
-  // Delete category helper exposed above - implemented earlier
-
-  // Initial load and filter handling
-  filterCategory.addEventListener('change', renderInventory);
-  filterMonth.addEventListener('change', renderInventory);
-  clearFilters.addEventListener('click', ()=>{
-    filterCategory.value = 'all';
-    filterMonth.value = '';
-    renderInventory();
+  await addDoc(collection(db, "inventoryUsed"), {
+    itemName: item.itemName,
+    usedQty: item.quantity,
+    unit: item.unit,
+    usedFor: "-",
+    category: item.category,
+    originalDate: item.date,
+    at: new Date().toISOString()
   });
 
-  // Logout (match your auth logic)
-  logoutBtn.onclick = async ()=>{
-    try{ await signOut(auth); localStorage.removeItem('loggedInUser'); location.href='login.html'; }
-    catch(e){ console.error(e); location.href='login.html'; }
-  };
+  await deleteDoc(doc(db, "inventory", id));
+  loadInventory();
+};
 
-  // init
-  await loadCategories();
-  await loadInventory();
+/* VIEW DETAILS (MODAL) */
+window.viewItemDetails = function(id) {
+  const item = cacheInventory.find(x => x.id === id);
+  const modal = document.getElementById("modalView");
+  const box = document.getElementById("detailFields");
 
-  // Expose for debugging
-  window.__reloadInventory = loadInventory;
-  window.__inventoryCache = inventory;
+  box.innerHTML = `
+    <p><strong>Item Name:</strong> ${item.itemName}</p>
+    <p><strong>Invoice:</strong> ${item.invoice}</p>
+    <p><strong>Reel:</strong> ${item.reel}</p>
+    <p><strong>Supplier:</strong> ${item.supplier}</p>
+    <p><strong>GSM:</strong> ${item.gsm}</p>
+    <p><strong>BF:</strong> ${item.bf}</p>
+    <p><strong>Qty:</strong> ${item.quantity} ${item.unit}</p>
+    <p><strong>Price:</strong> ₹${item.price}</p>
+    <p><strong>Category:</strong> ${item.category}</p>
+    <p><strong>Date:</strong> ${item.date}</p>
+  `;
+
+  modal.classList.add("active");
+};
+
+document.getElementById("closeModal").onclick = () =>
+  document.getElementById("modalView").classList.remove("active");
+
+loadCategories();
+loadInventory();
 
 </script>
 
