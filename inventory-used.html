@@ -38,7 +38,6 @@ h1{
   margin-bottom:18px;
   flex-wrap:wrap;
 }
-
 .btn{
   padding:8px 12px;
   border-radius:8px;
@@ -69,7 +68,6 @@ h1{
   border:1px solid rgba(255,255,255,0.03);
   color:#e6f2ff;
 }
-
 .used-left{line-height:1.45}
 .used-actions{display:flex;gap:8px;align-items:center}
 
@@ -86,7 +84,6 @@ h1{
   justify-content:center;
   z-index:9999;
 }
-
 .modal{
   background:#0f1720;
   width:90%;
@@ -96,21 +93,17 @@ h1{
   padding:18px;
   border-radius:12px;
   color:var(--text);
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
 }
-
+.modal h3{color:var(--accent);margin:0 0 12px}
 .field{margin-bottom:10px}
-.field label{display:block;font-size:0.85rem;margin-bottom:6px}
-.field input{width:100%;padding:10px;border-radius:8px;background:#0b1115;color:var(--text)}
+.field label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:10px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
+.modal-footer{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+.modal .btn-close{background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:none}
+.modal .btn-del{background:var(--danger);color:#fff;padding:8px 12px;border-radius:8px;border:none}
 
-.modal-footer{
-  display:flex;
-  justify-content:space-between;
-  margin-top:12px;
-}
-.btn-close{background:#555;color:white;padding:8px 14px;border-radius:8px;border:none}
-.btn-del{background:#ef4444;color:white;padding:8px 14px;border-radius:8px;border:none}
-
-.empty-msg{text-align:center;margin-top:40px;color:#64748b}
+.empty-msg{text-align:center;color:#64748b;margin-top:40px;font-size:1rem}
 </style>
 </head>
 <body>
@@ -131,36 +124,41 @@ h1{
   <div id="usedList"></div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- POPUP -->
 <div class="modal-back" id="modalBack">
   <div class="modal">
-    <h3 style="color:#00b4ff">Item Details</h3>
+    <h3>Item Details</h3>
 
-    <div class="field"><label>Name</label><input id="v_name" readonly></div>
-    <div class="field"><label>Invoice</label><input id="v_invoice" readonly></div>
-    <div class="field"><label>Reel</label><input id="v_reel" readonly></div>
+    <div class="field"><label>Item Name</label><input id="v_name" readonly></div>
+    <div class="field"><label>Used Quantity</label><input id="v_usedAmount" readonly></div>
+    <div class="field"><label>Unit</label><input id="v_unit" readonly></div>
+    <div class="field"><label>Used For</label><input id="v_usedFor" readonly></div>
+    <div class="field"><label>Invoice Number</label><input id="v_invoice" readonly></div>
+    <div class="field"><label>Reel Number</label><input id="v_reel" readonly></div>
     <div class="field"><label>Supplier</label><input id="v_supplier" readonly></div>
     <div class="field"><label>GSM</label><input id="v_gsm" readonly></div>
     <div class="field"><label>BF</label><input id="v_bf" readonly></div>
-    <div class="field"><label>Used Amount</label><input id="v_usedAmount" readonly></div>
-    <div class="field"><label>Unit</label><input id="v_unit" readonly></div>
-    <div class="field"><label>Used For</label><input id="v_usedFor" readonly></div>
-    <div class="field"><label>Price</label><input id="v_price" readonly></div>
+
+    <!-- 🔥 FIXED: DISPLAY EXACT SAME INVENTORY AMOUNT -->
+    <div class="field"><label>Item Amount (₹)</label><input id="v_amount" readonly></div>
+
     <div class="field"><label>Category</label><input id="v_category" readonly></div>
     <div class="field"><label>Original Date</label><input id="v_date" readonly></div>
-    <div class="field"><label>Used On</label><input id="v_usedAt" readonly></div>
+    <div class="field"><label>Used At</label><input id="v_usedAt" readonly></div>
 
     <div class="modal-footer">
-      <button class="btn-del" id="modalDelete">Delete</button>
-      <button class="btn-close" id="modalClose">Close</button>
+      <button id="modalDelete" class="btn-del">Delete</button>
+      <button id="modalClose" class="btn-close">Close</button>
     </div>
-
   </div>
 </div>
 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+  getFirestore, collection, getDocs, deleteDoc, doc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -169,116 +167,102 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-const usedListEl = document.getElementById("usedList");
+// elements
+const usedList = document.getElementById("usedList");
+const modalBack = document.getElementById("modalBack");
 const filterCategory = document.getElementById("filterCategory");
 const filterMonth = document.getElementById("filterMonth");
 
-const modalBack = document.getElementById("modalBack");
-const modalDelete = document.getElementById("modalDelete");
-const modalClose = document.getElementById("modalClose");
+// modal fields
+const v_name=document.getElementById("v_name");
+const v_usedAmount=document.getElementById("v_usedAmount");
+const v_unit=document.getElementById("v_unit");
+const v_usedFor=document.getElementById("v_usedFor");
+const v_invoice=document.getElementById("v_invoice");
+const v_reel=document.getElementById("v_reel");
+const v_supplier=document.getElementById("v_supplier");
+const v_gsm=document.getElementById("v_gsm");
+const v_bf=document.getElementById("v_bf");
+const v_amount=document.getElementById("v_amount"); // 🔥 NEW
+const v_category=document.getElementById("v_category");
+const v_date=document.getElementById("v_date");
+const v_usedAt=document.getElementById("v_usedAt");
 
-let usedRecords = [];
-let currentId = null;
+let usedData=[];
+let currentId=null;
 
-function F(obj, arr){
-  for(const k of arr){ if(obj[k] !== undefined) return obj[k]; }
-  return "";
-}
-
-function pretty(d){
-  if(!d) return "-";
-  const x = new Date(d);
-  return isNaN(x) ? d : x.toLocaleString();
-}
-
-async function load(){
-  usedRecords = [];
-  const snap = await getDocs(collection(db,"inventoryUsed"));
-  snap.forEach(s => usedRecords.push({id:s.id, ...s.data()}));
-
-  const cats = [...new Set(usedRecords.map(r => r.category))];
-  filterCategory.innerHTML = `<option value="all">All Categories</option>`;
-  cats.forEach(c => filterCategory.innerHTML += `<option>${c}</option>`);
-
+async function loadUsed(){
+  usedList.innerHTML="Loading…";
+  usedData=[];
+  const snap=await getDocs(collection(db,"inventoryUsed"));
+  snap.forEach(s=> usedData.push({id:s.id,...s.data()}));
   render();
 }
 
 function render(){
-  usedListEl.innerHTML = "";
+  usedList.innerHTML="";
+  usedData.forEach(d=>{
+    usedList.innerHTML += `
+      <div class="used-card">
+        <div class="used-left">
+          <strong style="color:#fff">${d.name}</strong>
+          <br>Used: ${d.usedAmount} ${d.unit}
+          <br>Category: ${d.category}
+          <br><span style="color:#00b4ff;font-weight:700;">Amount: ₹${d.amount || d.displayAmount || 0}</span>
+        </div>
 
-  usedRecords.forEach(r => {
-    if(filterCategory.value!=="all" && r.category !== filterCategory.value) return;
-    if(filterMonth.value && !(r.usedAt||"").startsWith(filterMonth.value)) return;
-
-    const name = F(r,["name","itemName"]);
-    const price = Number(F(r,["price","purchasePrice"])) || 0;
-    const qty = Number(F(r,["usedAmount","usedQty","qtyUsed"])) || 0;
-    const unit = F(r,["unit"]);
-    const amount = qty * price;
-
-    const card = document.createElement("div");
-    card.className = "used-card";
-
-    card.innerHTML = `
-      <div class="used-left">
-        <strong style="color:white">${name}</strong>
-        <div>Used: ${qty} ${unit}</div>
-        <div>Category: ${r.category}</div>
-        <div>Used At: ${pretty(r.usedAt)}</div>
-      </div>
-
-      <div style="text-align:right;">
-        <div style="color:#00b4ff;font-size:1.2rem;font-weight:700;">₹${amount}</div>
-
-        <div class="used-actions" style="margin-top:12px;">
-          <button class="small-btn view-btn" onclick="openModal('${r.id}')">View</button>
-          <button class="small-btn delete-btn" onclick="deleteOne('${r.id}')">Delete</button>
+        <div class="used-actions">
+          <button class="small-btn view-btn" onclick="openView('${d.id}')">View</button>
+          <button class="small-btn delete-btn" onclick="deleteUsed('${d.id}')">Delete</button>
         </div>
       </div>
     `;
-
-    usedListEl.appendChild(card);
   });
 }
 
-window.openModal = function(id){
-  const r = usedRecords.find(x => x.id === id);
-  currentId = id;
+window.openView = (id)=>{
+  const d = usedData.find(x=>x.id==id);
+  if(!d) return;
 
-  const F2 = (keys)=>F(r,keys);
+  currentId=id;
 
-  document.getElementById("v_name").value = F2(["name","itemName"]);
-  document.getElementById("v_invoice").value = F2(["invoice"]);
-  document.getElementById("v_reel").value = F2(["reel"]);
-  document.getElementById("v_supplier").value = F2(["supplier"]);
-  document.getElementById("v_gsm").value = F2(["gsm"]);
-  document.getElementById("v_bf").value = F2(["bf"]);
-  document.getElementById("v_usedAmount").value = F2(["usedAmount","usedQty","qtyUsed"]);
-  document.getElementById("v_unit").value = F2(["unit"]);
-  document.getElementById("v_usedFor").value = F2(["usedFor"]);
-  document.getElementById("v_price").value = F2(["price","purchasePrice"]);
-  document.getElementById("v_category").value = F2(["category"]);
-  document.getElementById("v_date").value = F2(["date","originalDate"]);
-  document.getElementById("v_usedAt").value = pretty(F2(["usedAt"]));
+  v_name.value = d.name;
+  v_usedAmount.value = d.usedAmount+" "+d.unit;
+  v_unit.value = d.unit;
+  v_usedFor.value = d.usedFor;
+  v_invoice.value = d.invoice;
+  v_reel.value = d.reel;
+  v_supplier.value = d.supplier;
+  v_gsm.value = d.gsm;
+  v_bf.value = d.bf;
 
-  modalBack.style.display = "flex";
-}
+  v_amount.value = d.amount || d.displayAmount || 0;  // 🔥 EXACT amount
 
-window.deleteOne = async function(id){
+  v_category.value = d.category;
+  v_date.value = d.date;
+  v_usedAt.value = d.usedAt;
+
+  modalBack.style.display="flex";
+};
+
+window.deleteUsed = async(id)=>{
   if(!confirm("Delete this used record?")) return;
-
   await deleteDoc(doc(db,"inventoryUsed",id));
-  usedRecords = usedRecords.filter(r => r.id !== id);
-  render();
-}
+  loadUsed();
+};
 
-modalDelete.onclick = ()=>window.deleteOne(currentId);
-modalClose.onclick = ()=>modalBack.style.display="none";
+document.getElementById("modalClose").onclick=()=>{
+  modalBack.style.display="none";
+};
 
-filterCategory.onchange = render;
-filterMonth.onchange = render;
+document.getElementById("modalDelete").onclick=async()=>{
+  if(!confirm("Delete this used record?")) return;
+  await deleteDoc(doc(db,"inventoryUsed",currentId));
+  modalBack.style.display="none";
+  loadUsed();
+};
 
-load();
+loadUsed();
 </script>
 
 </body>
