@@ -33,7 +33,7 @@
     }
 
     .container{
-      max-width:850px;margin:30px auto;background:var(--card);
+      max-width:900px;margin:30px auto;background:var(--card);
       padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.15);
     }
     h1{color:var(--accent);text-align:center;}
@@ -53,6 +53,26 @@
       min-width:140px;
     }
 
+    .section-title{
+      margin-top:20px;color:var(--accent);font-size:1.3rem;text-align:center;
+    }
+
+    .category-list{
+      margin-top:10px;
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    }
+    .cat-item{
+      background:rgba(255,255,255,0.06);
+      padding:7px 12px;border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+      display:flex;gap:8px;align-items:center;
+    }
+    .cat-del{
+      background:var(--danger);border:none;color:white;
+      padding:3px 7px;border-radius:5px;font-size:0.7rem;cursor:pointer;
+    }
+
+    /* ITEMS */
     .inventory-list{margin-top:25px;}
     .item-card{
       background:rgba(255,255,255,0.05);
@@ -70,7 +90,31 @@
       background:var(--danger);border:none;color:white;
       padding:7px 12px;border-radius:6px;cursor:pointer;
     }
+    .edit-btn{
+      background:var(--accent);border:none;color:white;
+      padding:7px 12px;border-radius:6px;cursor:pointer;margin-right:10px;
+    }
     .warn-text{color:var(--warn);font-size:0.85rem;margin-top:5px;}
+
+    /* EDIT MODAL */
+    .modal-bg{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.7);display:flex;justify-content:center;
+      align-items:center;z-index:9999;
+    }
+    .modal-box{
+      background:#1b2534;padding:20px;border-radius:14px;
+      width:320px;text-align:center;
+      box-shadow:0 0 20px rgba(0,180,255,0.2);
+    }
+    .modal-box input, .modal-box select{
+      width:100%;margin-top:10px;
+    }
+    .modal-btn{
+      margin-top:15px;background:var(--accent);
+      padding:8px 12px;border:none;border-radius:8px;color:white;
+      cursor:pointer;font-weight:600;width:100%;
+    }
   </style>
 </head>
 
@@ -87,31 +131,39 @@
 <div class="container">
   <h1>Inventory Management</h1>
 
+  <!-- CATEGORY SECTION -->
+  <div class="section-title">Categories</div>
+
+  <div class="form-row">
+    <input id="newCat" type="text" placeholder="New Category Name" />
+    <button class="add-btn" id="addCategory">Add Category</button>
+  </div>
+
+  <div class="category-list" id="categoryList"></div>
+
+  <hr style="border-color:#333;margin:25px 0">
+
   <!-- ADD ITEM FORM -->
   <div class="form-row">
     <input id="itemName" type="text" placeholder="Item Name" />
     <input id="itemQty" type="number" placeholder="Quantity" />
     <input id="itemBuy" type="number" placeholder="Purchase Price" />
-    <input id="itemSell" type="number" placeholder="Selling Price" />
-    <select id="itemCategory">
-      <option value="General">General</option>
-      <option value="Material">Material</option>
-      <option value="Packaging">Packaging</option>
-      <option value="Machine Part">Machine Part</option>
-    </select>
-    <button class="add-btn" id="addItem">Add</button>
+    <select id="itemCategory"></select>
+
+    <button class="add-btn" id="addItem">Add Item</button>
   </div>
 
-  <!-- INVENTORY LIST -->
+  <!-- ITEMS LIST -->
   <div class="inventory-list" id="inventoryList"></div>
 </div>
 
 <!-- FIREBASE -->
 <script type="module">
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import {
     getFirestore, collection, addDoc, getDocs,
-    deleteDoc, updateDoc, doc, query, orderBy
+    deleteDoc, updateDoc, doc, orderBy
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -126,19 +178,65 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const listEl = document.getElementById("inventoryList");
+  const catListEl = document.getElementById("categoryList");
+  const catSelect = document.getElementById("itemCategory");
+  const inventoryList = document.getElementById("inventoryList");
 
-  // Load inventory
-  async function loadInventory() {
-    const qSnap = await getDocs(query(collection(db, "inventory"), orderBy("name")));
-    listEl.innerHTML = "";
 
-    if (qSnap.empty) {
-      listEl.innerHTML = "<p style='text-align:center;color:#999;'>No items added yet.</p>";
-      return;
-    }
+  /* ===========================
+         LOAD CATEGORIES
+  ============================ */
 
-    qSnap.forEach(d => {
+  async function loadCategories() {
+    const snap = await getDocs(collection(db, "inventoryCategories"));
+    catListEl.innerHTML = "";
+    catSelect.innerHTML = "";
+
+    snap.forEach(c => {
+      const d = c.data();
+
+      // Show in dropdown
+      catSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+
+      // Show in UI list
+      catListEl.innerHTML += `
+        <div class="cat-item">
+          ${d.name}
+          <button class="cat-del" onclick="deleteCategory('${c.id}')">X</button>
+        </div>
+      `;
+    });
+  }
+
+  document.getElementById("addCategory").onclick = async () => {
+    const name = newCat.value.trim();
+    if (!name) return alert("Enter category name");
+
+    await addDoc(collection(db, "inventoryCategories"), {
+      name,
+      created: Date.now()
+    });
+
+    newCat.value = "";
+    loadCategories();
+  };
+
+  window.deleteCategory = async (id) => {
+    if (!confirm("Delete this category? Items will not be deleted.")) return;
+    await deleteDoc(doc(db, "inventoryCategories", id));
+    loadCategories();
+  };
+
+
+  /* ===========================
+           LOAD ITEMS
+  ============================ */
+
+  async function loadItems() {
+    const snap = await getDocs(collection(db, "inventory"));
+    inventoryList.innerHTML = "";
+
+    snap.forEach(d => {
       const item = d.data();
       createItemCard(item, d.id);
     });
@@ -153,69 +251,132 @@
         <strong>${item.name}</strong>
         <span>${item.category}</span>
         <span>Qty: ${item.qty}</span>
-        <span>Purchase: ₹${item.buy} | Sell: ₹${item.sell}</span>
+        <span>Purchase: ₹${item.buy}</span>
+
         ${item.qty < 5 ? "<span class='warn-text'>Low Stock!</span>" : ""}
+
         <div class="qty-box">
           <button class="qty-btn" onclick="increaseQty('${id}', ${item.qty})">+ Add</button>
           <button class="qty-btn" onclick="decreaseQty('${id}', ${item.qty})">- Reduce</button>
         </div>
       </div>
 
-      <button class="delete-btn" onclick="deleteItem('${id}')">Delete</button>
+      <div>
+        <button class="edit-btn" onclick="openEdit('${id}', '${item.name}', ${item.qty}, ${item.buy}, '${item.category}')">Edit</button>
+        <button class="delete-btn" onclick="deleteItem('${id}')">Delete</button>
+      </div>
     `;
 
-    listEl.appendChild(div);
+    inventoryList.appendChild(div);
   }
 
-  // Add new item
+  /* ===========================
+          ADD ITEM
+  ============================ */
+
   document.getElementById("addItem").onclick = async () => {
     const name = itemName.value.trim();
     const qty = parseInt(itemQty.value);
     const buy = parseFloat(itemBuy.value);
-    const sell = parseFloat(itemSell.value);
     const cat = itemCategory.value;
 
-    if (!name || isNaN(qty) || isNaN(buy) || isNaN(sell)) {
-      return alert("Enter valid details");
-    }
+    if (!name || isNaN(qty) || isNaN(buy)) return alert("Enter valid details");
 
     await addDoc(collection(db, "inventory"), {
-      name, qty, buy, sell, category: cat, created: new Date().toISOString()
+      name, qty, buy, category: cat
     });
 
     itemName.value = "";
     itemQty.value = "";
     itemBuy.value = "";
-    itemSell.value = "";
 
-    loadInventory();
+    loadItems();
   };
 
-  // Update qty
+  /* ===========================
+          EDIT ITEM
+  ============================ */
+
+  window.openEdit = (id, name, qty, buy, cat) => {
+    const modal = document.createElement("div");
+    modal.className = "modal-bg";
+
+    modal.innerHTML = `
+      <div class="modal-box">
+        <h3 style="color:var(--accent);margin-bottom:10px;">Edit Item</h3>
+
+        <input id="editName" type="text" value="${name}">
+        <input id="editQty" type="number" value="${qty}">
+        <input id="editBuy" type="number" value="${buy}">
+        
+        <select id="editCat"></select>
+
+        <button class="modal-btn" id="saveEdit">Save</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // load categories into modal
+    loadModalCategories(cat);
+
+    async function loadModalCategories(selectedCat) {
+      const snap = await getDocs(collection(db, "inventoryCategories"));
+      const sel = modal.querySelector("#editCat");
+      sel.innerHTML = "";
+      snap.forEach(c => {
+        const d = c.data();
+        sel.innerHTML += `<option ${selectedCat===d.name?"selected":""}>${d.name}</option>`;
+      });
+    }
+
+    modal.querySelector("#saveEdit").onclick = async () => {
+      await updateDoc(doc(db, "inventory", id), {
+        name: editName.value,
+        qty: parseInt(editQty.value),
+        buy: parseFloat(editBuy.value),
+        category: editCat.value
+      });
+      modal.remove();
+      loadItems();
+    };
+  };
+
+
+  /* ===========================
+         UPDATE QTY
+  ============================ */
+
   window.increaseQty = async (id, oldQty) => {
-    const newQty = oldQty + 1;
-    await updateDoc(doc(db, "inventory", id), { qty: newQty });
-    loadInventory();
+    await updateDoc(doc(db, "inventory", id), { qty: oldQty + 1 });
+    loadItems();
   };
 
   window.decreaseQty = async (id, oldQty) => {
     if (oldQty <= 0) return;
-    const newQty = oldQty - 1;
-    await updateDoc(doc(db, "inventory", id), { qty: newQty });
-    loadInventory();
+    await updateDoc(doc(db, "inventory", id), { qty: oldQty - 1 });
+    loadItems();
   };
 
-  // Delete item
+  /* ===========================
+         DELETE ITEM
+  ============================ */
+
   window.deleteItem = async (id) => {
     if (!confirm("Delete this item?")) return;
     await deleteDoc(doc(db, "inventory", id));
-    loadInventory();
+    loadItems();
   };
 
-  loadInventory();
+
+  /* ===========================
+        INITIAL LOAD
+  ============================ */
+
+  loadCategories();
+  loadItems();
 </script>
 
-<!-- GLOBAL LOGOUT -->
 <script>
   function logoutUser() {
     localStorage.removeItem("loggedInUser");
