@@ -4,7 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, deleteDoc,
-  doc, updateDoc, getDoc
+  doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,15 +14,14 @@ const firebaseConfig = {
   storageBucket: "mg-manager-3ab66.firebasestorage.app",
   messagingSenderId: "330667005987",
   appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-  measurementId: "G-05HW0KSN38"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ------------------------------
-// DOM Elements
-// ------------------------------
+// ------------------------------------------------------
+// DOM ELEMENTS
+// ------------------------------------------------------
 const itemName = document.getElementById("itemName");
 const quantity = document.getElementById("quantity");
 const unit = document.getElementById("unit");
@@ -37,7 +36,7 @@ const categorySelect = document.getElementById("categorySelect");
 
 const addItemBtn = document.getElementById("addItemBtn");
 
-// Category elements
+// Category
 const newCategoryName = document.getElementById("newCategoryName");
 const addCategoryBtn = document.getElementById("addCategoryBtn");
 const categoryList = document.getElementById("categoryList");
@@ -48,289 +47,280 @@ const filterItemName = document.getElementById("filterItemName");
 const filterDate = document.getElementById("filterDate");
 const clearFilters = document.getElementById("clearFilters");
 
-// Inventory list display
+// List
 const inventoryList = document.getElementById("inventoryList");
 
-// ======================================================
+// STORE ALL ITEMS HERE
+let allInventory = [];
+
+// =====================================================
 // 🔥 LOAD CATEGORIES
-// ======================================================
+// =====================================================
 async function loadCategories() {
   categorySelect.innerHTML = "";
   filterCategory.innerHTML = `<option value="all">All Categories</option>`;
   categoryList.innerHTML = "";
 
-  try {
-    const snap = await getDocs(collection(db, "inventoryCategories"));
-    snap.forEach(docu => {
-      const cat = docu.data().name;
+  const snap = await getDocs(collection(db, "inventoryCategories"));
+  snap.forEach(docu => {
+    const cat = docu.data().name;
 
-      categorySelect.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
-      filterCategory.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+    categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+    filterCategory.innerHTML += `<option value="${cat}">${cat}</option>`;
 
-      categoryList.innerHTML += `
-        <div class="cat-item">
-          <span>${escapeHtml(cat)}</span>
-          <button class="delete-btn" onclick="deleteCategory('${docu.id}')">Delete</button>
-        </div>
-      `;
-    });
-  } catch (err) {
-    console.error("loadCategories err:", err);
-  }
+    categoryList.innerHTML += `
+      <div class="cat-item">
+        <span>${cat}</span>
+        <button class="delete-btn" onclick="deleteCategory('${docu.id}', '${cat}')">Delete</button>
+      </div>
+    `;
+  });
 }
 
-window.deleteCategory = async function (id) {
-  if (!confirm("Delete this category?")) return;
+window.deleteCategory = async function (id, name) {
+  if (!confirm(`Delete category: ${name}?`)) return;
   await deleteDoc(doc(db, "inventoryCategories", id));
   loadCategories();
 };
 
-// ======================================================
+// =====================================================
 // 🔥 ADD CATEGORY
-// ======================================================
+// =====================================================
 addCategoryBtn.onclick = async () => {
-  const name = (newCategoryName.value || "").trim();
-  if (!name) return alert("Enter category name");
+  const name = newCategoryName.value.trim();
+  if (!name) return alert("Enter category name!");
+
   await addDoc(collection(db, "inventoryCategories"), { name });
   newCategoryName.value = "";
   loadCategories();
 };
 
-// ======================================================
-// 🔥 ADD ITEM TO INVENTORY
-// ======================================================
+// =====================================================
+// 🔥 ADD ITEM
+// =====================================================
 addItemBtn.onclick = async () => {
   const data = {
-    name: (itemName.value || "").trim(),
-    qty: Number(quantity.value) || 0,
-    unit: unit.value || "PCS",
-    price: Number(price.value) || 0,
-    invoice: (invoice.value || "").trim(),
-    reel: (reel.value || "").trim(),
-    supplier: (supplier.value || "").trim(),
-    gsm: gsm.value || "",
-    bf: bf.value || "",
-    date: dateInput.value || new Date().toISOString().slice(0,10),
-    category: categorySelect.value || ""
+    name: itemName.value,
+    qty: Number(quantity.value),
+    unit: unit.value,
+    price: Number(price.value),
+    invoice: invoice.value,
+    reel: reel.value,
+    supplier: supplier.value,
+    gsm: gsm.value,
+    bf: bf.value,
+    date: dateInput.value,
+    category: categorySelect.value,
   };
 
-  if (!data.name) return alert("Enter item name");
+  await addDoc(collection(db, "inventory"), data);
 
-  try {
-    await addDoc(collection(db, "inventory"), data);
-    // clear form
-    itemName.value = ""; quantity.value = ""; price.value = "";
-    invoice.value = ""; reel.value = ""; supplier.value = "";
-    gsm.value = ""; bf.value = ""; dateInput.value = "";
-    loadInventory();
-  } catch (err) {
-    console.error("addItem err:", err);
-    alert("Failed to add item. Check console.");
-  }
+  // Clear
+  itemName.value = "";
+  quantity.value = "";
+  price.value = "";
+  invoice.value = "";
+  reel.value = "";
+  supplier.value = "";
+  gsm.value = "";
+  bf.value = "";
+  dateInput.value = "";
+
+  loadInventory();
 };
 
-// ======================================================
-// 🔥 LOAD INVENTORY LIST WITH FILTERS
-// ======================================================
+// =====================================================
+// 🔥 LOAD INVENTORY WITH FILTERS
+// =====================================================
 async function loadInventory() {
   inventoryList.innerHTML = "";
   filterItemName.innerHTML = `<option value="all">All Items</option>`;
 
-  try {
-    const snap = await getDocs(collection(db, "inventory"));
-    let items = [];
-    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+  const snap = await getDocs(collection(db, "inventory"));
+  allInventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // FILTERS
-    if (filterCategory.value !== "all")
-      items = items.filter(i => i.category === filterCategory.value);
+  let items = [...allInventory];
 
-    if (filterItemName.value !== "all")
-      items = items.filter(i => i.name === filterItemName.value);
-
-    if (filterDate.value)
-      items = items.filter(i => i.date === filterDate.value);
-
-    // Build item name filter (unique names from DB regardless of active filters)
-    const allNames = [...new Set(items.map(i => i.name))];
-    allNames.forEach(n => {
-      filterItemName.innerHTML += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
-    });
-
-    if (items.length === 0) {
-      inventoryList.innerHTML = `<p style="text-align:center; opacity:0.7;">No items found.</p>`;
-      return;
-    }
-
-    // Render items
-    items.forEach(item => {
-      inventoryList.innerHTML += `
-        <div class="inventory-item" id="inv-${item.id}">
-          <h3>${escapeHtml(item.name)}</h3>
-          <p>Qty: ${escapeHtml(String(item.qty))} ${escapeHtml(item.unit || "")}</p>
-          <p>Date: ${escapeHtml(item.date || "")}</p>
-          <p>Category: ${escapeHtml(item.category || "")}</p>
-
-          <div class="actions">
-            <button class="btn btn-view" onclick="viewItem('${item.id}')">View</button>
-            <button class="btn btn-edit" onclick="editItem('${item.id}')">Edit</button>
-            <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
-            <button class="btn btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
-          </div>
-        </div>
-      `;
-    });
-  } catch (err) {
-    console.error("loadInventory err:", err);
-    inventoryList.innerHTML = `<p style="text-align:center; opacity:0.7;">Failed loading items.</p>`;
+  // FILTERS
+  if (filterCategory.value !== "all") {
+    items = items.filter(i => i.category === filterCategory.value);
   }
+  if (filterItemName.value !== "all") {
+    items = items.filter(i => i.name === filterItemName.value);
+  }
+  if (filterDate.value) {
+    items = items.filter(i => i.date === filterDate.value);
+  }
+
+  // BUILD ITEM NAME FILTER LIST
+  const uniqueNames = [...new Set(allInventory.map(i => i.name))];
+  uniqueNames.forEach(n => {
+    filterItemName.innerHTML += `<option value="${n}">${n}</option>`;
+  });
+
+  if (items.length === 0) {
+    inventoryList.innerHTML = `<p style="opacity:0.7; text-align:center;">No items found.</p>`;
+    return;
+  }
+
+  items.forEach(item => {
+    inventoryList.innerHTML += `
+      <div class="inventory-item">
+        <h3>${item.name}</h3>
+        <p>Qty: ${item.qty} ${item.unit}</p>
+        <p>Date: ${item.date}</p>
+        <p>Category: ${item.category}</p>
+
+        <div class="actions">
+          <button class="btn btn-view" onclick="viewItem('${item.id}')">View</button>
+          <button class="btn btn-edit" onclick="editItem('${item.id}')">Edit</button>
+          <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
+          <button class="btn btn-delete" onclick="deleteItem('${item.id}', '${item.name}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
 }
 
-// ======================================================
-// 🔥 DELETE ITEM
-// ======================================================
-window.deleteItem = async function (id) {
-  if (!confirm("Delete this inventory item?")) return;
+// =====================================================
+// 🔥 DELETE ITEM (WITH CONFIRM)
+// =====================================================
+window.deleteItem = async function (id, name) {
+  if (!confirm(`Delete ${name}?`)) return;
   await deleteDoc(doc(db, "inventory", id));
   loadInventory();
 };
 
-// ======================================================
-// 🔥 VIEW ITEM DETAILS POPUP
-// ======================================================
-window.viewItem = async function (id) {
-  try {
-    const snap = await getDoc(doc(db, "inventory", id));
-    if (!snap.exists()) return alert("Item not found");
-    const item = snap.data();
+// =====================================================
+// 🔥 VIEW POPUP
+// =====================================================
+window.viewItem = function (id) {
+  const item = allInventory.find(x => x.id === id);
+  if (!item) return;
 
-    const popup = document.createElement("div");
-    popup.className = "popup-overlay";
-    popup.innerHTML = `
-      <div class="popup-box" role="dialog" aria-modal="true">
-        <h2 style="color:#00b4ff;margin-bottom:12px;">Item Details</h2>
+  d_name.innerText = item.name;
+  d_invoice.innerText = item.invoice;
+  d_reel.innerText = item.reel;
+  d_supplier.innerText = item.supplier;
+  d_gsm.innerText = item.gsm;
+  d_bf.innerText = item.bf;
+  d_qty.innerText = `${item.qty} ${item.unit}`;
+  d_price.innerText = item.price;
+  d_category.innerText = item.category;
+  d_date.innerText = item.date;
 
-        <label>Name</label><input value="${escapeHtml(item.name || "")}" disabled>
-        <label>Invoice Number</label><input value="${escapeHtml(item.invoice || "")}" disabled>
-        <label>Reel Number</label><input value="${escapeHtml(item.reel || "")}" disabled>
-        <label>Supplier</label><input value="${escapeHtml(item.supplier || "")}" disabled>
-        <label>GSM</label><input value="${escapeHtml(item.gsm || "")}" disabled>
-        <label>BF</label><input value="${escapeHtml(item.bf || "")}" disabled>
-        <label>Qty</label><input value="${escapeHtml(String(item.qty || 0))} ${escapeHtml(item.unit || "")}" disabled>
-        <label>Price</label><input value="${escapeHtml(String(item.price || ""))}" disabled>
-        <label>Category</label><input value="${escapeHtml(item.category || "")}" disabled>
-        <label>Date</label><input value="${escapeHtml(item.date || "")}" disabled>
-
-        <div style="display:flex;gap:10px;margin-top:14px;">
-          <button class="btn btn-close">Close</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(popup);
-    popup.querySelector(".btn-close").onclick = () => popup.remove();
-  } catch (err) {
-    console.error("viewItem err:", err);
-  }
+  detailsPopup.style.display = "flex";
 };
 
-// ======================================================
-// 🔥 USED ITEM POPUP + MOVE TO inventoryUsed
-// ======================================================
-window.useItem = async function (id) {
-  try {
-    const snap = await getDoc(doc(db, "inventory", id));
-    if (!snap.exists()) return alert("Item not found");
-    const item = snap.data();
-
-    const popup = document.createElement("div");
-    popup.className = "popup-overlay";
-    popup.innerHTML = `
-      <div class="popup-box" role="dialog" aria-modal="true">
-        <h2 style="color:#00b4ff;margin-bottom:12px;">Use Item — ${escapeHtml(item.name || "")}</h2>
-
-        <label>Used Quantity</label><input id="usedQty" type="number" placeholder="Enter quantity used">
-
-        <label>Unit</label>
-        <input value="${escapeHtml(item.unit || "")}" disabled>
-
-        <label>Used For</label><input id="usedFor" type="text" placeholder="What is this used for?">
-
-        <div style="display:flex;gap:10px;margin-top:14px;">
-          <button class="btn" id="saveUsedBtn" style="background:#00b4ff;">Save</button>
-          <button class="btn btn-close" style="background:#666;">Cancel</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(popup);
-
-    popup.querySelector(".btn-close").onclick = () => popup.remove();
-
-    popup.querySelector("#saveUsedBtn").onclick = async () => {
-      const usedQty = Number(popup.querySelector("#usedQty").value) || 0;
-      const usedFor = (popup.querySelector("#usedFor").value || "").trim();
-
-      // save used entry
-      await addDoc(collection(db, "inventoryUsed"), {
-        name: item.name,
-        usedQty,
-        usedFor,
-        date: new Date().toLocaleString(),
-        category: item.category || "",
-        unit: item.unit || "",
-        originalDate: item.date || "",
-        originalPrice: item.price || 0,
-        reel: item.reel || "",
-        supplier: item.supplier || ""
-      });
-
-      // update inventory quantity (no blocking if usedQty > qty — proceed)
-      const newQty = (Number(item.qty) || 0) - usedQty;
-      if (newQty <= 0) {
-        await deleteDoc(doc(db, "inventory", id));
-      } else {
-        await updateDoc(doc(db, "inventory", id), { qty: newQty });
-      }
-
-      popup.remove();
-      loadInventory();
-    };
-
-  } catch (err) {
-    console.error("useItem err:", err);
-  }
+window.closeDetails = function () {
+  detailsPopup.style.display = "none";
 };
 
-// ======================================================
-// 🔥 EDIT ITEM (simple alert placeholder — keep as-is)
-// ======================================================
+// =====================================================
+// 🔥 EDIT POPUP
+// =====================================================
+let currentEditId = null;
+
 window.editItem = function (id) {
-  alert("Edit popup coming in next update");
+  const item = allInventory.find(x => x.id === id);
+  if (!item) return;
+
+  currentEditId = id;
+
+  e_name.value = item.name;
+  e_invoice.value = item.invoice;
+  e_reel.value = item.reel;
+  e_supplier.value = item.supplier;
+  e_gsm.value = item.gsm;
+  e_bf.value = item.bf;
+  e_qty.value = item.qty;
+  e_price.value = item.price;
+  e_category.value = item.category;
+  e_date.value = item.date;
+
+  editPopup.style.display = "flex";
 };
 
-// ======================================================
+window.closeEdit = function () {
+  editPopup.style.display = "none";
+};
+
+window.saveEdit = async function () {
+  const ref = doc(db, "inventory", currentEditId);
+
+  await updateDoc(ref, {
+    name: e_name.value,
+    invoice: e_invoice.value,
+    reel: e_reel.value,
+    supplier: e_supplier.value,
+    gsm: e_gsm.value,
+    bf: e_bf.value,
+    qty: Number(e_qty.value),
+    price: Number(e_price.value),
+    category: e_category.value,
+    date: e_date.value
+  });
+
+  closeEdit();
+  loadInventory();
+};
+
+// =====================================================
+// 🔥 USED POPUP
+// =====================================================
+let currentUsedId = null;
+let currentUsedItem = null;
+
+window.useItem = function (id) {
+  const item = allInventory.find(x => x.id === id);
+  if (!item) return;
+
+  currentUsedId = id;
+  currentUsedItem = item;
+
+  u_available.value = `${item.qty} ${item.unit}`;
+  u_qty.value = "";
+  u_for.value = "";
+
+  usedPopup.style.display = "flex";
+};
+
+window.closeUsed = function () {
+  usedPopup.style.display = "none";
+};
+
+window.saveUsed = async function () {
+  const usedQty = Number(u_qty.value);
+  const usedFor = u_for.value.trim();
+
+  const ref = doc(db, "inventory", currentUsedId);
+
+  const newQty = currentUsedItem.qty - usedQty;
+
+  await updateDoc(ref, { qty: newQty });
+
+  await addDoc(collection(db, "inventoryUsed"), {
+    itemId: currentUsedId,
+    name: currentUsedItem.name,
+    usedQty,
+    usedFor,
+    unit: currentUsedItem.unit,
+    date: new Date().toLocaleString()
+  });
+
+  closeUsed();
+  loadInventory();
+};
+
+// =====================================================
 // CLEAR FILTERS
-// ======================================================
+// =====================================================
 clearFilters.onclick = () => {
   filterCategory.value = "all";
   filterItemName.value = "all";
   filterDate.value = "";
   loadInventory();
 };
-
-// ======================================================
-// UTIL: small escape to avoid injection into innerHTML
-// ======================================================
-function escapeHtml(s) {
-  if (s === null || s === undefined) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 // INITIAL LOAD
 loadCategories();
