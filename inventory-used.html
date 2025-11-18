@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Used Inventory | MG</title>
+  <style>
+    :root { --bg:#0b111b; --accent:#00b4ff; --text:#e2e8f0; --red:#ef4444; }
+    body { background:var(--bg); color:var(--text); font-family:Poppins, sans-serif; padding:22px; }
+    h1 { text-align:center; color:var(--accent); margin-bottom:18px; }
+    .container { max-width:900px; margin:auto; }
+    .used-card { background: rgba(255,255,255,0.05); padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.06); }
+    .small-btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+    .del { background:var(--red); color:white; }
+    .back { background:#0ea5a0; color:#041014; margin-right:10px; }
+    .filters { display:flex; gap:10px; justify-content:center; margin-bottom:12px; }
+    select, input { padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:#1a1f27; color:white; }
+  </style>
+</head>
+<body>
+  <h1>Used Inventory History</h1>
+  <div style="text-align:center;margin-bottom:12px;">
+    <a href="inventory.html"><button class="small-btn back">Back to Inventory</button></a>
+  </div>
+
+  <div class="container">
+    <div class="filters">
+      <select id="filterByCategory">
+        <option value="all">All Categories</option>
+      </select>
+      <input id="filterByMonth" type="month" />
+    </div>
+
+    <div id="usedList"></div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const usedList = document.getElementById("usedList");
+  const filterByCategory = document.getElementById("filterByCategory");
+  const filterByMonth = document.getElementById("filterByMonth");
+
+  async function loadFilters() {
+    filterByCategory.innerHTML = `<option value="all">All Categories</option>`;
+    const catSnap = await getDocs(collection(db, "inventoryCategories"));
+    catSnap.forEach(c => {
+      filterByCategory.innerHTML += `<option value="${c.data().name}">${c.data().name}</option>`;
+    });
+  }
+
+  async function loadUsed() {
+    const snap = await getDocs(collection(db, "inventoryUsed"));
+    usedList.innerHTML = "";
+    const catFilter = filterByCategory.value;
+    const monthFilter = filterByMonth.value; // YYYY-MM
+
+    // build an array then sort by usedAt desc
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    arr.sort((a,b)=> (b.usedAt || "").localeCompare(a.usedAt || ""));
+
+    arr.forEach(rec => {
+      if (catFilter !== "all" && rec.category && rec.category !== catFilter) {
+        // category stored on used record is optional; skip if mismatch
+        // If your used records don't include category (we didn't add it in main), you can skip this check.
+      }
+      // month filter: usedAt is ISO string
+      if (monthFilter && (!rec.usedAt || !rec.usedAt.startsWith(monthFilter))) return;
+
+      const d = document.createElement("div");
+      d.className = "used-card";
+
+      const usedDate = rec.usedAt ? new Date(rec.usedAt).toLocaleString() : "-";
+      d.innerHTML = `
+        <strong>${rec.name}</strong><br>
+        Used: ${rec.usedAmount} ${rec.unit || "PCS"}<br>
+        For: ${rec.usedFor || "-"}<br>
+        At: ${usedDate}
+        <div style="margin-top:8px;text-align:right;">
+          <button class="small-btn del" onclick="confirmDeleteUsed('${rec.id}')">Delete</button>
+        </div>
+      `;
+      usedList.appendChild(d);
+    });
+  }
+
+  window.confirmDeleteUsed = async (id) => {
+    if (!confirm("Delete this used record? This will NOT restore inventory.")) return;
+    await deleteDoc(doc(db, "inventoryUsed", id));
+    loadUsed();
+  };
+
+  filterByCategory.onchange = loadUsed;
+  filterByMonth.onchange = loadUsed;
+
+  // initialize
+  loadFilters(); // (category filter for used page)
+  loadUsed();
+</script>
+</body>
+</html>
