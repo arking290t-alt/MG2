@@ -1,190 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MG Inventory</title>
 
-  <link rel="stylesheet" href="style.css">
-
   <style>
-    body { color: white; }
+    body {
+      background:#0b111b;
+      font-family:Poppins, sans-serif;
+      color:white;
+      margin:0;
+      padding:20px;
+    }
 
     .inv-container {
-      background: rgba(255,255,255,0.05);
-      padding: 20px;
-      border-radius: 15px;
-      width: 95%;
-      max-width: 1200px;
-      margin: 20px auto;
+      max-width:1100px;
+      margin:auto;
+      background:rgba(255,255,255,0.05);
+      padding:20px;
+      border-radius:15px;
     }
 
     .section-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #00b4ff;
-      margin-bottom: 15px;
+      font-size:1.4rem;
+      font-weight:600;
+      margin-bottom:10px;
+      color:#00b4ff;
     }
 
     .row {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
+      display:flex;
+      gap:15px;
+      flex-wrap:wrap;
+      margin-bottom:15px;
     }
 
     .input-box {
-      flex: 1;
-      min-width: 200px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .input-box label {
-      font-size: 0.9rem;
-      margin-bottom: 5px;
-      color: #9ab;
+      flex:1;
+      min-width:200px;
+      display:flex;
+      flex-direction:column;
     }
 
     .input-box input,
     .input-box select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.08);
-      color: white;
-      outline: none;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.08);
+      color:white;
     }
 
     #addItemBtn {
-      width: 100%;
-      padding: 12px;
+      width:100%;
+      padding:12px;
       background:#00b4ff;
       border:none;
       border-radius:10px;
-      margin-top:10px;
+      font-weight:600;
       cursor:pointer;
-      font-weight: 600;
-    }
-
-    .cat-box {
-      background: rgba(0,0,0,0.3);
-      padding:15px;
-      border-radius:12px;
     }
 
     .cat-item {
-      display: flex;
-      justify-content: space-between;
-      background: rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.1);
       padding:10px;
       border-radius:8px;
+      display:flex;
+      justify-content:space-between;
       margin-top:5px;
     }
 
-    .delete-btn {
-      background: red;
-      color: white;
-      padding: 5px 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
     .inventory-item {
-      background: rgba(255,255,255,0.06);
-      padding: 15px;
-      margin-top: 12px;
-      border-radius: 12px;
+      background:rgba(255,255,255,0.07);
+      padding:15px;
+      border-radius:12px;
+      margin-top:15px;
     }
 
-    .actions {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-    }
+    .actions { margin-top:10px; display:flex; gap:12px; }
 
     .btn {
-      padding: 7px 15px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
+      padding:7px 14px;
+      border:none;
+      border-radius:6px;
+      font-weight:600;
+      cursor:pointer;
     }
 
-    .btn-view { background: #3b82f6; color: white; }
-    .btn-edit { background: #facc15; color: black; }
-    .btn-used { background: #ccc; color: #444; }
-    .btn-delete { background: #e63939; color: white; }
+    .btn-view { background:#3b82f6; }
+    .btn-edit { background:#facc15; color:black; }
+    .btn-delete { background:#ef4444; }
+    .btn-used { background:#10b981; }
 
-    .filter-row {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-top: 20px;
+    .filter-row select,
+    .filter-row input {
+      flex:1;
+      min-width:180px;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.08);
+      color:white;
     }
-
-    /* POPUP STYLES */
-    .popup {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    .popup-inner {
-      background: #111;
-      padding: 20px;
-      width: 90%;
-      max-width: 400px;
-      border-radius: 15px;
-    }
-
-    .popup-inner h2 {
-      margin-bottom: 10px;
-      color: #00b4ff;
-    }
-
-    .popup-inner input {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 8px;
-      border: 1px solid #444;
-      background: #222;
-      color: white;
-    }
-
-    .popup-inner button {
-      padding: 10px;
-      width: 48%;
-      margin-top: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .save-btn { background: #00b4ff; color: black; }
-    .cancel-btn { background: #e63939; color: white; }
   </style>
 </head>
 
 <body>
 
-<h1 style="text-align:center; color:#00b4ff; margin-top:20px;">MG Inventory</h1>
+<h1 style="text-align:center; color:#00b4ff;">MG Inventory</h1>
 
 <div class="inv-container">
 
-  <!-- INVENTORY FORM -->
-  <div class="section-title">Inventory Management</div>
+  <div class="section-title">Add Inventory</div>
 
   <div class="row">
     <div class="input-box"><label>Item Name</label><input id="itemName"></div>
-    <div class="input-box"><label>Quantity</label><input id="quantity" type="number"></div>
+    <div class="input-box"><label>Qty</label><input id="quantity" type="number"></div>
     <div class="input-box">
       <label>Unit</label>
       <select id="unit">
@@ -195,9 +127,9 @@
   </div>
 
   <div class="row">
-    <div class="input-box"><label>Purchase Price (₹)</label><input id="price" type="number"></div>
-    <div class="input-box"><label>Invoice Number</label><input id="invoice"></div>
-    <div class="input-box"><label>Reel Number</label><input id="reel"></div>
+    <div class="input-box"><label>Price</label><input id="price" type="number"></div>
+    <div class="input-box"><label>Invoice No</label><input id="invoice"></div>
+    <div class="input-box"><label>Reel No</label><input id="reel"></div>
   </div>
 
   <div class="row">
@@ -208,102 +140,221 @@
 
   <div class="row">
     <div class="input-box"><label>Date</label><input id="date" type="date"></div>
-    <div class="input-box"><label>Select Category</label><select id="categorySelect"></select></div>
+    <div class="input-box"><label>Category</label><select id="categorySelect"></select></div>
   </div>
 
   <button id="addItemBtn">Add Item</button>
 
-  <!-- CATEGORY MANAGER -->
-  <div class="section-title" style="margin-top:30px;">Manage Categories</div>
+  <br><br>
 
-  <div class="cat-box">
-    <div class="row">
-      <div class="input-box"><label>New Category</label><input id="newCategoryName"></div>
-      <button id="addCategoryBtn" class="btn-view" style="height:45px;margin-top:22px;">Add Category</button>
+  <div class="section-title">Manage Categories</div>
+  <div class="row">
+    <div class="input-box">
+      <label>New Category</label>
+      <input id="newCategoryName">
     </div>
-
-    <div id="categoryList"></div>
+    <button id="addCategoryBtn" class="btn" style="background:#00b4ff; margin-top:25px;">Add</button>
   </div>
 
-  <!-- FILTERS -->
-  <div class="section-title" style="margin-top:30px;">Filter Inventory</div>
+  <div id="categoryList"></div>
 
-  <div class="filter-row">
-    <select id="filterCategory" class="input-box" style="flex:1;"><option value="all">All Categories</option></select>
-    <select id="filterItemName" class="input-box" style="flex:1;"><option value="all">All Items</option></select>
-    <input id="filterDate" type="date" class="input-box" style="flex:1;">
-    <button class="btn-delete" id="clearFilters">Clear</button>
+  <br><br>
+
+  <div class="section-title">Filter Inventory</div>
+
+  <div class="filter-row row">
+    <select id="filterCategory">
+      <option value="all">All Categories</option>
+    </select>
+
+    <select id="filterItemName">
+      <option value="all">All Items</option>
+    </select>
+
+    <input id="filterDate" type="date">
+    <button id="clearFilters" class="btn btn-delete">Clear</button>
   </div>
 
   <div id="inventoryList" style="margin-top:20px;"></div>
 
 </div>
 
-<!-- VIEW POPUP -->
-<div id="detailsPopup" class="popup">
-  <div class="popup-inner">
-    <h2>Item Details</h2>
+<script type="module">
 
-    <p><strong>Name:</strong> <span id="d_name"></span></p>
-    <p><strong>Invoice:</strong> <span id="d_invoice"></span></p>
-    <p><strong>Reel:</strong> <span id="d_reel"></span></p>
-    <p><strong>Supplier:</strong> <span id="d_supplier"></span></p>
-    <p><strong>GSM:</strong> <span id="d_gsm"></span></p>
-    <p><strong>BF:</strong> <span id="d_bf"></span></p>
-    <p><strong>Quantity:</strong> <span id="d_qty"></span></p>
-    <p><strong>Price:</strong> ₹<span id="d_price"></span></p>
-    <p><strong>Category:</strong> <span id="d_category"></span></p>
-    <p><strong>Date:</strong> <span id="d_date"></span></p>
+// FIREBASE
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs,
+  deleteDoc, doc, updateDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    <button class="save-btn" onclick="closeDetails()">Close</button>
-  </div>
-</div>
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+};
 
-<!-- EDIT POPUP -->
-<div id="editPopup" class="popup">
-  <div class="popup-inner">
-    <h2>Edit Item</h2>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    <input id="e_name" placeholder="Name">
-    <input id="e_invoice" placeholder="Invoice Number">
-    <input id="e_reel" placeholder="Reel Number">
-    <input id="e_supplier" placeholder="Supplier">
-    <input id="e_gsm" placeholder="GSM">
-    <input id="e_bf" placeholder="BF">
-    <input id="e_qty" placeholder="Quantity">
-    <input id="e_price" placeholder="Price">
-    <input id="e_category" placeholder="Category">
-    <input id="e_date" type="date">
+// DOM
+const itemName = document.getElementById("itemName");
+const quantity = document.getElementById("quantity");
+const unit = document.getElementById("unit");
+const price = document.getElementById("price");
+const invoice = document.getElementById("invoice");
+const reel = document.getElementById("reel");
+const supplier = document.getElementById("supplier");
+const gsm = document.getElementById("gsm");
+const bf = document.getElementById("bf");
+const dateInput = document.getElementById("date");
+const categorySelect = document.getElementById("categorySelect");
 
-    <div style="display:flex;gap:10px;">
-      <button class="save-btn" onclick="saveEdit()">Save</button>
-      <button class="cancel-btn" onclick="closeEdit()">Cancel</button>
-    </div>
-  </div>
-</div>
+const inventoryList = document.getElementById("inventoryList");
 
-<!-- USED POPUP -->
-<div id="usedPopup" class="popup">
-  <div class="popup-inner">
-    <h2>Use Item — <span id="u_title"></span></h2>
+// CATEGORY LOAD
+async function loadCategories() {
+  categorySelect.innerHTML = "";
+  filterCategory.innerHTML = `<option value="all">All Categories</option>`;
 
-    <label>Available:</label>
-    <input id="u_available" disabled>
+  const snap = await getDocs(collection(db, "inventoryCategories"));
+  snap.forEach(c => {
+    const name = c.data().name;
+    categorySelect.innerHTML += `<option value="${name}">${name}</option>`;
+    filterCategory.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+}
 
-    <label>Used Quantity:</label>
-    <input id="u_qty" placeholder="Enter quantity used">
+// ADD CATEGORY
+addCategoryBtn.onclick = async () => {
+  const name = newCategoryName.value.trim();
+  if (!name) return;
+  await addDoc(collection(db, "inventoryCategories"), { name });
+  newCategoryName.value = "";
+  loadCategories();
+};
 
-    <label>Used For:</label>
-    <input id="u_for" placeholder="Purpose">
+// ADD ITEM
+addItemBtn.onclick = async () => {
+  const data = {
+    name: itemName.value,
+    qty: Number(quantity.value),
+    unit: unit.value,
+    price: Number(price.value),
+    invoice: invoice.value,
+    reel: reel.value,
+    supplier: supplier.value,
+    gsm: gsm.value,
+    bf: bf.value,
+    date: dateInput.value,
+    category: categorySelect.value
+  };
 
-    <div style="display:flex;gap:10px;">
-      <button class="save-btn" onclick="saveUsed()">Save</button>
-      <button class="cancel-btn" onclick="closeUsed()">Cancel</button>
-    </div>
-  </div>
-</div>
+  await addDoc(collection(db, "inventory"), data);
 
-<script type="module" src="inventory.js"></script>
+  itemName.value="";
+  quantity.value="";
+  price.value="";
+  invoice.value="";
+  reel.value="";
+  supplier.value="";
+  gsm.value="";
+  bf.value="";
+  dateInput.value="";
+
+  loadInventory();
+};
+
+// LOAD INVENTORY
+async function loadInventory() {
+  inventoryList.innerHTML = "";
+  filterItemName.innerHTML = `<option value="all">All Items</option>`;
+
+  let snap = await getDocs(collection(db, "inventory"));
+  let items = [];
+  snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+
+  if (filterCategory.value !== "all")
+    items = items.filter(i => i.category === filterCategory.value);
+
+  if (filterItemName.value !== "all")
+    items = items.filter(i => i.name === filterItemName.value);
+
+  if (filterDate.value)
+    items = items.filter(i => i.date === filterDate.value);
+
+  [...new Set(items.map(i => i.name))].forEach(n => {
+    filterItemName.innerHTML += `<option value="${n}">${n}</option>`;
+  });
+
+  if (!items.length) {
+    inventoryList.innerHTML = `<p>No items found.</p>`;
+    return;
+  }
+
+  items.forEach(item => {
+    inventoryList.innerHTML += `
+      <div class="inventory-item">
+        <h3>${item.name}</h3>
+        <p>Qty: ${item.qty} ${item.unit}</p>
+        <p>Date: ${item.date}</p>
+        <p>Category: ${item.category}</p>
+
+        <div class="actions">
+          <button class="btn btn-view">View</button>
+          <button class="btn btn-edit">Edit</button>
+          <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
+          <button class="btn btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// DELETE ITEM
+window.deleteItem = async (id) => {
+  if (!confirm("Delete this item?")) return;
+  await deleteDoc(doc(db, "inventory", id));
+  loadInventory();
+};
+
+// USED ITEM → MOVE TO inventoryUsed
+window.useItem = async (id) => {
+  if (!confirm("Mark this item as USED?")) return;
+
+  const ref = doc(db, "inventory", id);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return;
+
+  const item = snap.data();
+
+  await addDoc(collection(db, "inventoryUsed"), {
+    ...item,
+    usedDate: new Date().toISOString().slice(0,10)
+  });
+
+  await deleteDoc(ref);
+
+  alert("Item moved to USED INVENTORY");
+  loadInventory();
+};
+
+// CLEAR FILTERS
+clearFilters.onclick = () => {
+  filterCategory.value = "all";
+  filterItemName.value = "all";
+  filterDate.value = "";
+  loadInventory();
+};
+
+loadCategories();
+loadInventory();
+
+</script>
 
 </body>
 </html>
