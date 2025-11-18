@@ -15,97 +15,49 @@
   --danger:#ef4444;
   --text:#e2e8f0;
 }
-*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Poppins, sans-serif;
   background:var(--bg);
   color:var(--muted);
-  padding:28px;
+  padding:26px;
 }
-
-h1{
-  text-align:center;
-  color:var(--accent);
-  margin:6px 0 18px;
-  font-size:2rem;
-}
-
+h1{text-align:center;color:var(--accent);margin-bottom:20px;font-size:2rem}
 .top-row{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  margin-bottom:18px;
-  flex-wrap:wrap;
+  display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap
 }
-.btn{
-  padding:8px 12px;
-  border-radius:8px;
-  border:none;
-  cursor:pointer;
-  font-weight:700;
+.btn{padding:10px 14px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
+.back-btn{background:#0ea5a0;color:#000}
+.filter-select,.filter-date{
+  background:#11181d;border:1px solid rgba(255,255,255,0.1);color:white;padding:10px;border-radius:8px
 }
-.back-btn{background:#0ea5a0;color:#021014}
-
-.filter-select, .filter-date{
-  background:#11181d;
-  border:1px solid rgba(255,255,255,0.06);
-  color:var(--text);
-  padding:10px 12px;
-  border-radius:8px;
-  outline:none;
-}
-
-.container{max-width:1100px;margin:0 auto}
+.container{max-width:1100px;margin:auto}
 .used-card{
-  background:var(--card);
-  padding:14px;
-  border-radius:10px;
-  margin-bottom:14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  border:1px solid rgba(255,255,255,0.03);
-  color:#e6f2ff;
+  background:var(--card);padding:16px;border-radius:12px;margin-bottom:14px;
+  border:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:flex-start;color:white
 }
-.used-left{line-height:1.45}
-.used-actions{display:flex;gap:8px;align-items:center}
-
-.small-btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-.view-btn{background:#60a5fa;color:#021022}
-.delete-btn{background:var(--danger);color:white}
-
+.used-actions{display:flex;gap:10px}
+.small-btn{padding:8px 12px;border-radius:8px;font-weight:700;border:none;cursor:pointer}
+.view-btn{background:#3b82f6}
+.delete-btn{background:#ef4444}
 .modal-back{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999
 }
 .modal{
-  background:#0f1720;
-  width:90%;
-  max-width:420px;
-  max-height:90vh;
-  overflow-y:auto;
-  padding:18px;
-  border-radius:12px;
-  color:var(--text);
-  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+  background:#0f1720;padding:18px;border-radius:12px;width:90%;max-width:450px;color:white;max-height:90vh;overflow-y:auto
 }
-.modal h3{color:var(--accent);margin:0 0 12px}
-.field{margin-bottom:10px}
-.field label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
-.field input{width:100%;padding:10px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
-.modal-footer{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
-.modal .btn-close{background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:none}
-.modal .btn-del{background:var(--danger);color:#fff;padding:8px 12px;border-radius:8px;border:none}
-
-.empty-msg{text-align:center;color:#64748b;margin-top:40px;font-size:1rem}
+.field{margin-bottom:14px}
+.field label{font-size:.9rem;color:#aab;;margin-bottom:5px;display:block}
+.field input{
+  width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+  background:#141b22;color:white;font-size:1rem
+}
+.modal-footer{display:flex;justify-content:space-between;margin-top:14px}
+.btn-close{background:#444;border:none;padding:10px 14px;border-radius:8px;color:white}
+.btn-del{background:#ef4444;border:none;padding:10px 14px;border-radius:8px;color:white}
 </style>
 </head>
+
 <body>
 
 <h1>Used Inventory History</h1>
@@ -124,41 +76,38 @@ h1{
   <div id="usedList"></div>
 </div>
 
-<!-- POPUP -->
+<!-- VIEW POPUP -->
 <div class="modal-back" id="modalBack">
   <div class="modal">
-    <h3>Item Details</h3>
+    <h2 style="color:#00b4ff;margin-top:0">Item Details</h2>
 
-    <div class="field"><label>Item Name</label><input id="v_name" readonly></div>
-    <div class="field"><label>Used Quantity</label><input id="v_usedAmount" readonly></div>
-    <div class="field"><label>Unit</label><input id="v_unit" readonly></div>
+    <div class="field"><label>Name</label><input id="v_name" readonly></div>
+    <div class="field"><label>Used Quantity</label><input id="v_usedQty" readonly></div>
     <div class="field"><label>Used For</label><input id="v_usedFor" readonly></div>
+
     <div class="field"><label>Invoice Number</label><input id="v_invoice" readonly></div>
     <div class="field"><label>Reel Number</label><input id="v_reel" readonly></div>
     <div class="field"><label>Supplier</label><input id="v_supplier" readonly></div>
+
     <div class="field"><label>GSM</label><input id="v_gsm" readonly></div>
     <div class="field"><label>BF</label><input id="v_bf" readonly></div>
 
-    <!-- 🔥 FIXED: DISPLAY EXACT SAME INVENTORY AMOUNT -->
-    <div class="field"><label>Item Amount (₹)</label><input id="v_amount" readonly></div>
+    <div class="field"><label>Amount (₹)</label><input id="v_amount" readonly></div>
 
     <div class="field"><label>Category</label><input id="v_category" readonly></div>
     <div class="field"><label>Original Date</label><input id="v_date" readonly></div>
     <div class="field"><label>Used At</label><input id="v_usedAt" readonly></div>
 
     <div class="modal-footer">
-      <button id="modalDelete" class="btn-del">Delete</button>
-      <button id="modalClose" class="btn-close">Close</button>
+      <button class="btn-del" id="modalDelete">Delete</button>
+      <button class="btn-close" id="modalClose">Close</button>
     </div>
   </div>
 </div>
 
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore, collection, getDocs, deleteDoc, doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -167,80 +116,83 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-// elements
 const usedList = document.getElementById("usedList");
 const modalBack = document.getElementById("modalBack");
-const filterCategory = document.getElementById("filterCategory");
-const filterMonth = document.getElementById("filterMonth");
 
-// modal fields
 const v_name=document.getElementById("v_name");
-const v_usedAmount=document.getElementById("v_usedAmount");
-const v_unit=document.getElementById("v_unit");
+const v_usedQty=document.getElementById("v_usedQty");
 const v_usedFor=document.getElementById("v_usedFor");
 const v_invoice=document.getElementById("v_invoice");
 const v_reel=document.getElementById("v_reel");
 const v_supplier=document.getElementById("v_supplier");
 const v_gsm=document.getElementById("v_gsm");
 const v_bf=document.getElementById("v_bf");
-const v_amount=document.getElementById("v_amount"); // 🔥 NEW
+const v_amount=document.getElementById("v_amount");
 const v_category=document.getElementById("v_category");
 const v_date=document.getElementById("v_date");
 const v_usedAt=document.getElementById("v_usedAt");
 
-let usedData=[];
-let currentId=null;
+let usedData=[], currentId=null;
+
+function formatDate(d){
+  const dt=new Date(d);
+  return dt.toLocaleString("en-IN",{hour12:false});
+}
 
 async function loadUsed(){
-  usedList.innerHTML="Loading…";
+  usedList.innerHTML="Loading...";
   usedData=[];
-  const snap=await getDocs(collection(db,"inventoryUsed"));
-  snap.forEach(s=> usedData.push({id:s.id,...s.data()}));
+
+  const snap = await getDocs(collection(db,"inventoryUsed"));
+  snap.forEach(s => usedData.push({ id:s.id, ...s.data() }));
+
   render();
 }
 
 function render(){
   usedList.innerHTML="";
-  usedData.forEach(d=>{
+
+  usedData.forEach(d => {
     usedList.innerHTML += `
       <div class="used-card">
-        <div class="used-left">
-          <strong style="color:#fff">${d.name}</strong>
-          <br>Used: ${d.usedAmount} ${d.unit}
-          <br>Category: ${d.category}
-          <br><span style="color:#00b4ff;font-weight:700;">Amount: ₹${d.amount || d.displayAmount || 0}</span>
+        <div>
+          <strong>${d.name}</strong><br>
+          Used: ${d.usedAmount} ${d.unit}<br>
+          Category: ${d.category}<br>
+          <span style="color:#00b4ff;font-weight:700;">Amount: ₹${d.amount}</span>
         </div>
 
         <div class="used-actions">
           <button class="small-btn view-btn" onclick="openView('${d.id}')">View</button>
           <button class="small-btn delete-btn" onclick="deleteUsed('${d.id}')">Delete</button>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
 window.openView = (id)=>{
-  const d = usedData.find(x=>x.id==id);
+  const d = usedData.find(x=>x.id===id);
   if(!d) return;
 
   currentId=id;
 
   v_name.value = d.name;
-  v_usedAmount.value = d.usedAmount+" "+d.unit;
-  v_unit.value = d.unit;
+  v_usedQty.value = d.usedAmount+" "+d.unit;
   v_usedFor.value = d.usedFor;
-  v_invoice.value = d.invoice;
-  v_reel.value = d.reel;
-  v_supplier.value = d.supplier;
-  v_gsm.value = d.gsm;
-  v_bf.value = d.bf;
 
-  v_amount.value = d.amount || d.displayAmount || 0;  // 🔥 EXACT amount
+  v_invoice.value = d.invoice || "";
+  v_reel.value = d.reel || "";
+  v_supplier.value = d.supplier || "";
+
+  v_gsm.value = d.gsm || "";
+  v_bf.value = d.bf || "";
+
+  v_amount.value = d.amount; // FIXED amount
 
   v_category.value = d.category;
-  v_date.value = d.date;
-  v_usedAt.value = d.usedAt;
+  v_date.value = d.originalDate || d.date || "—";
+
+  v_usedAt.value = formatDate(d.usedAt);
 
   modalBack.style.display="flex";
 };
@@ -251,10 +203,6 @@ window.deleteUsed = async(id)=>{
   loadUsed();
 };
 
-document.getElementById("modalClose").onclick=()=>{
-  modalBack.style.display="none";
-};
-
 document.getElementById("modalDelete").onclick=async()=>{
   if(!confirm("Delete this used record?")) return;
   await deleteDoc(doc(db,"inventoryUsed",currentId));
@@ -262,8 +210,11 @@ document.getElementById("modalDelete").onclick=async()=>{
   loadUsed();
 };
 
+document.getElementById("modalClose").onclick=()=>{
+  modalBack.style.display="none";
+};
+
 loadUsed();
 </script>
-
 </body>
 </html>
