@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory | MG</title>
+
+  <style>
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --panel:#0e1724;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#facc15;
+    }
+
+    *{box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{background:var(--bg);color:var(--text);margin:0;}
+
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      background:rgba(255,255,255,0.05);
+      padding:15px 25px;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    .logo{font-size:1.5rem;font-weight:700;color:var(--accent);}
+    .btn{
+      background:var(--accent);border:none;color:white;padding:8px 14px;
+      border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;
+    }
+
+    .container{
+      max-width:850px;margin:30px auto;background:var(--card);
+      padding:25px;border-radius:14px;box-shadow:0 8px 30px rgba(0,180,255,0.15);
+    }
+    h1{color:var(--accent);text-align:center;}
+
+    .form-row{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;
+    }
+    input,select{
+      flex:1;min-width:150px;padding:10px;
+      border-radius:8px;border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.08);color:white;
+    }
+
+    .add-btn{
+      background:var(--accent);border:none;padding:10px 15px;color:white;
+      border-radius:8px;font-weight:600;cursor:pointer;
+      min-width:140px;
+    }
+
+    .inventory-list{margin-top:25px;}
+    .item-card{
+      background:rgba(255,255,255,0.05);
+      padding:15px;border-radius:10px;margin-bottom:12px;
+      display:flex;justify-content:space-between;align-items:center;
+      border:1px solid rgba(255,255,255,0.07);
+    }
+    .item-left{display:flex;flex-direction:column;}
+    .qty-box{display:flex;gap:5px;margin-top:8px;}
+    .qty-btn{
+      background:var(--accent);border:none;color:white;padding:4px 10px;
+      border-radius:6px;cursor:pointer;font-size:0.8rem;
+    }
+    .delete-btn{
+      background:var(--danger);border:none;color:white;
+      padding:7px 12px;border-radius:6px;cursor:pointer;
+    }
+    .warn-text{color:var(--warn);font-size:0.85rem;margin-top:5px;}
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">MG</div>
+  <div>
+    <a class="btn" href="dashboard.html">← Dashboard</a>
+    <button onclick="logoutUser()" class="btn" style="margin-left:10px;">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  <h1>Inventory Management</h1>
+
+  <!-- ADD ITEM FORM -->
+  <div class="form-row">
+    <input id="itemName" type="text" placeholder="Item Name" />
+    <input id="itemQty" type="number" placeholder="Quantity" />
+    <input id="itemBuy" type="number" placeholder="Purchase Price" />
+    <input id="itemSell" type="number" placeholder="Selling Price" />
+    <select id="itemCategory">
+      <option value="General">General</option>
+      <option value="Material">Material</option>
+      <option value="Packaging">Packaging</option>
+      <option value="Machine Part">Machine Part</option>
+    </select>
+    <button class="add-btn" id="addItem">Add</button>
+  </div>
+
+  <!-- INVENTORY LIST -->
+  <div class="inventory-list" id="inventoryList"></div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs,
+    deleteDoc, updateDoc, doc, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+    storageBucket: "mg-manager-3ab66.appspot.com",
+    messagingSenderId: "330667005987",
+    appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const listEl = document.getElementById("inventoryList");
+
+  // Load inventory
+  async function loadInventory() {
+    const qSnap = await getDocs(query(collection(db, "inventory"), orderBy("name")));
+    listEl.innerHTML = "";
+
+    if (qSnap.empty) {
+      listEl.innerHTML = "<p style='text-align:center;color:#999;'>No items added yet.</p>";
+      return;
+    }
+
+    qSnap.forEach(d => {
+      const item = d.data();
+      createItemCard(item, d.id);
+    });
+  }
+
+  function createItemCard(item, id) {
+    const div = document.createElement("div");
+    div.className = "item-card";
+
+    div.innerHTML = `
+      <div class="item-left">
+        <strong>${item.name}</strong>
+        <span>${item.category}</span>
+        <span>Qty: ${item.qty}</span>
+        <span>Purchase: ₹${item.buy} | Sell: ₹${item.sell}</span>
+        ${item.qty < 5 ? "<span class='warn-text'>Low Stock!</span>" : ""}
+        <div class="qty-box">
+          <button class="qty-btn" onclick="increaseQty('${id}', ${item.qty})">+ Add</button>
+          <button class="qty-btn" onclick="decreaseQty('${id}', ${item.qty})">- Reduce</button>
+        </div>
+      </div>
+
+      <button class="delete-btn" onclick="deleteItem('${id}')">Delete</button>
+    `;
+
+    listEl.appendChild(div);
+  }
+
+  // Add new item
+  document.getElementById("addItem").onclick = async () => {
+    const name = itemName.value.trim();
+    const qty = parseInt(itemQty.value);
+    const buy = parseFloat(itemBuy.value);
+    const sell = parseFloat(itemSell.value);
+    const cat = itemCategory.value;
+
+    if (!name || isNaN(qty) || isNaN(buy) || isNaN(sell)) {
+      return alert("Enter valid details");
+    }
+
+    await addDoc(collection(db, "inventory"), {
+      name, qty, buy, sell, category: cat, created: new Date().toISOString()
+    });
+
+    itemName.value = "";
+    itemQty.value = "";
+    itemBuy.value = "";
+    itemSell.value = "";
+
+    loadInventory();
+  };
+
+  // Update qty
+  window.increaseQty = async (id, oldQty) => {
+    const newQty = oldQty + 1;
+    await updateDoc(doc(db, "inventory", id), { qty: newQty });
+    loadInventory();
+  };
+
+  window.decreaseQty = async (id, oldQty) => {
+    if (oldQty <= 0) return;
+    const newQty = oldQty - 1;
+    await updateDoc(doc(db, "inventory", id), { qty: newQty });
+    loadInventory();
+  };
+
+  // Delete item
+  window.deleteItem = async (id) => {
+    if (!confirm("Delete this item?")) return;
+    await deleteDoc(doc(db, "inventory", id));
+    loadInventory();
+  };
+
+  loadInventory();
+</script>
+
+<!-- GLOBAL LOGOUT -->
+<script>
+  function logoutUser() {
+    localStorage.removeItem("loggedInUser");
+    window.location.href = "login.html";
+  }
+</script>
+
+</body>
+</html>
