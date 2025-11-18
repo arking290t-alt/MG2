@@ -59,23 +59,28 @@ async function loadCategories() {
   filterCategory.innerHTML = `<option value="all">All Categories</option>`;
   categoryList.innerHTML = "";
 
-  const snap = await getDocs(collection(db, "inventoryCategories"));
-  snap.forEach(docu => {
-    const cat = docu.data().name;
+  try {
+    const snap = await getDocs(collection(db, "inventoryCategories"));
+    snap.forEach(docu => {
+      const cat = docu.data().name;
 
-    categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-    filterCategory.innerHTML += `<option value="${cat}">${cat}</option>`;
+      categorySelect.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+      filterCategory.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
 
-    categoryList.innerHTML += `
-      <div class="cat-item">
-        <span>${cat}</span>
-        <button class="delete-btn" onclick="deleteCategory('${docu.id}')">Delete</button>
-      </div>
-    `;
-  });
+      categoryList.innerHTML += `
+        <div class="cat-item">
+          <span>${escapeHtml(cat)}</span>
+          <button class="delete-btn" onclick="deleteCategory('${docu.id}')">Delete</button>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("loadCategories err:", err);
+  }
 }
 
 window.deleteCategory = async function (id) {
+  if (!confirm("Delete this category?")) return;
   await deleteDoc(doc(db, "inventoryCategories", id));
   loadCategories();
 };
@@ -84,9 +89,8 @@ window.deleteCategory = async function (id) {
 // 🔥 ADD CATEGORY
 // ======================================================
 addCategoryBtn.onclick = async () => {
-  const name = newCategoryName.value.trim();
-  if (!name) return;
-
+  const name = (newCategoryName.value || "").trim();
+  if (!name) return alert("Enter category name");
   await addDoc(collection(db, "inventoryCategories"), { name });
   newCategoryName.value = "";
   loadCategories();
@@ -97,33 +101,32 @@ addCategoryBtn.onclick = async () => {
 // ======================================================
 addItemBtn.onclick = async () => {
   const data = {
-    name: itemName.value,
-    qty: Number(quantity.value),
-    unit: unit.value,
-    price: Number(price.value),
-    invoice: invoice.value,
-    reel: reel.value,
-    supplier: supplier.value,
-    gsm: gsm.value,
-    bf: bf.value,
-    date: dateInput.value,
-    category: categorySelect.value,
+    name: (itemName.value || "").trim(),
+    qty: Number(quantity.value) || 0,
+    unit: unit.value || "PCS",
+    price: Number(price.value) || 0,
+    invoice: (invoice.value || "").trim(),
+    reel: (reel.value || "").trim(),
+    supplier: (supplier.value || "").trim(),
+    gsm: gsm.value || "",
+    bf: bf.value || "",
+    date: dateInput.value || new Date().toISOString().slice(0,10),
+    category: categorySelect.value || ""
   };
 
-  await addDoc(collection(db, "inventory"), data);
+  if (!data.name) return alert("Enter item name");
 
-  // Clear
-  itemName.value = "";
-  quantity.value = "";
-  price.value = "";
-  invoice.value = "";
-  reel.value = "";
-  supplier.value = "";
-  gsm.value = "";
-  bf.value = "";
-  dateInput.value = "";
-
-  loadInventory();
+  try {
+    await addDoc(collection(db, "inventory"), data);
+    // clear form
+    itemName.value = ""; quantity.value = ""; price.value = "";
+    invoice.value = ""; reel.value = ""; supplier.value = "";
+    gsm.value = ""; bf.value = ""; dateInput.value = "";
+    loadInventory();
+  } catch (err) {
+    console.error("addItem err:", err);
+    alert("Failed to add item. Check console.");
+  }
 };
 
 // ======================================================
@@ -133,55 +136,61 @@ async function loadInventory() {
   inventoryList.innerHTML = "";
   filterItemName.innerHTML = `<option value="all">All Items</option>`;
 
-  const snap = await getDocs(collection(db, "inventory"));
-  let items = [];
+  try {
+    const snap = await getDocs(collection(db, "inventory"));
+    let items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
 
-  snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    // FILTERS
+    if (filterCategory.value !== "all")
+      items = items.filter(i => i.category === filterCategory.value);
 
-  // FILTERS
-  if (filterCategory.value !== "all")
-    items = items.filter(i => i.category === filterCategory.value);
+    if (filterItemName.value !== "all")
+      items = items.filter(i => i.name === filterItemName.value);
 
-  if (filterItemName.value !== "all")
-    items = items.filter(i => i.name === filterItemName.value);
+    if (filterDate.value)
+      items = items.filter(i => i.date === filterDate.value);
 
-  if (filterDate.value)
-    items = items.filter(i => i.date === filterDate.value);
+    // Build item name filter (unique names from DB regardless of active filters)
+    const allNames = [...new Set(items.map(i => i.name))];
+    allNames.forEach(n => {
+      filterItemName.innerHTML += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
+    });
 
-  // Build item name filter
-  const uniqueNames = [...new Set(items.map(i => i.name))];
-  uniqueNames.forEach(n => {
-    filterItemName.innerHTML += `<option value="${n}">${n}</option>`;
-  });
+    if (items.length === 0) {
+      inventoryList.innerHTML = `<p style="text-align:center; opacity:0.7;">No items found.</p>`;
+      return;
+    }
 
-  if (items.length === 0) {
-    inventoryList.innerHTML = `<p style="text-align:center; opacity:0.7;">No items found.</p>`;
-    return;
-  }
+    // Render items
+    items.forEach(item => {
+      inventoryList.innerHTML += `
+        <div class="inventory-item" id="inv-${item.id}">
+          <h3>${escapeHtml(item.name)}</h3>
+          <p>Qty: ${escapeHtml(String(item.qty))} ${escapeHtml(item.unit || "")}</p>
+          <p>Date: ${escapeHtml(item.date || "")}</p>
+          <p>Category: ${escapeHtml(item.category || "")}</p>
 
-  items.forEach(item => {
-    inventoryList.innerHTML += `
-      <div class="inventory-item">
-        <h3>${item.name}</h3>
-        <p>Qty: ${item.qty} ${item.unit}</p>
-        <p>Date: ${item.date}</p>
-        <p>Category: ${item.category}</p>
-
-        <div class="actions">
-          <button class="btn btn-view" onclick="viewItem('${item.id}')">View</button>
-          <button class="btn btn-edit" onclick="editItem('${item.id}')">Edit</button>
-          <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
-          <button class="btn btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
+          <div class="actions">
+            <button class="btn btn-view" onclick="viewItem('${item.id}')">View</button>
+            <button class="btn btn-edit" onclick="editItem('${item.id}')">Edit</button>
+            <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
+            <button class="btn btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
+          </div>
         </div>
-      </div>
-    `;
-  });
+      `;
+    });
+  } catch (err) {
+    console.error("loadInventory err:", err);
+    inventoryList.innerHTML = `<p style="text-align:center; opacity:0.7;">Failed loading items.</p>`;
+  }
 }
 
 // ======================================================
 // 🔥 DELETE ITEM
 // ======================================================
 window.deleteItem = async function (id) {
+  if (!confirm("Delete this inventory item?")) return;
   await deleteDoc(doc(db, "inventory", id));
   loadInventory();
 };
@@ -190,118 +199,111 @@ window.deleteItem = async function (id) {
 // 🔥 VIEW ITEM DETAILS POPUP
 // ======================================================
 window.viewItem = async function (id) {
-  const snap = await getDoc(doc(db, "inventory", id));
-  const item = snap.data();
+  try {
+    const snap = await getDoc(doc(db, "inventory", id));
+    if (!snap.exists()) return alert("Item not found");
+    const item = snap.data();
 
-  const popup = document.createElement("div");
-  popup.className = "popup";
+    const popup = document.createElement("div");
+    popup.className = "popup-overlay";
+    popup.innerHTML = `
+      <div class="popup-box" role="dialog" aria-modal="true">
+        <h2 style="color:#00b4ff;margin-bottom:12px;">Item Details</h2>
 
-  popup.innerHTML = `
-    <div class="popup-box">
-      <h2>Item Details</h2>
+        <label>Name</label><input value="${escapeHtml(item.name || "")}" disabled>
+        <label>Invoice Number</label><input value="${escapeHtml(item.invoice || "")}" disabled>
+        <label>Reel Number</label><input value="${escapeHtml(item.reel || "")}" disabled>
+        <label>Supplier</label><input value="${escapeHtml(item.supplier || "")}" disabled>
+        <label>GSM</label><input value="${escapeHtml(item.gsm || "")}" disabled>
+        <label>BF</label><input value="${escapeHtml(item.bf || "")}" disabled>
+        <label>Qty</label><input value="${escapeHtml(String(item.qty || 0))} ${escapeHtml(item.unit || "")}" disabled>
+        <label>Price</label><input value="${escapeHtml(String(item.price || ""))}" disabled>
+        <label>Category</label><input value="${escapeHtml(item.category || "")}" disabled>
+        <label>Date</label><input value="${escapeHtml(item.date || "")}" disabled>
 
-      <label>Name</label>
-      <input value="${item.name}" disabled>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button class="btn btn-close">Close</button>
+        </div>
+      </div>
+    `;
 
-      <label>Invoice</label>
-      <input value="${item.invoice}" disabled>
-
-      <label>Reel</label>
-      <input value="${item.reel}" disabled>
-
-      <label>Supplier</label>
-      <input value="${item.supplier}" disabled>
-
-      <label>GSM</label>
-      <input value="${item.gsm}" disabled>
-
-      <label>BF</label>
-      <input value="${item.bf}" disabled>
-
-      <label>Qty</label>
-      <input value="${item.qty} ${item.unit}" disabled>
-
-      <label>Price</label>
-      <input value="${item.price}" disabled>
-
-      <label>Category</label>
-      <input value="${item.category}" disabled>
-
-      <label>Date</label>
-      <input value="${item.date}" disabled>
-
-      <button class="btn-close" onclick="this.parentElement.parentElement.remove()">Close</button>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
+    document.body.appendChild(popup);
+    popup.querySelector(".btn-close").onclick = () => popup.remove();
+  } catch (err) {
+    console.error("viewItem err:", err);
+  }
 };
 
 // ======================================================
 // 🔥 USED ITEM POPUP + MOVE TO inventoryUsed
 // ======================================================
 window.useItem = async function (id) {
-  const snap = await getDoc(doc(db, "inventory", id));
-  const item = snap.data();
+  try {
+    const snap = await getDoc(doc(db, "inventory", id));
+    if (!snap.exists()) return alert("Item not found");
+    const item = snap.data();
 
-  const popup = document.createElement("div");
-  popup.className = "popup";
+    const popup = document.createElement("div");
+    popup.className = "popup-overlay";
+    popup.innerHTML = `
+      <div class="popup-box" role="dialog" aria-modal="true">
+        <h2 style="color:#00b4ff;margin-bottom:12px;">Use Item — ${escapeHtml(item.name || "")}</h2>
 
-  popup.innerHTML = `
-    <div class="popup-box">
-      <h2>Use Item</h2>
+        <label>Used Quantity</label><input id="usedQty" type="number" placeholder="Enter quantity used">
 
-      <label>Used Quantity</label>
-      <input id="usedQty" type="number">
+        <label>Unit</label>
+        <input value="${escapeHtml(item.unit || "")}" disabled>
 
-      <label>Used For</label>
-      <input id="usedFor" type="text">
+        <label>Used For</label><input id="usedFor" type="text" placeholder="What is this used for?">
 
-      <button class="btn-save" id="saveUsedBtn">Save</button>
-      <button class="btn-close" onclick="this.parentElement.parentElement.remove()">Cancel</button>
-    </div>
-  `;
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button class="btn" id="saveUsedBtn" style="background:#00b4ff;">Save</button>
+          <button class="btn btn-close" style="background:#666;">Cancel</button>
+        </div>
+      </div>
+    `;
 
-  document.body.appendChild(popup);
+    document.body.appendChild(popup);
 
-  document.getElementById("saveUsedBtn").onclick = async () => {
-    const usedQty = Number(document.getElementById("usedQty").value);
-    const usedFor = document.getElementById("usedFor").value;
+    popup.querySelector(".btn-close").onclick = () => popup.remove();
 
-    // ————————————————
-    // SAVE USED ENTRY
-    // ————————————————
-    await addDoc(collection(db, "inventoryUsed"), {
-      name: item.name,
-      usedQty,
-      usedFor,
-      date: new Date().toLocaleString(),
-      category: item.category,
-      unit: item.unit,
-      originalDate: item.date,
-      originalPrice: item.price,
-      reel: item.reel,
-      supplier: item.supplier
-    });
+    popup.querySelector("#saveUsedBtn").onclick = async () => {
+      const usedQty = Number(popup.querySelector("#usedQty").value) || 0;
+      const usedFor = (popup.querySelector("#usedFor").value || "").trim();
 
-    // ————————————————
-    // UPDATE INVENTORY QTY
-    // ————————————————
-    let newQty = item.qty - usedQty;
+      // save used entry
+      await addDoc(collection(db, "inventoryUsed"), {
+        name: item.name,
+        usedQty,
+        usedFor,
+        date: new Date().toLocaleString(),
+        category: item.category || "",
+        unit: item.unit || "",
+        originalDate: item.date || "",
+        originalPrice: item.price || 0,
+        reel: item.reel || "",
+        supplier: item.supplier || ""
+      });
 
-    if (newQty <= 0) {
-      await deleteDoc(doc(db, "inventory", id));
-    } else {
-      await updateDoc(doc(db, "inventory", id), { qty: newQty });
-    }
+      // update inventory quantity (no blocking if usedQty > qty — proceed)
+      const newQty = (Number(item.qty) || 0) - usedQty;
+      if (newQty <= 0) {
+        await deleteDoc(doc(db, "inventory", id));
+      } else {
+        await updateDoc(doc(db, "inventory", id), { qty: newQty });
+      }
 
-    popup.remove();
-    loadInventory();
-  };
+      popup.remove();
+      loadInventory();
+    };
+
+  } catch (err) {
+    console.error("useItem err:", err);
+  }
 };
 
 // ======================================================
-// 🔥 EDIT ITEM (next update if you want)
+// 🔥 EDIT ITEM (simple alert placeholder — keep as-is)
 // ======================================================
 window.editItem = function (id) {
   alert("Edit popup coming in next update");
@@ -316,6 +318,19 @@ clearFilters.onclick = () => {
   filterDate.value = "";
   loadInventory();
 };
+
+// ======================================================
+// UTIL: small escape to avoid injection into innerHTML
+// ======================================================
+function escapeHtml(s) {
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 // INITIAL LOAD
 loadCategories();
