@@ -1,386 +1,558 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MG Inventory</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MG Inventory</title>
 
-<style>
-    body { margin:0; padding:0; font-family:Arial; background:#0c0f17; color:white; }
-
-    h1 { text-align:center; color:#00b4ff; margin:20px 0; }
-
-    .inv-container {
-        width:95%; max-width:1250px; margin:auto;
-        background:rgba(255,255,255,0.05);
-        padding:20px; border-radius:15px;
+  <style>
+    /* --- Theme & layout --- */
+    :root{
+      --bg:#0b111b; --panel:rgba(255,255,255,0.04);
+      --accent:#00b4ff; --accent-2:#39c8ff;
+      --card:rgba(255,255,255,0.06); --muted:#9fb6d4;
+      --danger:#ef4444; --ok:#22c55e;
     }
-
-    .section-title {
-        font-size:1.5rem; color:#00b4ff; margin-bottom:15px;
+    *{box-sizing:border-box;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 30%, #101821,#070c12);color:#e6eef6;}
+    .container{max-width:1100px;margin:20px auto;padding:22px;background:var(--panel);border-radius:14px;border:1px solid rgba(255,255,255,0.03);}
+    h1{color:var(--accent);text-align:center;margin:6px 0 18px;font-size:28px}
+    .section-title{color:var(--accent);font-weight:700;margin:18px 0 10px;font-size:20px}
+    /* rows */
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .input{flex:1;min-width:160px;display:flex;flex-direction:column}
+    .input label{font-size:13px;color:var(--muted);margin-bottom:6px}
+    .input input,.input select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.3);color:#eef;outline:none}
+    .input input[type=number]{-moz-appearance:textfield}
+    button.btn{background:var(--accent);border:none;color:#001;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    /* category box */
+    .cat-box{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;margin-top:10px}
+    .cat-item{display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-top:8px}
+    .cat-item .del{background:var(--danger);border:none;padding:6px 10px;border-radius:6px;color:white;cursor:pointer}
+    /* inventory cards */
+    .inventory-item{background:var(--card);padding:18px;border-radius:12px;margin-top:12px}
+    .inventory-item h3{margin:0;color:#fff}
+    .meta{color:var(--muted);margin-top:6px}
+    .actions{display:flex;gap:10px;margin-top:12px}
+    .actions .btn{padding:8px 12px;border-radius:8px}
+    .btn-view{background:#3b82f6;color:white}
+    .btn-edit{background:#facc15;color:#111}
+    .btn-used{background:#10b981;color:white}
+    .btn-delete{background:var(--danger);color:white}
+    /* filters row */
+    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
+    .filters select,.filters input{padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);color:#fff;min-width:160px}
+    .filters button{padding:8px 12px;border-radius:8px;background:var(--danger);border:none;color:white}
+    /* slide-up modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+    .modal{width:100%;max-width:760px;background:linear-gradient(180deg, rgba(11,17,27,0.98), rgba(10,14,20,0.98));border-radius:14px 14px 0 0;padding:18px;box-shadow:0 -10px 40px rgba(0,0,0,0.6);transform:translateY(100%);transition:transform .28s ease}
+    .modal.open{transform:translateY(0)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center}
+    .modal-title{font-size:18px;color:var(--accent)}
+    .modal-body{margin-top:12px;max-height:65vh;overflow:auto;padding-right:6px}
+    .modal .input{margin-bottom:10px}
+    .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .btn-close{background:#6b7280;color:white;padding:8px 12px;border-radius:8px;border:none}
+    .btn-save{background:var(--accent);color:#001;padding:8px 12px;border-radius:8px;border:none}
+    /* small screens adjustments */
+    @media (max-width:700px){
+      .row{flex-direction:column}
+      .filters{flex-direction:column;align-items:stretch}
+      .modal{border-radius:12px;height:auto}
     }
-
-    .row {
-        display:flex; gap:15px; flex-wrap:wrap;
-    }
-
-    .input-box { flex:1; min-width:240px; display:flex; flex-direction:column; }
-    .input-box label { font-size:0.9rem; margin-bottom:5px; color:#a9b; }
-    .input-box input, .input-box select {
-        padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);
-        background:rgba(255,255,255,0.08); color:white;
-    }
-
-    #addItemBtn {
-        width:100%; padding:12px; font-size:1.1rem; margin-top:10px;
-        background:#00b4ff; border:none; border-radius:10px; font-weight:bold;
-    }
-
-    .cat-box { background:rgba(255,255,255,0.07); padding:15px; border-radius:12px; }
-
-    .cat-item { display:flex; justify-content:space-between;
-        padding:10px; background:rgba(0,0,0,0.3); border-radius:8px; margin-top:5px;
-    }
-
-    .delete-btn { background:#ff3b30; border:none; padding:8px 14px; border-radius:6px; color:white; }
-
-    .inventory-item {
-        background:rgba(255,255,255,0.08); padding:15px; margin-top:15px;
-        border-radius:12px;
-    }
-
-    .actions { display:flex; gap:10px; margin-top:10px; }
-
-    .btn { padding:7px 15px; border:none; border-radius:6px; font-weight:bold; color:white; cursor:pointer; }
-    .btn-view { background:#007bff; }
-    .btn-edit { background:#ffcc00; color:black; }
-    .btn-used { background:#00c853; }
-    .btn-delete { background:#e53935; }
-    .btn-cancel { background:#555; }
-
-    /* POPUP */
-    .popup-bg {
-        position:fixed; top:0; left:0; width:100%; height:100%;
-        background:rgba(0,0,0,0.7); display:none;
-        justify-content:center; align-items:center; z-index:9999;
-    }
-
-    .popup {
-        background:#111827; padding:20px; width:90%; max-width:450px;
-        border-radius:15px;
-    }
-
-    .popup h2 { margin-top:0; color:#00b4ff; }
-</style>
+  </style>
 </head>
-
 <body>
 
-<h1>MG Inventory</h1>
+  <div class="container">
+    <h1>MG Inventory</h1>
 
-<div class="inv-container">
-
-    <!-- MANAGEMENT -->
+    <!-- INVENTORY FORM -->
     <div class="section-title">Inventory Management</div>
 
     <div class="row">
-        <div class="input-box"><label>Item Name</label><input id="itemName"></div>
-        <div class="input-box"><label>Quantity</label><input id="quantity" type="number"></div>
-        <div class="input-box"><label>Unit</label>
-            <select id="unit"><option value="PCS">PCS</option><option value="KGS">KGS</option></select>
-        </div>
+      <div class="input"><label>Item Name</label><input id="itemName" placeholder="Item name"></div>
+      <div class="input"><label>Quantity</label><input id="quantity" type="number" placeholder="Qty"></div>
+      <div class="input"><label>Unit</label>
+        <select id="unit"><option>PCS</option><option>KGS</option></select>
+      </div>
     </div>
 
-    <div class="row">
-        <div class="input-box"><label>Price (₹)</label><input id="price" type="number"></div>
-        <div class="input-box"><label>Invoice</label><input id="invoice"></div>
-        <div class="input-box"><label>Reel</label><input id="reel"></div>
+    <div class="row" style="margin-top:10px">
+      <div class="input"><label>Purchase Price (₹)</label><input id="price" type="number" placeholder="Purchase price"></div>
+      <div class="input"><label>Invoice Number</label><input id="invoice" placeholder="Invoice number"></div>
+      <div class="input"><label>Reel Number</label><input id="reel" placeholder="Reel number"></div>
     </div>
 
-    <div class="row">
-        <div class="input-box"><label>Supplier</label><input id="supplier"></div>
-        <div class="input-box"><label>GSM</label><input id="gsm" type="number"></div>
-        <div class="input-box"><label>BF</label><input id="bf" type="number"></div>
+    <div class="row" style="margin-top:10px">
+      <div class="input"><label>Supplier</label><input id="supplier" placeholder="Supplier"></div>
+      <div class="input"><label>GSM</label><input id="gsm" type="number" placeholder="GSM"></div>
+      <div class="input"><label>BF</label><input id="bf" type="number" placeholder="BF"></div>
     </div>
 
-    <div class="row">
-        <div class="input-box"><label>Date</label><input id="date" type="date"></div>
-        <div class="input-box"><label>Category</label><select id="categorySelect"></select></div>
+    <div class="row" style="margin-top:10px">
+      <div class="input"><label>Date</label><input id="date" type="date"></div>
+      <div class="input"><label>Select Category</label>
+        <select id="categorySelect"><option value="">Select Category</option></select>
+      </div>
     </div>
 
-    <button id="addItemBtn">Add Item</button>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <button id="addItemBtn" class="btn">Add Item</button>
+      <div style="color:var(--muted)">Manage categories below</div>
+    </div>
 
-    <!-- CATEGORY -->
-    <div class="section-title" style="margin-top:25px;">Manage Categories</div>
-
+    <!-- CATEGORY MANAGER -->
+    <div class="section-title">Manage Categories</div>
     <div class="cat-box">
-        <div class="row">
-            <div class="input-box"><label>New Category</label><input id="newCategoryName"></div>
-            <button id="addCategoryBtn" class="btn" style="background:#00b4ff;">Add Category</button>
+      <div class="row">
+        <div class="input"><label>New Category</label><input id="newCategoryName" placeholder="New category name"></div>
+        <div style="align-self:flex-end">
+          <button id="addCategoryBtn" class="btn">Add Category</button>
         </div>
+      </div>
 
-        <div id="categoryList"></div>
+      <div id="categoryList" style="margin-top:12px"></div>
     </div>
 
-    <!-- FILTER -->
-    <div class="section-title" style="margin-top:30px;">Filter Inventory</div>
-    <div class="row">
-        <select id="filterCategory" class="input-box">
-            <option value="all">All Categories</option>
-        </select>
-        <select id="filterItemName" class="input-box">
-            <option value="all">All Items</option>
-        </select>
-        <input id="filterDate" type="date" class="input-box">
-        <button id="clearFilters" class="btn-delete">Clear</button>
+    <!-- FILTERS -->
+    <div class="section-title" style="margin-top:18px">Filter Inventory</div>
+    <div class="filters">
+      <select id="filterCategory"><option value="all">All Categories</option></select>
+      <select id="filterItemName"><option value="all">All Items</option></select>
+      <input id="filterDate" type="date" />
+      <button id="clearFilters">Clear</button>
     </div>
 
-    <!-- LIST -->
-    <div id="inventoryList" style="margin-top:20px;"></div>
-</div>
+    <!-- INVENTORY LIST -->
+    <div id="inventoryList" style="margin-top:18px"></div>
+  </div>
 
+  <!-- SLIDE-UP MODAL BACKDROP -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+    <div id="modal" class="modal" role="document">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Item</div>
+        <button id="closeModal" class="btn-close">Close</button>
+      </div>
 
+      <div class="modal-body" id="modalBody">
+        <!-- dynamic content inserted here -->
+      </div>
 
-<!-- POPUP -->
-<div id="popupBG" class="popup-bg">
-    <div class="popup" id="popupBox"></div>
-</div>
+      <div class="modal-footer" id="modalFooter">
+        <!-- dynamic footer buttons -->
+      </div>
+    </div>
+  </div>
 
+  <!-- Firebase + App logic -->
+  <script type="module">
+    // -------------------------
+    // FIREBASE SETUP (v11)
+    // -------------------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      deleteDoc, doc, updateDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-<!-- JS + FIREBASE -->
-<script type="module">
-
-/* FIREBASE */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } 
-from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain:"mg-manager-3ab66.firebaseapp.com",
-    projectId:"mg-manager-3ab66",
-    storageBucket:"mg-manager-3ab66.firebasestorage.app",
-    messagingSenderId:"330667005987",
-    appId:"1:330667005987:web:95de27b6259ace9fc6b996"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* DOM */
-const itemName=document.getElementById("itemName");
-const quantity=document.getElementById("quantity");
-const unit=document.getElementById("unit");
-const price=document.getElementById("price");
-const invoice=document.getElementById("invoice");
-const reel=document.getElementById("reel");
-const supplier=document.getElementById("supplier");
-const gsm=document.getElementById("gsm");
-const bf=document.getElementById("bf");
-const dateInput=document.getElementById("date");
-const categorySelect=document.getElementById("categorySelect");
-
-const newCategoryName=document.getElementById("newCategoryName");
-const categoryList=document.getElementById("categoryList");
-
-const filterCategory=document.getElementById("filterCategory");
-const filterItemName=document.getElementById("filterItemName");
-const filterDate=document.getElementById("filterDate");
-const inventoryList=document.getElementById("inventoryList");
-const popupBG=document.getElementById("popupBG");
-const popupBox=document.getElementById("popupBox");
-
-/* POPUP FUNCTIONS */
-function showPopup(html){
-    popupBox.innerHTML=html;
-    popupBG.style.display="flex";
-}
-function closePopup(){ popupBG.style.display="none"; }
-
-/* LOAD CATEGORIES */
-async function loadCategories(){
-    categorySelect.innerHTML="";
-    filterCategory.innerHTML=`<option value="all">All Categories</option>`;
-    categoryList.innerHTML="";
-
-    const snap=await getDocs(collection(db,"inventoryCategories"));
-    snap.forEach(d=>{
-        let name=d.data().name;
-        categorySelect.innerHTML+=`<option value="${name}">${name}</option>`;
-        filterCategory.innerHTML+=`<option value="${name}">${name}</option>`;
-
-        categoryList.innerHTML+=`
-            <div class='cat-item'>
-                <span>${name}</span>
-                <button class='delete-btn' onclick="deleteCategory('${d.id}')">Delete</button>
-            </div>
-        `;
-    });
-}
-window.deleteCategory=async(id)=>{
-    if(confirm("Delete this category?")){
-        await deleteDoc(doc(db,"inventoryCategories",id));
-        loadCategories();
-    }
-};
-
-/* ADD CATEGORY */
-document.getElementById("addCategoryBtn").onclick=async()=>{
-    if(!newCategoryName.value.trim())return;
-    await addDoc(collection(db,"inventoryCategories"),{name:newCategoryName.value});
-    newCategoryName.value="";
-    loadCategories();
-};
-
-/* ADD ITEM */
-document.getElementById("addItemBtn").onclick=async()=>{
-    const data={
-        name:itemName.value,
-        qty:Number(quantity.value),
-        unit:unit.value,
-        price:Number(price.value),
-        invoice:invoice.value,
-        reel:reel.value,
-        supplier:supplier.value,
-        gsm:gsm.value,
-        bf:bf.value,
-        date:dateInput.value,
-        category:categorySelect.value
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
     };
 
-    await addDoc(collection(db,"inventory"),data);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    itemName.value=""; quantity.value=""; price.value="";
-    invoice.value=""; reel.value=""; supplier.value="";
-    gsm.value=""; bf.value=""; dateInput.value="";
+    // -------------------------
+    // DOM refs
+    // -------------------------
+    const itemName = document.getElementById('itemName');
+    const quantity = document.getElementById('quantity');
+    const unit = document.getElementById('unit');
+    const price = document.getElementById('price');
+    const invoice = document.getElementById('invoice');
+    const reel = document.getElementById('reel');
+    const supplier = document.getElementById('supplier');
+    const gsm = document.getElementById('gsm');
+    const bf = document.getElementById('bf');
+    const dateInput = document.getElementById('date');
+    const categorySelect = document.getElementById('categorySelect');
+    const addItemBtn = document.getElementById('addItemBtn');
 
-    loadInventory();
-};
+    const newCategoryName = document.getElementById('newCategoryName');
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    const categoryList = document.getElementById('categoryList');
 
-/* LOAD INVENTORY */
-async function loadInventory(){
-    inventoryList.innerHTML="";
-    filterItemName.innerHTML=`<option value="all">All Items</option>`;
+    const filterCategory = document.getElementById('filterCategory');
+    const filterItemName = document.getElementById('filterItemName');
+    const filterDate = document.getElementById('filterDate');
+    const clearFilters = document.getElementById('clearFilters');
 
-    let snap=await getDocs(collection(db,"inventory"));
-    let items=[];
-    snap.forEach(d=>items.push({id:d.id,...d.data()}));
+    const inventoryList = document.getElementById('inventoryList');
 
-    if(filterCategory.value!=="all")
-        items=items.filter(i=>i.category===filterCategory.value);
-    if(filterItemName.value!=="all")
-        items=items.filter(i=>i.name===filterItemName.value);
-    if(filterDate.value)
-        items=items.filter(i=>i.date===filterDate.value);
+    // modal elements
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalFooter = document.getElementById('modalFooter');
+    const closeModalBtn = document.getElementById('closeModal');
 
-    [...new Set(items.map(i=>i.name))].forEach(n=>{
-        filterItemName.innerHTML+=`<option value="${n}">${n}</option>`;
-    });
+    // -------------------------
+    // Helpers
+    // -------------------------
+    function openModal(title, bodyHtml, footerHtml) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml || '';
+      modalFooter.innerHTML = footerHtml || '';
+      modalBackdrop.style.display = 'flex';
+      // small next tick so CSS transition will animate
+      requestAnimationFrame(()=> modal.classList.add('open'));
+      modalBackdrop.setAttribute('aria-hidden','false');
+      // attach close handlers inside footer (save / cancel will be bound later)
+    }
+    function closeModal() {
+      modal.classList.remove('open');
+      modalBackdrop.setAttribute('aria-hidden','true');
+      // hide after animation
+      setTimeout(()=> modalBackdrop.style.display = 'none', 300);
+    }
+    closeModalBtn.onclick = closeModal;
+    modalBackdrop.onclick = (e) => { if (e.target === modalBackdrop) closeModal(); };
 
-    if(items.length===0){
-        inventoryList.innerHTML="<p>No items found.</p>";
+    // -------------------------
+    // Load categories
+    // -------------------------
+    async function loadCategories() {
+      categorySelect.innerHTML = '<option value="">Select Category</option>';
+      filterCategory.innerHTML = '<option value="all">All Categories</option>';
+      categoryList.innerHTML = '';
+
+      const snap = await getDocs(collection(db, 'inventoryCategories'));
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const id = docSnap.id;
+        const name = d.name;
+
+        // dropdowns
+        const opt = document.createElement('option'); opt.value = name; opt.textContent = name;
+        categorySelect.appendChild(opt);
+
+        const opt2 = document.createElement('option'); opt2.value = name; opt2.textContent = name;
+        filterCategory.appendChild(opt2);
+
+        // manager list
+        const div = document.createElement('div'); div.className = 'cat-item';
+        div.innerHTML = `<div>${name}</div><button class="del" data-id="${id}">Delete</button>`;
+        categoryList.appendChild(div);
+        div.querySelector('.del').onclick = async () => {
+          if (!confirm('Delete category "'+name+'"? This will not delete items already in inventory.')) return;
+          await deleteDoc(doc(db,'inventoryCategories',id));
+          await loadCategories(); loadInventory();
+        };
+      });
+    }
+
+    addCategoryBtn.onclick = async () => {
+      const name = newCategoryName.value.trim();
+      if (!name) { alert('Enter category name'); return; }
+      await addDoc(collection(db,'inventoryCategories'), { name });
+      newCategoryName.value = '';
+      await loadCategories();
+    };
+
+    // -------------------------
+    // Add item
+    // -------------------------
+    addItemBtn.onclick = async () => {
+      const payload = {
+        name: (itemName.value||'').trim(),
+        qty: Number(quantity.value) || 0,
+        unit: unit.value || 'PCS',
+        price: Number(price.value) || 0,
+        invoice: (invoice.value||'').trim(),
+        reel: (reel.value||'').trim(),
+        supplier: (supplier.value||'').trim(),
+        gsm: (gsm.value||'').trim(),
+        bf: (bf.value||'').trim(),
+        date: dateInput.value || new Date().toISOString().slice(0,10),
+        category: categorySelect.value || '',
+        createdAt: new Date().toISOString()
+      };
+
+      if (!payload.name) { alert('Enter item name'); return; }
+      if (!payload.category) { alert('Select category'); return; }
+
+      await addDoc(collection(db,'inventory'), payload);
+
+      // clear inputs
+      itemName.value=''; quantity.value=''; price.value=''; invoice.value=''; reel.value='';
+      supplier.value=''; gsm.value=''; bf.value=''; dateInput.value='';
+      await loadInventory();
+    };
+
+    // -------------------------
+    // Load inventory (excluding used items)
+    // -------------------------
+    async function loadInventory() {
+      inventoryList.innerHTML = '';
+      filterItemName.innerHTML = '<option value="all">All Items</option>';
+
+      const snap = await getDocs(collection(db,'inventory'));
+      let items = [];
+      snap.forEach(d => items.push({ id:d.id, ...d.data() }));
+
+      // filters
+      if (filterCategory.value && filterCategory.value !== 'all') {
+        items = items.filter(i => i.category === filterCategory.value);
+      }
+      // populate item name filter with all unique names from full dataset (not only filtered subset)
+      const allSnap = await getDocs(collection(db,'inventory'));
+      const allNames = Array.from(new Set(allSnap.docs.map(d => d.data().name).filter(Boolean)));
+      allNames.forEach(n => {
+        const op = document.createElement('option'); op.value = n; op.textContent = n;
+        filterItemName.appendChild(op);
+      });
+
+      if (filterItemName.value && filterItemName.value !== 'all') {
+        items = items.filter(i => i.name === filterItemName.value);
+      }
+      if (filterDate.value) {
+        items = items.filter(i => i.date === filterDate.value);
+      }
+
+      if (!items.length) {
+        inventoryList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No items found.</p>`;
         return;
-    }
+      }
 
-    items.forEach(item=>{
-        inventoryList.innerHTML+=`
-            <div class='inventory-item'>
-                <h3>${item.name}</h3>
-                <p>Qty: ${item.qty} ${item.unit}</p>
-                <p>Date: ${item.date}</p>
-                <p>Category: ${item.category}</p>
-
-                <div class="actions">
-                    <button class="btn btn-view" onclick="viewItem('${item.id}')">View</button>
-                    <button class="btn btn-edit" onclick="editItem('${item.id}')">Edit</button>
-                    <button class="btn btn-used" onclick="useItem('${item.id}')">Used</button>
-                    <button class="btn btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
-                </div>
-            </div>
+      // render
+      items.forEach(item => {
+        const div = document.createElement('div'); div.className = 'inventory-item';
+        div.innerHTML = `
+          <h3>${escapeHtml(item.name || '—')}</h3>
+          <div class="meta">Qty: ${item.qty || 0} ${escapeHtml(item.unit||'')}</div>
+          <div class="meta">Date: ${escapeHtml(item.date||'—')}</div>
+          <div class="meta">Category: ${escapeHtml(item.category||'—')}</div>
+          <div class="actions">
+            <button class="btn btn-view">View</button>
+            <button class="btn btn-edit">Edit</button>
+            <button class="btn btn-used">Used</button>
+            <button class="btn btn-delete">Delete</button>
+          </div>
         `;
-    });
-}
+        inventoryList.appendChild(div);
 
-/* DELETE ITEM */
-window.deleteItem=async(id)=>{
-    if(confirm("Delete this item?")){
-        await deleteDoc(doc(db,"inventory",id));
-        loadInventory();
+        // bind actions
+        div.querySelector('.btn-view').onclick = () => showViewModal(item);
+        div.querySelector('.btn-edit').onclick = () => showEditModal(item);
+        div.querySelector('.btn-used').onclick = () => showUsedModal(item);
+        div.querySelector('.btn-delete').onclick = async () => {
+          if (!confirm('Delete item "'+item.name+'"? This cannot be undone.')) return;
+          await deleteDoc(doc(db,'inventory',item.id));
+          await loadInventory();
+        };
+      });
     }
-};
 
-/* VIEW POPUP */
-window.viewItem=async(id)=>{
-    const snap=await getDocs(collection(db,"inventory"));
-    let item=[...snap.docs].find(d=>d.id===id).data();
+    // -------------------------
+    // Show VIEW modal (slide-up)
+    // -------------------------
+    function showViewModal(item){
+      const body = `
+        <div class="input"><label>Name</label><input readonly value="${escapeHtml(item.name||'')}" /></div>
+        <div class="row">
+          <div class="input"><label>Invoice</label><input readonly value="${escapeHtml(item.invoice||'')}" /></div>
+          <div class="input"><label>Reel</label><input readonly value="${escapeHtml(item.reel||'')}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>Supplier</label><input readonly value="${escapeHtml(item.supplier||'')}" /></div>
+          <div class="input"><label>GSM</label><input readonly value="${escapeHtml(item.gsm||'')}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>BF</label><input readonly value="${escapeHtml(item.bf||'')}" /></div>
+          <div class="input"><label>Qty</label><input readonly value="${escapeHtml(item.qty+' '+(item.unit||''))}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>Price</label><input readonly value="${escapeHtml(item.price||'')}" /></div>
+          <div class="input"><label>Category</label><input readonly value="${escapeHtml(item.category||'')}" /></div>
+        </div>
+        <div class="input"><label>Date</label><input readonly value="${escapeHtml(item.date||'')}" /></div>
+      `;
+      const footer = `<button class="btn-close" id="viewClose">Close</button>`;
+      openModal('Item Details', body, footer);
+      document.getElementById('viewClose').onclick = closeModal;
+    }
 
-    showPopup(`
-        <h2>Item Details</h2>
-        <p><b>Name:</b> ${item.name}</p>
-        <p><b>Qty:</b> ${item.qty} ${item.unit}</p>
-        <p><b>Supplier:</b> ${item.supplier}</p>
-        <p><b>Invoice:</b> ${item.invoice}</p>
-        <p><b>Reel:</b> ${item.reel}</p>
-        <p><b>GSM:</b> ${item.gsm}</p>
-        <p><b>BF:</b> ${item.bf}</p>
-        <p><b>Category:</b> ${item.category}</p>
-        <p><b>Date:</b> ${item.date}</p>
-        <button class="btn-cancel" onclick="closePopup()">Close</button>
-    `);
-};
+    // -------------------------
+    // Show EDIT modal
+    // -------------------------
+    function showEditModal(item){
+      // build a form
+      const body = `
+        <div class="row">
+          <div class="input"><label>Name</label><input id="m_name" value="${escapeHtml(item.name||'')}"/></div>
+          <div class="input"><label>Invoice</label><input id="m_invoice" value="${escapeHtml(item.invoice||'')}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>Reel</label><input id="m_reel" value="${escapeHtml(item.reel||'')}" /></div>
+          <div class="input"><label>Supplier</label><input id="m_supplier" value="${escapeHtml(item.supplier||'')}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>GSM</label><input id="m_gsm" value="${escapeHtml(item.gsm||'')}" /></div>
+          <div class="input"><label>BF</label><input id="m_bf" value="${escapeHtml(item.bf||'')}" /></div>
+        </div>
+        <div class="row">
+          <div class="input"><label>Qty</label><input id="m_qty" type="number" value="${escapeHtml(item.qty||0)}" /></div>
+          <div class="input"><label>Unit</label>
+            <select id="m_unit"><option ${item.unit==='PCS'?'selected':''}>PCS</option><option ${item.unit==='KGS'?'selected':''}>KGS</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input"><label>Price</label><input id="m_price" type="number" value="${escapeHtml(item.price||0)}" /></div>
+          <div class="input"><label>Category</label>
+            <select id="m_category"></select>
+          </div>
+        </div>
+        <div class="input"><label>Date</label><input id="m_date" type="date" value="${escapeHtml(item.date||'')}" /></div>
+      `;
+      const footer = `<button class="btn-close" id="editCancel">Cancel</button><button class="btn-save" id="editSave">Save Changes</button>`;
+      openModal('Edit Item — '+(item.name||''), body, footer);
 
-/* EDIT POPUP */
-window.editItem=async(id)=>{
-    const snap=await getDocs(collection(db,"inventory"));
-    let item=[...snap.docs].find(d=>d.id===id);
+      // populate category options
+      (async ()=>{
+        const catSnap = await getDocs(collection(db,'inventoryCategories'));
+        const sel = modalBody.querySelector('#m_category');
+        sel.innerHTML = '';
+        catSnap.forEach(c => {
+          const name = c.data().name;
+          const op = document.createElement('option');
+          op.value = name; op.textContent = name;
+          if (name === item.category) op.selected = true;
+          sel.appendChild(op);
+        });
+      })();
 
-    showPopup(`
-        <h2>Edit Item</h2>
-        <input id="editName" value="${item.data().name}" class="input">
-        <input id="editQty" value="${item.data().qty}">
-        <button class="btn-edit" onclick="saveEdit('${id}')">Save</button>
-        <button class="btn-cancel" onclick="closePopup()">Cancel</button>
-    `);
-};
+      document.getElementById('editCancel').onclick = closeModal;
+      document.getElementById('editSave').onclick = async ()=>{
+        const updated = {
+          name: modalBody.querySelector('#m_name').value.trim(),
+          invoice: modalBody.querySelector('#m_invoice').value.trim(),
+          reel: modalBody.querySelector('#m_reel').value.trim(),
+          supplier: modalBody.querySelector('#m_supplier').value.trim(),
+          gsm: modalBody.querySelector('#m_gsm').value.trim(),
+          bf: modalBody.querySelector('#m_bf').value.trim(),
+          qty: Number(modalBody.querySelector('#m_qty').value) || 0,
+          unit: modalBody.querySelector('#m_unit').value || 'PCS',
+          price: Number(modalBody.querySelector('#m_price').value) || 0,
+          category: modalBody.querySelector('#m_category').value || '',
+          date: modalBody.querySelector('#m_date').value || new Date().toISOString().slice(0,10),
+        };
+        await updateDoc(doc(db,'inventory',item.id), updated);
+        closeModal();
+        await loadInventory();
+      };
+    }
 
-window.saveEdit=async(id)=>{
-    await updateDoc(doc(db,"inventory",id),{
-        name:document.getElementById("editName").value,
-        qty:Number(document.getElementById("editQty").value)
-    });
+    // -------------------------
+    // Show USED modal (slide-up)
+    // -------------------------
+    function showUsedModal(item){
+      const body = `
+        <div style="font-weight:700;margin-bottom:10px">Use Item — ${escapeHtml(item.name || '')}</div>
+        <div class="row">
+          <div class="input"><label>Used Quantity</label><input id="u_qty" type="number" placeholder="Enter quantity used"/></div>
+          <div class="input"><label>Unit</label><select id="u_unit"><option ${item.unit==='PCS'?'selected':''}>PCS</option><option ${item.unit==='KGS'?'selected':''}>KGS</option></select></div>
+        </div>
+        <div class="input"><label>Used For</label><input id="u_for" placeholder="What is this used for? (type)" /></div>
+        <div class="input"><label>Notes (optional)</label><input id="u_notes" placeholder="Any notes"/></div>
+      `;
+      const footer = `<button class="btn-close" id="usedCancel">Cancel</button><button class="btn-save" id="usedSave">Save Used</button>`;
+      openModal('Mark Item as Used', body, footer);
 
-    closePopup();
-    loadInventory();
-};
+      document.getElementById('usedCancel').onclick = closeModal;
+      document.getElementById('usedSave').onclick = async ()=>{
+        // Confirm first
+        if (!confirm('Mark this item as USED?')) return;
 
-/* USED POPUP */
-window.useItem=async(id)=>{
-    if(!confirm("Mark as USED?")) return;
+        const usedQtyRaw = modalBody.querySelector('#u_qty').value;
+        const usedQty = Number(usedQtyRaw) || 0;
+        const usedFor = modalBody.querySelector('#u_for').value.trim() || '';
+        const notes = modalBody.querySelector('#u_notes').value.trim() || '';
+        const unitChoice = modalBody.querySelector('#u_unit').value || item.unit || 'PCS';
 
-    const snap=await getDocs(collection(db,"inventory"));
-    let itemDoc=[...snap.docs].find(d=>d.id===id);
+        // Create used record (copy relevant fields + used metadata)
+        const usedPayload = {
+          originalItemId: item.id,
+          name: item.name,
+          usedQuantity: usedQty,
+          unit: unitChoice,
+          usedFor,
+          notes,
+          originalQty: item.qty || 0,
+          originalUnit: item.unit || '',
+          invoice: item.invoice || '',
+          reel: item.reel || '',
+          supplier: item.supplier || '',
+          gsm: item.gsm || '',
+          bf: item.bf || '',
+          price: item.price || 0,
+          category: item.category || '',
+          originalDate: item.date || '',
+          usedAt: new Date().toISOString()
+        };
 
-    let item=itemDoc.data();
+        // Save used and delete original from inventory (so it doesn't show in inventory)
+        await addDoc(collection(db,'inventoryUsed'), usedPayload);
+        await deleteDoc(doc(db,'inventory',item.id));
 
-    await addDoc(collection(db,"inventoryUsed"), item);
+        closeModal();
+        await loadInventory();
+        alert('Marked as used and moved to Used Inventory.');
+      };
+    }
 
-    await deleteDoc(doc(db,"inventory",id));
+    // -------------------------
+    // Utilities
+    // -------------------------
+    // simple escape for HTML insertion into value attributes
+    function escapeHtml(s){
+      if (s===null||s===undefined) return '';
+      return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    }
 
-    loadInventory();
-};
+    // -------------------------
+    // Clear filters
+    // -------------------------
+    clearFilters.onclick = ()=> {
+      filterCategory.value = 'all';
+      filterItemName.value = 'all';
+      filterDate.value = '';
+      loadInventory();
+    };
 
-/* CLEAR FILTER */
-document.getElementById("clearFilters").onclick=()=>{
-    filterCategory.value="all";
-    filterItemName.value="all";
-    filterDate.value="";
-    loadInventory();
-};
+    // bind filters to reload
+    filterCategory.onchange = loadInventory;
+    filterItemName.onchange = loadInventory;
+    filterDate.onchange = loadInventory;
 
-loadCategories();
-loadInventory();
+    // initial load
+    (async ()=>{
+      await loadCategories();
+      await loadInventory();
+    })();
 
-</script>
+    // Expose some functions for debugging (optional)
+    window._reloadInventory = loadInventory;
 
+  </script>
 </body>
 </html>
