@@ -56,6 +56,15 @@
     color:#fff;
     min-width:160px;
   }
+  #filterClear{
+    padding:10px 14px;
+    border-radius:8px;
+    border:none;
+    background:var(--danger);
+    color:white;
+    cursor:pointer;
+    font-weight:700;
+  }
 
   .used-card{
     background:var(--card);
@@ -133,14 +142,16 @@
   <h1>Used Inventory</h1>
 
   <!-- FILTERS -->
-  <div class="filters">
-    <select id="filterCategory">
+  <div class="filters" aria-hidden="false">
+    <select id="filterCategory" aria-label="Filter by category">
       <option value="all">All Categories</option>
     </select>
 
-    <input id="filterFullDate" type="date">
+    <input id="filterFullDate" type="date" aria-label="Filter by full date (optional)">
 
-    <input id="filterMonthYear" type="month">
+    <input id="filterMonthYear" type="month" aria-label="Filter by month and year (optional)">
+
+    <button id="filterClear" title="Clear filters">Clear Filters</button>
   </div>
 
   <div id="usedList"></div>
@@ -148,7 +159,7 @@
 
 <div id="fixedTotalBar">Total Qty: 0 | Total Amount: ₹0.00</div>
 
-<div id="centerBackdrop" class="center-backdrop">
+<div id="centerBackdrop" class="center-backdrop" role="dialog" aria-modal="true">
   <div class="center-card" id="detailCard"></div>
 </div>
 
@@ -178,11 +189,12 @@ const centerBackdrop = document.getElementById("centerBackdrop");
 const fixedTotalBar = document.getElementById("fixedTotalBar");
 
 const filterCategory = document.getElementById("filterCategory");
-const filterFullDate = document.getElementById("filterFullDate");
-const filterMonthYear = document.getElementById("filterMonthYear");
+const filterFullDate = document.getElementById("filterFullDate"); // yyyy-mm-dd (from browser)
+const filterMonthYear = document.getElementById("filterMonthYear"); // yyyy-mm (from browser)
+const filterClear = document.getElementById("filterClear");
 
 function escapeHtml(s){
-  if(!s) return "";
+  if(s===null||s===undefined) return "";
   return String(s)
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
@@ -191,16 +203,23 @@ function escapeHtml(s){
     .replace(/'/g,"&#39;");
 }
 
-/* LOAD CATEGORY FILTER */
+/* LOAD CATEGORY FILTERS FROM Firestore inventoryCategories */
 async function loadCategories() {
-  const snap = await getDocs(collection(db,"inventoryCategories"));
-  snap.forEach(d=>{
-    const name = d.data().name;
-    const op = document.createElement("option");
-    op.value = name;
-    op.textContent = name;
-    filterCategory.appendChild(op);
-  });
+  // clear existing (preserve first 'all' option)
+  filterCategory.innerHTML = '<option value="all">All Categories</option>';
+  try {
+    const snap = await getDocs(collection(db,"inventoryCategories"));
+    snap.forEach(d=>{
+      const name = d.data().name;
+      if (!name) return;
+      const op = document.createElement("option");
+      op.value = name;
+      op.textContent = name;
+      filterCategory.appendChild(op);
+    });
+  } catch (err) {
+    console.error('Failed to load categories', err);
+  }
 }
 
 /* MAIN LOAD USED */
@@ -210,81 +229,99 @@ async function loadUsed(){
   let totalAmount = 0;
   let totalQty = 0;
 
-  const snap = await getDocs(collection(db,"inventoryUsed"));
+  try {
+    const snap = await getDocs(collection(db,"inventoryUsed"));
 
-  const catVal = filterCategory.value;
-  const fullDateVal = filterFullDate.value;     // yyyy-mm-dd
-  const monthYearVal = filterMonthYear.value;   // yyyy-mm
+    const catVal = (filterCategory.value || "all");
+    const fullDateVal = (filterFullDate.value || "");     // yyyy-mm-dd (browser)
+    const monthYearVal = (filterMonthYear.value || "");   // yyyy-mm
 
-  let filtered = [];
+    let filtered = [];
 
-  snap.forEach(docSnap=>{
-    const it = docSnap.data();
-    const id = docSnap.id;
+    snap.forEach(docSnap=>{
+      const it = docSnap.data();
+      const id = docSnap.id;
 
-    /* Parse MM/DD/YYYY from usedAt */
-    // example: "11/19/2025 09:59 AM"
-    const parts = it.usedAt.split(" ")[0].split("/"); // ["11","19","2025"]
-    const mm = parts[0].padStart(2,"0");
-    const dd = parts[1].padStart(2,"0");
-    const yyyy = parts[2];
+      // If usedAt is missing or not string, skip safely
+      if (!it || typeof it.usedAt !== 'string'){
+        return;
+      }
 
-    const itemFullDate = `${yyyy}-${mm}-${dd}`;
-    const itemMonthYear = `${yyyy}-${mm}`;
+      /* Parse MM/DD/YYYY from usedAt (your format: "11/19/2025 09:59 AM") */
+      // split on space to remove time, then split by /
+      const rawDatePart = String(it.usedAt).split(" ")[0]; // "11/19/2025"
+      const parts = rawDatePart.split("/"); // ["11","19","2025"]
+      if (parts.length !== 3) return; // unexpected format, skip
 
-    let ok = true;
+      const mm = parts[0].padStart(2,"0");
+      const dd = parts[1].padStart(2,"0");
+      const yyyy = parts[2];
 
-    // Category filter
-    if (catVal !== "all" && it.category !== catVal){
-      ok = false;
-    }
+      const itemFullDate = `${yyyy}-${mm}-${dd}`; // yyyy-mm-dd
+      const itemMonthYear = `${yyyy}-${mm}`;      // yyyy-mm
 
-    // Full Date filter (OVERRIDES month-year)
-    if (fullDateVal){
-      if (itemFullDate !== fullDateVal){
+      let ok = true;
+
+      // CATEGORY filter (if selected)
+      if (catVal !== "all" && it.category !== catVal){
         ok = false;
       }
-    } else {
-      // Month-Year filter only IF fullDate is empty
-      if (monthYearVal){
-        if (itemMonthYear !== monthYearVal){
+
+      // FULL DATE filter (if selected) — this TAKES PRIORITY over month-year
+      if (fullDateVal !== ""){
+        if (itemFullDate !== fullDateVal){
           ok = false;
         }
+      } else {
+        // month-year only applied when full date is NOT selected
+        if (monthYearVal !== ""){
+          if (itemMonthYear !== monthYearVal){
+            ok = false;
+          }
+        }
       }
-    }
 
-    if (ok){
-      filtered.push({id, ...it});
+      if (ok){
+        filtered.push({ id, ...it });
+      }
+    });
+
+    // compute totals from filtered list
+    filtered.forEach(it=>{
       totalAmount += Number(it.amount || 0);
       totalQty += Number(it.qty || 0);
+    });
+
+    if (filtered.length === 0){
+      usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
+      fixedTotalBar.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
+      return;
     }
-  });
 
-  if (filtered.length === 0){
-    usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
+    // Render filtered items
+    filtered.forEach(it=>{
+      const card = document.createElement("div");
+      card.className = "used-card";
+      card.innerHTML = `
+        <div style="max-width:78%">
+          <h3>${escapeHtml(it.name)}</h3>
+          <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
+          <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
+          <div class="meta">Category: ${escapeHtml(it.category)}</div>
+        </div>
+        <button class="btn">View</button>
+      `;
+      usedList.appendChild(card);
+
+      card.querySelector("button").onclick = ()=> showUsedView(it.id);
+    });
+
+    fixedTotalBar.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
+  } catch (err) {
+    console.error('Failed to load used items', err);
+    usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">Error loading items.</p>`;
     fixedTotalBar.innerHTML = `Total Qty: 0 | Total Amount: ₹0.00`;
-    return;
   }
-
-  filtered.forEach(it=>{
-    const card = document.createElement("div");
-    card.className = "used-card";
-    card.innerHTML = `
-      <div style="max-width:78%">
-        <h3>${escapeHtml(it.name)}</h3>
-        <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
-        <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
-        <div class="meta">Category: ${escapeHtml(it.category)}</div>
-      </div>
-      <button class="btn">View</button>
-    `;
-    usedList.appendChild(card);
-
-    card.querySelector("button").onclick = ()=> showUsedView(it.id);
-  });
-
-  fixedTotalBar.innerHTML =
-    `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
 }
 
 /* VIEW DETAILS */
@@ -333,22 +370,37 @@ async function showUsedView(id){
     if (!confirm("Delete this used record?")) return;
     await deleteDoc(doc(db,"inventoryUsed",id));
     centerBackdrop.style.display = "none";
-    loadUsed();
+    await loadUsed();
   };
 }
 
-centerBackdrop.onclick = e=>{
+centerBackdrop.onclick = (e)=>{
   if (e.target === centerBackdrop){
     centerBackdrop.style.display = "none";
   }
 };
 
+/* EVENTS */
 filterCategory.onchange = loadUsed;
-filterFullDate.onchange = loadUsed;
+filterFullDate.onchange = () => {
+  // When a full date is selected, ignore month-year control visually (we don't clear it,
+  // we just make sure fullDate takes precedence in logic). Reload.
+  loadUsed();
+};
 filterMonthYear.onchange = loadUsed;
 
-await loadCategories();
-await loadUsed();
+filterClear.onclick = ()=>{
+  filterCategory.value = "all";
+  filterFullDate.value = "";
+  filterMonthYear.value = "";
+  loadUsed();
+};
+
+/* INIT */
+(async ()=>{
+  await loadCategories();
+  await loadUsed();
+})();
 
 </script>
 
