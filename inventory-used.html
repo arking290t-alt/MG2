@@ -203,9 +203,68 @@ function escapeHtml(s){
     .replace(/'/g,"&#39;");
 }
 
+/* parseUsedAt: accept many formats and return normalized yyyy-mm-dd and yyyy-mm */
+function parseUsedAt(raw){
+  if (!raw || typeof raw !== 'string') return null;
+
+  raw = raw.trim();
+
+  // 1) If begins with ISO yyyy-mm-dd
+  let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m){
+    const yyyy = m[1], mm = m[2], dd = m[3];
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 2) If format like MM/DD/YYYY or M/D/YYYY (with optional time and AM/PM)
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m){
+    const mm = String(m[1]).padStart(2,'0');
+    const dd = String(m[2]).padStart(2,'0');
+    const yyyy = m[3];
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 3) If format like DD/MM/YYYY (some users) possibly with comma/time
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m){
+    // To handle ambiguity between MM/DD and DD/MM, we try to detect:
+    // If month number > 12 then it's DD/MM
+    const a = Number(m[1]), b = Number(m[2]), y = m[3];
+    if (a > 12 && b <= 12){
+      // treat as DD/MM/YYYY
+      const dd = String(a).padStart(2,'0');
+      const mm = String(b).padStart(2,'0');
+      return { full: `${y}-${mm}-${dd}`, month: `${y}-${mm}` };
+    }
+    // otherwise earlier branch already handled as MM/DD
+  }
+
+  // 4) If format like "19-11-2025" or "19.11.2025"
+  m = raw.match(/^(\d{1,2})[-.](\d{1,2})[-.](\d{4})/);
+  if (m){
+    const dd = String(m[1]).padStart(2,'0');
+    const mm = String(m[2]).padStart(2,'0');
+    const yyyy = m[3];
+    // ambiguous but assume dd-mm-yyyy -> convert to yyyy-mm-dd
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 5) Fallback: try Date.parse
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())){
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // could not parse
+  return null;
+}
+
 /* LOAD CATEGORY FILTERS FROM Firestore inventoryCategories */
 async function loadCategories() {
-  // clear existing (preserve first 'all' option)
   filterCategory.innerHTML = '<option value="all">All Categories</option>';
   try {
     const snap = await getDocs(collection(db,"inventoryCategories"));
@@ -236,29 +295,23 @@ async function loadUsed(){
     const fullDateVal = (filterFullDate.value || "");     // yyyy-mm-dd (browser)
     const monthYearVal = (filterMonthYear.value || "");   // yyyy-mm
 
-    let filtered = [];
+    const filtered = [];
 
     snap.forEach(docSnap=>{
       const it = docSnap.data();
       const id = docSnap.id;
 
-      // If usedAt is missing or not string, skip safely
-      if (!it || typeof it.usedAt !== 'string'){
-        return;
+      if (!it) return;
+
+      // parse usedAt into normalized forms
+      const parsed = parseUsedAt(String(it.usedAt || ''));
+      if (!parsed){
+        // if cannot parse, still include item when no date filters selected.
+        // but when a date filter is active and cannot parse, item must not match.
       }
 
-      /* Parse MM/DD/YYYY from usedAt (your format: "11/19/2025 09:59 AM") */
-      // split on space to remove time, then split by /
-      const rawDatePart = String(it.usedAt).split(" ")[0]; // "11/19/2025"
-      const parts = rawDatePart.split("/"); // ["11","19","2025"]
-      if (parts.length !== 3) return; // unexpected format, skip
-
-      const mm = parts[0].padStart(2,"0");
-      const dd = parts[1].padStart(2,"0");
-      const yyyy = parts[2];
-
-      const itemFullDate = `${yyyy}-${mm}-${dd}`; // yyyy-mm-dd
-      const itemMonthYear = `${yyyy}-${mm}`;      // yyyy-mm
+      const itemFullDate = parsed ? parsed.full : null; // yyyy-mm-dd
+      const itemMonthYear = parsed ? parsed.month : null; // yyyy-mm
 
       let ok = true;
 
@@ -269,13 +322,14 @@ async function loadUsed(){
 
       // FULL DATE filter (if selected) — this TAKES PRIORITY over month-year
       if (fullDateVal !== ""){
-        if (itemFullDate !== fullDateVal){
+        // if parsed is null, we can't match -> mark not ok
+        if (!itemFullDate || itemFullDate !== fullDateVal){
           ok = false;
         }
       } else {
         // month-year only applied when full date is NOT selected
         if (monthYearVal !== ""){
-          if (itemMonthYear !== monthYearVal){
+          if (!itemMonthYear || itemMonthYear !== monthYearVal){
             ok = false;
           }
         }
@@ -383,8 +437,7 @@ centerBackdrop.onclick = (e)=>{
 /* EVENTS */
 filterCategory.onchange = loadUsed;
 filterFullDate.onchange = () => {
-  // When a full date is selected, ignore month-year control visually (we don't clear it,
-  // we just make sure fullDate takes precedence in logic). Reload.
+  // full date selected takes precedence over month
   loadUsed();
 };
 filterMonthYear.onchange = loadUsed;
