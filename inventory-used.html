@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Used Inventory</title>
-
 <style>
   :root{
     --bg:#0b111b; 
@@ -40,6 +39,24 @@
     margin-bottom:10px;
   }
 
+  /* FILTERS */
+  .filters{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:18px;
+    align-items:center;
+  }
+  .filters select,
+  .filters input{
+    padding:10px;
+    border-radius:8px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.06);
+    color:#fff;
+    min-width:160px;
+  }
+
   .used-card{
     background:var(--card);
     padding:18px;
@@ -50,10 +67,7 @@
     align-items:center;
   }
 
-  .meta{
-    color:var(--muted);
-    margin-top:6px;
-  }
+  .meta{ color:var(--muted); margin-top:6px; }
 
   .btn{
     background:var(--accent);
@@ -95,9 +109,7 @@
     border-bottom:1px dashed rgba(255,255,255,0.05);
   }
 
-  .detail-row strong{
-    color:var(--muted);
-  }
+  .detail-row strong{ color:var(--muted); }
 
   #fixedTotalBar{
     position:fixed;
@@ -119,6 +131,18 @@
 
 <div class="container">
   <h1>Used Inventory</h1>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <select id="filterCategory">
+      <option value="all">All Categories</option>
+    </select>
+
+    <input id="filterFullDate" type="date">
+
+    <input id="filterMonthYear" type="month">
+  </div>
+
   <div id="usedList"></div>
 </div>
 
@@ -153,6 +177,10 @@ const detailCard = document.getElementById("detailCard");
 const centerBackdrop = document.getElementById("centerBackdrop");
 const fixedTotalBar = document.getElementById("fixedTotalBar");
 
+const filterCategory = document.getElementById("filterCategory");
+const filterFullDate = document.getElementById("filterFullDate");
+const filterMonthYear = document.getElementById("filterMonthYear");
+
 function escapeHtml(s){
   if(!s) return "";
   return String(s)
@@ -163,7 +191,19 @@ function escapeHtml(s){
     .replace(/'/g,"&#39;");
 }
 
-/* LOAD USED ITEMS */
+/* LOAD CATEGORY FILTER */
+async function loadCategories() {
+  const snap = await getDocs(collection(db,"inventoryCategories"));
+  snap.forEach(d=>{
+    const name = d.data().name;
+    const op = document.createElement("option");
+    op.value = name;
+    op.textContent = name;
+    filterCategory.appendChild(op);
+  });
+}
+
+/* MAIN LOAD USED */
 async function loadUsed(){
   usedList.innerHTML = "";
 
@@ -172,19 +212,61 @@ async function loadUsed(){
 
   const snap = await getDocs(collection(db,"inventoryUsed"));
 
-  if (snap.empty){
+  const catVal = filterCategory.value;
+  const fullDateVal = filterFullDate.value;     // yyyy-mm-dd
+  const monthYearVal = filterMonthYear.value;   // yyyy-mm
+
+  let filtered = [];
+
+  snap.forEach(docSnap=>{
+    const it = docSnap.data();
+    const id = docSnap.id;
+
+    /* Parse MM/DD/YYYY from usedAt */
+    // example: "11/19/2025 09:59 AM"
+    const parts = it.usedAt.split(" ")[0].split("/"); // ["11","19","2025"]
+    const mm = parts[0].padStart(2,"0");
+    const dd = parts[1].padStart(2,"0");
+    const yyyy = parts[2];
+
+    const itemFullDate = `${yyyy}-${mm}-${dd}`;
+    const itemMonthYear = `${yyyy}-${mm}`;
+
+    let ok = true;
+
+    // Category filter
+    if (catVal !== "all" && it.category !== catVal){
+      ok = false;
+    }
+
+    // Full Date filter (OVERRIDES month-year)
+    if (fullDateVal){
+      if (itemFullDate !== fullDateVal){
+        ok = false;
+      }
+    } else {
+      // Month-Year filter only IF fullDate is empty
+      if (monthYearVal){
+        if (itemMonthYear !== monthYearVal){
+          ok = false;
+        }
+      }
+    }
+
+    if (ok){
+      filtered.push({id, ...it});
+      totalAmount += Number(it.amount || 0);
+      totalQty += Number(it.qty || 0);
+    }
+  });
+
+  if (filtered.length === 0){
     usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
-    fixedTotalBar.textContent = "Total Qty: 0 | Total Amount: ₹0.00";
+    fixedTotalBar.innerHTML = `Total Qty: 0 | Total Amount: ₹0.00`;
     return;
   }
 
-  snap.forEach(d=>{
-    const it = d.data();
-    const id = d.id;
-
-    totalAmount += Number(it.amount || 0);
-    totalQty += Number(it.qty || 0);
-
+  filtered.forEach(it=>{
     const card = document.createElement("div");
     card.className = "used-card";
     card.innerHTML = `
@@ -198,10 +280,10 @@ async function loadUsed(){
     `;
     usedList.appendChild(card);
 
-    card.querySelector("button").onclick = ()=> showUsedView(id);
+    card.querySelector("button").onclick = ()=> showUsedView(it.id);
   });
 
-  fixedTotalBar.textContent =
+  fixedTotalBar.innerHTML =
     `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
 }
 
@@ -211,6 +293,7 @@ async function showUsedView(id){
   const snap = await getDoc(ref);
 
   if (!snap.exists()) return alert("Item not found");
+
   const it = snap.data();
 
   detailCard.innerHTML = `
@@ -254,13 +337,18 @@ async function showUsedView(id){
   };
 }
 
-centerBackdrop.onclick = (e)=>{
+centerBackdrop.onclick = e=>{
   if (e.target === centerBackdrop){
     centerBackdrop.style.display = "none";
   }
 };
 
-loadUsed();
+filterCategory.onchange = loadUsed;
+filterFullDate.onchange = loadUsed;
+filterMonthYear.onchange = loadUsed;
+
+await loadCategories();
+await loadUsed();
 
 </script>
 
