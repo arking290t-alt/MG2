@@ -6,173 +6,262 @@
 <title>Used Inventory</title>
 <style>
   :root{
-    --bg:#0b111b; --panel:rgba(255,255,255,0.04);
-    --accent:#00b4ff; --muted:#9fb6d4; --card:rgba(255,255,255,0.06);
+    --bg:#0b111b; 
+    --panel:rgba(255,255,255,0.04);
+    --accent:#00b4ff; 
+    --muted:#9fb6d4; 
+    --card:rgba(255,255,255,0.06);
     --danger:#ef4444;
   }
-  body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 30%, #101821,#070c12);color:#e6eef6;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-  .container{max-width:1100px;margin:20px auto;padding:22px;background:var(--panel);border-radius:14px;border:1px solid rgba(255,255,255,0.03);}
-  h1{color:var(--accent);text-align:center;margin:6px 0 18px;font-size:28px}
-  .used-card{background:var(--card);padding:18px;border-radius:12px;margin-top:12px;display:flex;justify-content:space-between;align-items:center}
-  .meta{color:var(--muted);margin-top:6px}
-  .btn{background:var(--accent);border:none;color:#001;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
-  .btn-delete{background:var(--danger);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-  .center-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000}
-  .center-card{width:95%;max-width:520px;background:#0f1724;padding:18px;border-radius:12px}
-  .detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
-  .detail-row strong{color:var(--muted);font-weight:600}
-  .detail-row span{color:#fff}
-  @media (max-width:700px){.used-card{flex-direction:column;align-items:flex-start}.used-card .controls{margin-top:10px}}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:radial-gradient(circle at 20% 30%, #101821,#070c12);
+    color:#e6eef6;
+    font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    padding-bottom:80px; /* space for fixed bar */
+  }
+
+  .container{
+    max-width:1100px;
+    margin:20px auto;
+    padding:22px;
+    background:var(--panel);
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  h1{
+    color:var(--accent);
+    text-align:center;
+    font-size:28px;
+    margin-bottom:10px;
+  }
+
+  .used-card{
+    background:var(--card);
+    padding:18px;
+    border-radius:12px;
+    margin-top:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .meta{ color:var(--muted); margin-top:6px; }
+
+  .btn{
+    background:var(--accent);
+    border:none;
+    color:#001;
+    padding:8px 12px;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .btn-delete{
+    background:var(--danger);
+    color:white;
+  }
+
+  /* VIEW MODAL */
+  .center-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+  }
+
+  .center-card{
+    width:95%;
+    max-width:520px;
+    background:#0f1724;
+    padding:18px;
+    border-radius:12px;
+  }
+
+  .detail-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px dashed rgba(255,255,255,0.05);
+  }
+
+  .detail-row strong{ color:var(--muted); }
+
+  /* FIXED BOTTOM BAR */
+  #fixedTotalBar{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    background:#0f1724;
+    border-top:1px solid rgba(255,255,255,0.1);
+    padding:14px 22px;
+    font-size:20px;
+    font-weight:700;
+    color:var(--accent);
+    text-align:right;
+    z-index:999;
+  }
+
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Used Inventory</h1>
-    <div id="usedList"></div>
-  </div>
 
-  <!-- Centered detail modal for View -->
-  <div id="centerBackdrop" class="center-backdrop" aria-hidden="true">
-    <div class="center-card" id="detailCard"></div>
-  </div>
+<div class="container">
+  <h1>Used Inventory</h1>
+  <div id="usedList"></div>
+</div>
+
+<!-- FIXED TOTAL BAR -->
+<div id="fixedTotalBar">Total Qty: 0 | Total Amount: ₹0.00</div>
+
+<!-- VIEW MODAL -->
+<div id="centerBackdrop" class="center-backdrop">
+  <div class="center-card" id="detailCard"></div>
+</div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import {
-    getFirestore, collection, getDocs, getDoc, doc, deleteDoc
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain: "mg-manager-3ab66.firebaseapp.com",
-    projectId: "mg-manager-3ab66",
-    storageBucket: "mg-manager-3ab66.firebasestorage.app",
-    messagingSenderId: "330667005987",
-    appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-    measurementId: "G-05HW0KSN38"
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, getDoc, doc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const usedList = document.getElementById("usedList");
+const detailCard = document.getElementById("detailCard");
+const centerBackdrop = document.getElementById("centerBackdrop");
+const fixedTotalBar = document.getElementById("fixedTotalBar");
+
+function escapeHtml(s){
+  if(!s) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+/* LOAD USED ITEMS */
+async function loadUsed(){
+  usedList.innerHTML = "";
+
+  let totalAmount = 0;
+  let totalQty = 0;
+
+  const snap = await getDocs(collection(db,"inventoryUsed"));
+
+  if (snap.empty){
+    usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
+    fixedTotalBar.innerHTML = "Total Qty: 0 | Total Amount: ₹0.00";
+    return;
+  }
+
+  snap.forEach(d=>{
+    const it = d.data();
+    const id = d.id;
+
+    totalAmount += Number(it.amount || 0);
+    totalQty += Number(it.qty || 0);
+
+    const card = document.createElement("div");
+    card.className = "used-card";
+    card.innerHTML = `
+      <div style="max-width:78%">
+        <h3>${escapeHtml(it.name)}</h3>
+        <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
+        <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
+        <div class="meta">Category: ${escapeHtml(it.category)}</div>
+      </div>
+      <button class="btn">View</button>
+    `;
+    usedList.appendChild(card);
+
+    card.querySelector("button").onclick = ()=> showUsedView(id);
+  });
+
+  fixedTotalBar.innerHTML =
+    `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
+}
+
+/* VIEW DETAILS */
+async function showUsedView(id){
+  const ref = doc(db,"inventoryUsed",id);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return alert("Item not found");
+
+  const it = snap.data();
+
+  detailCard.innerHTML = `
+    <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
+
+    <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
+    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
+    <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
+    <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
+
+    <div class="detail-row"><strong>Invoice</strong><span>${escapeHtml(it.invoice)}</span></div>
+    <div class="detail-row"><strong>Reel</strong><span>${escapeHtml(it.reel)}</span></div>
+    <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier)}</span></div>
+    <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm)}</span></div>
+    <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf)}</span></div>
+
+    <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category)}</span></div>
+    <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate)}</span></div>
+    <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt)}</span></div>
+
+    <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor)}</span></div>
+    <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes)}</span></div>
+
+    <div style="margin-top:16px;text-align:center;display:flex;gap:12px;justify-content:center">
+      <button class="btn-delete" id="delBtn">Delete</button>
+      <button class="btn" id="closeBtn">Close</button>
+    </div>
+  `;
+
+  centerBackdrop.style.display = "flex";
+
+  document.getElementById("closeBtn").onclick = ()=> {
+    centerBackdrop.style.display = "none";
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  document.getElementById("delBtn").onclick = async ()=>{
+    if (!confirm("Delete this used record?")) return;
+    await deleteDoc(doc(db,"inventoryUsed",id));
+    centerBackdrop.style.display = "none";
+    loadUsed();
+  };
+}
 
-  const usedList = document.getElementById('usedList');
-  const centerBackdrop = document.getElementById('centerBackdrop');
-  const detailCard = document.getElementById('detailCard');
-
-  function escapeHtml(s){
-    if (s===null || s===undefined) return '';
-    return String(s)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'",'&#39;');
+centerBackdrop.onclick = (e)=>{
+  if (e.target === centerBackdrop){
+    centerBackdrop.style.display = "none";
   }
+};
 
-  // Load all used items (card style, with View button)
-  async function loadUsed(){
-    usedList.innerHTML = '';
-    const snap = await getDocs(collection(db,'inventoryUsed'));
-    if (snap.empty) {
-      usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
-      return;
-    }
-    snap.forEach(d=>{
-      const it = d.data();
-      const id = d.id;
-      const card = document.createElement('div');
-      card.className = 'used-card';
-      card.innerHTML = `
-        <div style="max-width:78%">
-          <h3>${escapeHtml(it.name || '—')}</h3>
-          <div class="meta">Qty: ${it.qty || 0} ${escapeHtml(it.unit || '')}</div>
-          <div class="meta">Used At: ${escapeHtml(it.usedAt || '')}</div>
-          <div class="meta">Category: ${escapeHtml(it.category || '')}</div>
-        </div>
-        <div class="controls">
-          <button class="btn" data-id="${id}">View</button>
-        </div>
-      `;
-      usedList.appendChild(card);
-
-      card.querySelector('button').onclick = ()=> showViewUsed(id);
-    });
-  }
-
-  // Open modal with full details (includes Used For and Notes)
-  async function showViewUsed(id){
-    try {
-      const ref = doc(db,'inventoryUsed',id);
-      const snap = await getDoc(ref);
-      if (!snap.exists()){
-        alert('Item not found');
-        await loadUsed();
-        return;
-      }
-      const it = snap.data();
-
-      const html = `
-        <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
-        <div style="padding:8px 6px">
-          <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name || '')}</span></div>
-          <div class="detail-row"><strong>Quantity</strong><span>${it.qty || 0} ${escapeHtml(it.unit || '')}</span></div>
-          <div class="detail-row"><strong>Price (₹)</strong><span>₹${Number(it.price || 0).toFixed(2)}</span></div>
-          <div class="detail-row"><strong>Amount (₹)</strong><span>₹${Number(it.amount || 0).toFixed(2)}</span></div>
-
-          <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice || '')}</span></div>
-          <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel || '')}</span></div>
-          <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier || '')}</span></div>
-          <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm || '')}</span></div>
-          <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf || '')}</span></div>
-
-          <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category || '')}</span></div>
-          <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate || '')}</span></div>
-          <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt || '')}</span></div>
-
-          <!-- ADDED FIELDS -->
-          <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor || '')}</span></div>
-          <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes || '')}</span></div>
-
-        </div>
-
-        <div style="text-align:center;margin-top:12px;display:flex;gap:12px;justify-content:center">
-          <button class="btn-delete" id="delBtn">Delete</button>
-          <button class="btn" id="closeBtn">Close</button>
-        </div>
-      `;
-
-      detailCard.innerHTML = html;
-      centerBackdrop.style.display = 'flex';
-      centerBackdrop.setAttribute('aria-hidden','false');
-
-      document.getElementById('closeBtn').onclick = ()=> {
-        centerBackdrop.style.display = 'none';
-        centerBackdrop.setAttribute('aria-hidden','true');
-      };
-
-      document.getElementById('delBtn').onclick = async ()=>{
-        if (!confirm('Delete this used record?')) return;
-        await deleteDoc(doc(db,'inventoryUsed',id));
-        centerBackdrop.style.display = 'none';
-        centerBackdrop.setAttribute('aria-hidden','true');
-        await loadUsed();
-      };
-
-    } catch (err){
-      console.error(err);
-      alert('Failed to load used item. Open console for details.');
-    }
-  }
-
-  // click outside to close
-  centerBackdrop.onclick = (e)=> { if (e.target === centerBackdrop){ centerBackdrop.style.display='none'; centerBackdrop.setAttribute('aria-hidden','true'); } };
-
-  // init
-  (async()=>{ await loadUsed(); })();
-
-  // expose for debug if needed
-  window._loadUsed = loadUsed;
-
+loadUsed();
 </script>
+
 </body>
 </html>
