@@ -1,219 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Used Inventory</title>
-
 <style>
-  :root {
-    --bg:#0b111b;
-    --panel:#111827;
-    --accent:#00b4ff;
-    --muted:#9fb6d4;
+  :root{
+    --bg:#0b111b; --panel:rgba(255,255,255,0.04);
+    --accent:#00b4ff; --muted:#9fb6d4; --card:rgba(255,255,255,0.06);
     --danger:#ef4444;
-    --card:#1f2937;
   }
-  body {
-    margin:0;
-    background:var(--bg);
-    font-family:Poppins, sans-serif;
-    color:white;
-  }
-  .container {
-    max-width:900px;
-    margin:20px auto;
-    background:var(--panel);
-    padding:20px;
-    border-radius:12px;
-  }
-  h1 {
-    text-align:center;
-    color:var(--accent);
-  }
-  .used-item {
-    background:var(--card);
-    padding:18px;
-    border-radius:12px;
-    margin-top:12px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-  }
-  .meta { color:var(--muted); margin-top:6px; }
-  .btn {
-    background:var(--accent);
-    color:black;
-    padding:8px 12px;
-    border-radius:8px;
-    border:none;
-    cursor:pointer;
-    font-weight:600;
-  }
-  .btn-delete { background:var(--danger); color:white; }
-  /* View Modal */
-  .modal-backdrop {
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:1000;
-  }
-  .modal-card {
-    background:#0f172a;
-    width:95%;
-    max-width:520px;
-    padding:20px;
-    border-radius:12px;
-  }
-  .detail-row {
-    display:flex;
-    justify-content:space-between;
-    padding:8px 0;
-    border-bottom:1px dashed rgba(255,255,255,0.1);
-  }
-  .detail-row strong {
-    color:var(--muted);
-  }
+  body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 30%, #101821,#070c12);color:#e6eef6;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  .container{max-width:1100px;margin:20px auto;padding:22px;background:var(--panel);border-radius:14px;border:1px solid rgba(255,255,255,0.03);}
+  h1{color:var(--accent);text-align:center;margin:6px 0 18px;font-size:28px}
+  .used-card{background:var(--card);padding:18px;border-radius:12px;margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+  .meta{color:var(--muted);margin-top:6px}
+  .btn{background:var(--accent);border:none;color:#001;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+  .btn-delete{background:var(--danger);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+  .center-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000}
+  .center-card{width:95%;max-width:520px;background:#0f1724;padding:18px;border-radius:12px}
+  .detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
+  .detail-row strong{color:var(--muted);font-weight:600}
+  .detail-row span{color:#fff}
+  @media (max-width:700px){.used-card{flex-direction:column;align-items:flex-start}.used-card .controls{margin-top:10px}}
 </style>
-
 </head>
 <body>
+  <div class="container">
+    <h1>Used Inventory</h1>
+    <div id="usedList"></div>
+  </div>
 
-<div class="container">
-  <h1>Used Inventory</h1>
-
-  <div id="usedList"></div>
-</div>
-
-<!-- View Modal -->
-<div id="viewBackdrop" class="modal-backdrop">
-  <div class="modal-card" id="viewCard"></div>
-</div>
+  <!-- Centered detail modal for View -->
+  <div id="centerBackdrop" class="center-backdrop" aria-hidden="true">
+    <div class="center-card" id="detailCard"></div>
+  </div>
 
 <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, getDoc, doc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-/* FIREBASE IMPORTS */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  deleteDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+    storageBucket: "mg-manager-3ab66.firebasestorage.app",
+    messagingSenderId: "330667005987",
+    appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+    measurementId: "G-05HW0KSN38"
+  };
 
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.firebasestorage.app",
-  messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-  measurementId: "G-05HW0KSN38"
-};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  const usedList = document.getElementById('usedList');
+  const centerBackdrop = document.getElementById('centerBackdrop');
+  const detailCard = document.getElementById('detailCard');
 
-/* Utility */
-function escapeHtml(s){
-  if(!s) return "";
-  return String(s)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;");
-}
-
-/* Load Used Inventory */
-async function loadUsed(){
-  const parent = document.getElementById("usedList");
-  parent.innerHTML = "";
-
-  const snap = await getDocs(collection(db,"inventoryUsed"));
-  if (snap.empty){
-    parent.innerHTML = `<p style="text-align:center;color:var(--muted)">No used items found.</p>`;
-    return;
+  function escapeHtml(s){
+    if (s===null || s===undefined) return '';
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#39;');
   }
 
-  snap.forEach(d=>{
-    const it = d.data();
-    const card = document.createElement("div");
-    card.className = "used-item";
+  // Load all used items (card style, with View button)
+  async function loadUsed(){
+    usedList.innerHTML = '';
+    const snap = await getDocs(collection(db,'inventoryUsed'));
+    if (snap.empty) {
+      usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
+      return;
+    }
+    snap.forEach(d=>{
+      const it = d.data();
+      const id = d.id;
+      const card = document.createElement('div');
+      card.className = 'used-card';
+      card.innerHTML = `
+        <div style="max-width:78%">
+          <h3>${escapeHtml(it.name || '—')}</h3>
+          <div class="meta">Qty: ${it.qty || 0} ${escapeHtml(it.unit || '')}</div>
+          <div class="meta">Used At: ${escapeHtml(it.usedAt || '')}</div>
+          <div class="meta">Category: ${escapeHtml(it.category || '')}</div>
+        </div>
+        <div class="controls">
+          <button class="btn" data-id="${id}">View</button>
+        </div>
+      `;
+      usedList.appendChild(card);
 
-    card.innerHTML = `
-      <div>
-        <h3>${escapeHtml(it.name)}</h3>
-        <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
-        <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
-      </div>
-      <button class="btn" onclick="viewUsed('${d.id}')">View</button>
-    `;
+      card.querySelector('button').onclick = ()=> showViewUsed(id);
+    });
+  }
 
-    parent.appendChild(card);
-  });
-}
+  // Open modal with full details (includes Used For and Notes)
+  async function showViewUsed(id){
+    try {
+      const ref = doc(db,'inventoryUsed',id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()){
+        alert('Item not found');
+        await loadUsed();
+        return;
+      }
+      const it = snap.data();
 
-window.viewUsed = async function(id){
-  const ref = doc(db,"inventoryUsed",id);
-  const snap = await getDoc(ref);
-  if (!snap.exists()){ alert("Not found"); return; }
+      const html = `
+        <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
+        <div style="padding:8px 6px">
+          <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name || '')}</span></div>
+          <div class="detail-row"><strong>Quantity</strong><span>${it.qty || 0} ${escapeHtml(it.unit || '')}</span></div>
+          <div class="detail-row"><strong>Price (₹)</strong><span>₹${Number(it.price || 0).toFixed(2)}</span></div>
+          <div class="detail-row"><strong>Amount (₹)</strong><span>₹${Number(it.amount || 0).toFixed(2)}</span></div>
 
-  const it = snap.data();
+          <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice || '')}</span></div>
+          <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel || '')}</span></div>
+          <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier || '')}</span></div>
+          <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm || '')}</span></div>
+          <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf || '')}</span></div>
 
-  const html = `
-    <h2 style="text-align:center;color:var(--accent)">Used Item Details</h2>
+          <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category || '')}</span></div>
+          <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate || '')}</span></div>
+          <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt || '')}</span></div>
 
-    <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
-    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
-    <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
-    <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
+          <!-- ADDED FIELDS -->
+          <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor || '')}</span></div>
+          <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes || '')}</span></div>
 
-    <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice)}</span></div>
-    <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel)}</span></div>
-    <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier)}</span></div>
-    <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm)}</span></div>
-    <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf)}</span></div>
+        </div>
 
-    <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category)}</span></div>
+        <div style="text-align:center;margin-top:12px;display:flex;gap:12px;justify-content:center">
+          <button class="btn-delete" id="delBtn">Delete</button>
+          <button class="btn" id="closeBtn">Close</button>
+        </div>
+      `;
 
-    <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate)}</span></div>
-    <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt)}</span></div>
+      detailCard.innerHTML = html;
+      centerBackdrop.style.display = 'flex';
+      centerBackdrop.setAttribute('aria-hidden','false');
 
-    <!-- FIXED: These were missing -->
-    <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor)}</span></div>
-    <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes)}</span></div>
-    <!-- END FIX -->
+      document.getElementById('closeBtn').onclick = ()=> {
+        centerBackdrop.style.display = 'none';
+        centerBackdrop.setAttribute('aria-hidden','true');
+      };
 
-    <div style="text-align:center;margin-top:18px">
-      <button class="btn-delete" onclick="deleteUsed('${id}')">Delete</button>
-      <button class="btn" onclick="closeView()">Close</button>
-    </div>
-  `;
+      document.getElementById('delBtn').onclick = async ()=>{
+        if (!confirm('Delete this used record?')) return;
+        await deleteDoc(doc(db,'inventoryUsed',id));
+        centerBackdrop.style.display = 'none';
+        centerBackdrop.setAttribute('aria-hidden','true');
+        await loadUsed();
+      };
 
-  document.getElementById("viewCard").innerHTML = html;
-  document.getElementById("viewBackdrop").style.display = "flex";
-};
+    } catch (err){
+      console.error(err);
+      alert('Failed to load used item. Open console for details.');
+    }
+  }
 
-window.closeView = function(){
-  document.getElementById("viewBackdrop").style.display = "none";
-};
+  // click outside to close
+  centerBackdrop.onclick = (e)=> { if (e.target === centerBackdrop){ centerBackdrop.style.display='none'; centerBackdrop.setAttribute('aria-hidden','true'); } };
 
-/* Delete */
-window.deleteUsed = async function(id){
-  if (!confirm("Delete this used item?")) return;
-  await deleteDoc(doc(db,"inventoryUsed",id));
-  closeView();
-  loadUsed();
-};
+  // init
+  (async()=>{ await loadUsed(); })();
 
-/* Start */
-loadUsed();
+  // expose for debug if needed
+  window._loadUsed = loadUsed;
 
 </script>
-
 </body>
 </html>
