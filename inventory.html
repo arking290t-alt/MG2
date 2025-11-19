@@ -281,18 +281,32 @@
   // ------------------ LOAD INVENTORY ------------------
   async function loadInventory(){
     inventoryList.innerHTML='';
+    // reset item filter first
     filterItemName.innerHTML = '<option value="all">All Items</option>';
 
+    // fetch all items
     const snapAll = await getDocs(collection(db,'inventory'));
-    let items = snapAll.docs.map(d => ({ id: d.id, ...d.data() }));
+    let itemsAll = snapAll.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // populate item-name filter from full list
-    const allNames = Array.from(new Set(items.map(i=>i.name).filter(Boolean)));
-    allNames.forEach(n=>{
+    // populate item-name filter in a way that matches currently selected category:
+    // if a category is selected, show only names in that category; otherwise show all names.
+    const selectedCategory = (filterCategory.value && filterCategory.value!=='all') ? filterCategory.value : 'all';
+
+    // Build set of names depending on category selection
+    let namesForFilter;
+    if (selectedCategory === 'all') {
+      namesForFilter = Array.from(new Set(itemsAll.map(i=>i.name).filter(Boolean)));
+    } else {
+      namesForFilter = Array.from(new Set(itemsAll.filter(i => i.category === selectedCategory).map(i=>i.name).filter(Boolean)));
+    }
+    // populate filterItemName
+    namesForFilter.forEach(n=>{
       const op=document.createElement('option'); op.value=n; op.textContent=n; filterItemName.appendChild(op);
     });
 
-    // apply filters
+    // Now apply actual filters to items that will be displayed
+    let items = itemsAll.slice();
+
     if (filterCategory.value && filterCategory.value!=='all'){
       items = items.filter(i => i.category === filterCategory.value);
     }
@@ -511,7 +525,9 @@
 
   // clear filters
   clearFilters.onclick = ()=> { filterCategory.value='all'; filterItemName.value='all'; filterDate.value=''; loadInventory(); };
-  filterCategory.onchange = loadInventory; filterItemName.onchange = loadInventory; filterDate.onchange = loadInventory;
+  filterCategory.onchange = loadInventory;
+  filterItemName.onchange = loadInventory;
+  filterDate.onchange = loadInventory;
 
   // init
   (async ()=>{
