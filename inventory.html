@@ -35,7 +35,7 @@
     .filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
     .filters select,.filters input{padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);color:#fff;min-width:160px}
     .filters button{padding:8px 12px;border-radius:8px;background:var(--danger);border:none;color:white}
-    /* modal */
+    /* slide-up modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:flex-end;justify-content:center;z-index:999}
     .modal{width:100%;max-width:760px;background:linear-gradient(180deg,#0f1724,#0b1220);border-radius:14px 14px 0 0;padding:18px;transform:translateY(100%);transition:transform .28s ease;}
     .modal.open{transform:translateY(0)}
@@ -43,9 +43,11 @@
     .modal-title{font-size:18px;color:var(--accent)}
     .modal-body{margin-top:12px;max-height:65vh;overflow:auto;padding-right:6px}
     .modal .input{margin-bottom:10px}
+    .modal .input label{font-size:13px;color:var(--muted);margin-bottom:6px}
     .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
     .btn-close{background:#6b7280;color:white;padding:8px 12px;border-radius:8px;border:none}
     .btn-save{background:var(--accent);color:#001;padding:8px 12px;border-radius:8px;border:none}
+    /* centered detail modal */
     .center-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000}
     .center-card{width:95%;max-width:520px;background:#0f1724;padding:18px;border-radius:12px}
     .detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
@@ -112,6 +114,8 @@
       <select id="filterCategory"><option value="all">All Categories</option></select>
       <select id="filterItemName"><option value="all">All Items</option></select>
       <input id="filterDate" type="date" />
+      <!-- NEW month-year filter added next to date -->
+      <input id="filterMonthYear" type="month" />
       <button id="clearFilters">Clear</button>
     </div>
 
@@ -179,6 +183,7 @@
   const filterCategory = document.getElementById('filterCategory');
   const filterItemName = document.getElementById('filterItemName');
   const filterDate = document.getElementById('filterDate');
+  const filterMonthYear = document.getElementById('filterMonthYear'); // NEW
   const clearFilters = document.getElementById('clearFilters');
 
   const inventoryList = document.getElementById('inventoryList');
@@ -330,6 +335,22 @@
     if (filterItemName.value !== 'all') {
       items = items.filter(i => String(i.name).trim() === String(filterItemName.value).trim());
     }
+
+    // NEW: Month-Year and Full date logic
+    const fullDateVal = filterDate.value || "";       // yyyy-mm-dd or ""
+    const monthYearVal = filterMonthYear.value || ""; // yyyy-mm or ""
+
+    if (fullDateVal !== "") {
+      // full date selected -> filter by exact date (item.date is in yyyy-mm-dd)
+      items = items.filter(i => i.date === fullDateVal);
+    } else if (monthYearVal !== "") {
+      // month-year selected and full date empty -> filter by month
+      items = items.filter(i => {
+        if (!i.date) return false;
+        return String(i.date).slice(0,7) === monthYearVal;
+      });
+    }
+
     if (filterDate.value){
       items = items.filter(i => i.date === filterDate.value);
     }
@@ -341,10 +362,12 @@
     }
 
     let total = 0;
+    let totalQty = 0;
 
     items.forEach(item => {
       const amount = (typeof item.amount !== 'undefined') ? Number(item.amount) : (Number(item.qty) * Number(item.price));
       total += (Number.isFinite(amount) ? amount : 0);
+      totalQty += Number(item.qty) || 0;
 
       const card = document.createElement('div'); card.className='inventory-item';
       card.innerHTML = `
@@ -377,11 +400,10 @@
       };
     });
 
-    const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
     totalAmountBox.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${total.toFixed(2)}`;
   }
 
-  // ------------------ VIEW ------------------
+  // ------------------ VIEW (Compact Modern Card C1) ------------------
   async function showView(id){
     const ref = doc(db,'inventory',id);
     const snap = await getDoc(ref);
@@ -411,13 +433,14 @@
     document.getElementById('viewClose').onclick = closeDetail;
   }
 
-  // ------------------ EDIT ------------------
+  // ------------------ EDIT (All fields E2) ------------------
   async function showEdit(id){
     const ref = doc(db,'inventory',id);
     const snap = await getDoc(ref);
     if (!snap.exists()){ alert('Item not found'); await loadInventory(); return; }
     const it = snap.data();
 
+    // build category options for edit
     const catSnap = await getDocs(collection(db,'inventoryCategories'));
     let catOptions = '';
     catSnap.forEach(c => {
@@ -531,13 +554,14 @@
   }
 
   // clear filters
-  clearFilters.onclick = ()=> { filterCategory.value='all'; filterItemName.value='all'; filterDate.value=''; loadInventory(); };
+  clearFilters.onclick = ()=> { filterCategory.value='all'; filterItemName.value='all'; filterDate.value=''; filterMonthYear.value=''; loadInventory(); };
 
   // improved filter event handling:
   // when category changes, we rebuild item-name options in loadInventory() and try to preserve selection.
   filterCategory.onchange = loadInventory;
   filterItemName.onchange = loadInventory;
   filterDate.onchange = loadInventory;
+  filterMonthYear.onchange = loadInventory; // NEW
 
   // init
   (async ()=>{
