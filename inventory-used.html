@@ -20,7 +20,7 @@
     background:radial-gradient(circle at 20% 30%, #101821,#070c12);
     color:#e6eef6;
     font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-    padding-bottom:80px; 
+    padding-bottom:80px;
   }
 
   .container{
@@ -39,22 +39,26 @@
     margin-bottom:10px;
   }
 
-  /* FILTER BAR */
-  .filters{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
+  /* FILTERS */
+  .filter-block{
     margin-bottom:18px;
   }
-  .filters select, .filters input{
+  .filter-label{
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:6px;
+    display:block;
+  }
+  .filter-input{
     padding:10px;
+    width:100%;
     border-radius:8px;
     background:rgba(0,0,0,0.3);
     border:1px solid rgba(255,255,255,0.06);
     color:white;
-    min-width:160px;
   }
-  .filters button{
+  #filterClear{
+    margin-top:12px;
     padding:10px 14px;
     border-radius:8px;
     border:none;
@@ -62,6 +66,7 @@
     color:white;
     cursor:pointer;
     font-weight:700;
+    width:100%;
   }
 
   .used-card{
@@ -115,8 +120,9 @@
     padding:6px 0;
     border-bottom:1px dashed rgba(255,255,255,0.05);
   }
-
-  .detail-row strong{ color:var(--muted); }
+  .detail-row strong{
+    color:var(--muted);
+  }
 
   #fixedTotalBar{
     position:fixed;
@@ -140,16 +146,18 @@
 <div class="container">
   <h1>Used Inventory</h1>
 
-  <!-- FILTER BAR -->
-  <div class="filters">
-    <select id="filterCategory">
-      <option value="all">All Categories</option>
-    </select>
-
-    <input type="date" id="filterDate">
-
-    <button id="filterClear">Clear</button>
+  <!-- FILTERS LAYOUT 2 -->
+  <div class="filter-block">
+    <label class="filter-label">Select Month (Required)</label>
+    <input type="month" id="filterMonth" class="filter-input">
   </div>
+
+  <div class="filter-block">
+    <label class="filter-label">Select Day (Optional)</label>
+    <input type="date" id="filterDay" class="filter-input">
+  </div>
+
+  <button id="filterClear">Clear Filters</button>
 
   <div id="usedList"></div>
 </div>
@@ -185,8 +193,8 @@ const detailCard = document.getElementById("detailCard");
 const centerBackdrop = document.getElementById("centerBackdrop");
 const fixedTotalBar = document.getElementById("fixedTotalBar");
 
-const filterCategory = document.getElementById("filterCategory");
-const filterDate = document.getElementById("filterDate");
+const filterMonth = document.getElementById("filterMonth");
+const filterDay = document.getElementById("filterDay");
 const filterClear = document.getElementById("filterClear");
 
 function escapeHtml(s){
@@ -199,7 +207,7 @@ function escapeHtml(s){
     .replace(/'/g,"&#39;");
 }
 
-/* LOAD USED ITEMS */
+/* LOAD USED */
 async function loadUsed(){
   usedList.innerHTML = "";
 
@@ -209,32 +217,32 @@ async function loadUsed(){
   const snap = await getDocs(collection(db,"inventoryUsed"));
   let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  /* BUILD CATEGORY FILTER OPTIONS */
-  filterCategory.innerHTML = `<option value="all">All Categories</option>`;
-  const categories = [...new Set(items.map(i=>i.category).filter(Boolean))];
-  categories.forEach(cat=>{
-    const op = document.createElement("option");
-    op.value = cat;
-    op.textContent = cat;
-    filterCategory.appendChild(op);
-  });
+  const monthVal = filterMonth.value;   // "2025-11"
+  const dayVal = filterDay.value;       // "2025-11-19"
 
-  /* APPLY FILTERS */
-  if (filterCategory.value !== "all") {
-    items = items.filter(i => i.category === filterCategory.value);
+  /* FILTER LOGIC */
+
+  // If no month selected → show all
+  if (!monthVal) {
+    // ignore day because day alone is not allowed
   }
+  else {
+    // filter by month
+    items = items.filter(it => String(it.usedAt).slice(0,7) === monthVal);
 
-  if (filterDate.value) {
-    items = items.filter(i => String(i.usedAt).slice(0,10) === filterDate.value);
+    // if day also selected
+    if (dayVal) {
+      items = items.filter(it => String(it.usedAt).slice(0,10) === dayVal);
+    }
   }
 
   if (!items.length){
     usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
-    fixedTotalBar.innerHTML = "Total Qty: 0 | Total Amount: ₹0.00";
+    fixedTotalBar.textContent = "Total Qty: 0 | Total Amount: ₹0.00";
     return;
   }
 
-  /* DISPLAY ITEMS */
+  /* DISPLAY */
   items.forEach(it=>{
     totalAmount += Number(it.amount || 0);
     totalQty += Number(it.qty || 0);
@@ -255,7 +263,7 @@ async function loadUsed(){
     card.querySelector("button").onclick = ()=> showUsedView(it.id);
   });
 
-  fixedTotalBar.innerHTML =
+  fixedTotalBar.textContent =
     `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
 }
 
@@ -271,7 +279,7 @@ async function showUsedView(id){
     <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
 
     <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
-    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
+    <div class="detail-row"><strong>Qty</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
     <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
     <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
 
@@ -314,11 +322,12 @@ centerBackdrop.onclick = (e)=>{
   }
 };
 
-filterCategory.onchange = loadUsed;
-filterDate.onchange = loadUsed;
+filterMonth.onchange = loadUsed;
+filterDay.onchange = loadUsed;
+
 filterClear.onclick = ()=>{
-  filterCategory.value = "all";
-  filterDate.value = "";
+  filterMonth.value = "";
+  filterDay.value = "";
   loadUsed();
 };
 
