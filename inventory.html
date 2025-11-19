@@ -310,8 +310,9 @@
     if (filterCategory.value && filterCategory.value!=='all'){
       items = items.filter(i => i.category === filterCategory.value);
     }
-    if (filterItemName.value && filterItemName.value!=='all'){
-      items = items.filter(i => i.name === filterItemName.value);
+    if (filterItemName.value !== 'all') {
+  items = items.filter(i => String(i.name).trim() === String(filterItemName.value).trim());
+}
     }
     if (filterDate.value){
       items = items.filter(i => i.date === filterDate.value);
