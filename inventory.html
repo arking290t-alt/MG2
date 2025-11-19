@@ -35,7 +35,7 @@
     .filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
     .filters select,.filters input{padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);color:#fff;min-width:160px}
     .filters button{padding:8px 12px;border-radius:8px;background:var(--danger);border:none;color:white}
-    /* slide-up modal */
+
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:flex-end;justify-content:center;z-index:999}
     .modal{width:100%;max-width:760px;background:linear-gradient(180deg,#0f1724,#0b1220);border-radius:14px 14px 0 0;padding:18px;transform:translateY(100%);transition:transform .28s ease;}
     .modal.open{transform:translateY(0)}
@@ -43,16 +43,16 @@
     .modal-title{font-size:18px;color:var(--accent)}
     .modal-body{margin-top:12px;max-height:65vh;overflow:auto;padding-right:6px}
     .modal .input{margin-bottom:10px}
-    .modal .input label{font-size:13px;color:var(--muted);margin-bottom:6px}
     .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
     .btn-close{background:#6b7280;color:white;padding:8px 12px;border-radius:8px;border:none}
     .btn-save{background:var(--accent);color:#001;padding:8px 12px;border-radius:8px;border:none}
-    /* centered detail modal */
+
     .center-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000}
     .center-card{width:95%;max-width:520px;background:#0f1724;padding:18px;border-radius:12px}
     .detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
     .detail-row strong{color:var(--muted);font-weight:600}
     .detail-row span{color:#fff}
+
     @media (max-width:700px){.row{flex-direction:column}.filters{flex-direction:column;align-items:stretch}.modal{border-radius:12px}}
   </style>
 </head>
@@ -121,9 +121,9 @@
     <div id="inventoryList" style="margin-top:18px"></div>
   </div>
 
-  <!-- Slide-up modal (Used/Edit as slide-up) -->
+  <!-- Slide-up modal -->
   <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
-    <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div id="modal" class="modal">
       <div class="modal-header">
         <div class="modal-title" id="modalTitle">Modal</div>
         <button id="closeModal" class="btn-close">Close</button>
@@ -133,7 +133,7 @@
     </div>
   </div>
 
-  <!-- Centered detail modal for View -->
+  <!-- Centered Details Modal -->
   <div id="centerBackdrop" class="center-backdrop" aria-hidden="true">
     <div class="center-card" id="detailCard"></div>
   </div>
@@ -169,7 +169,6 @@
   const bf = document.getElementById('bf');
   const dateInput = document.getElementById('date');
   const categorySelect = document.getElementById('categorySelect');
-  const addItemBtn = document.getElementById('addItemBtn');
 
   const newCategoryName = document.getElementById('newCategoryName');
   const addCategoryBtn = document.getElementById('addCategoryBtn');
@@ -182,7 +181,6 @@
 
   const inventoryList = document.getElementById('inventoryList');
 
-  // modal refs
   const modalBackdrop = document.getElementById('modalBackdrop');
   const modal = document.getElementById('modal');
   const modalTitle = document.getElementById('modalTitle');
@@ -193,7 +191,6 @@
   const centerBackdrop = document.getElementById('centerBackdrop');
   const detailCard = document.getElementById('detailCard');
 
-  // helper open/close slide-up modal
   function openModal(title, bodyHtml, footerHtml){
     modalTitle.textContent = title;
     modalBody.innerHTML = bodyHtml || '';
@@ -210,13 +207,15 @@
   closeModal.onclick = hideModal;
   modalBackdrop.onclick = (e)=> { if (e.target===modalBackdrop) hideModal(); };
 
-  // center detail modal
   function openDetail(html){
     detailCard.innerHTML = html;
     centerBackdrop.style.display = 'flex';
     centerBackdrop.setAttribute('aria-hidden','false');
   }
-  function closeDetail(){ centerBackdrop.style.display='none'; centerBackdrop.setAttribute('aria-hidden','true'); }
+  function closeDetail(){
+    centerBackdrop.style.display='none';
+    centerBackdrop.setAttribute('aria-hidden','true');
+  }
   centerBackdrop.onclick = (e)=> { if (e.target===centerBackdrop) closeDetail(); };
 
   // ------------------ CATEGORIES ------------------
@@ -227,24 +226,37 @@
 
     const snap = await getDocs(collection(db,'inventoryCategories'));
     snap.forEach(d=>{
-      const id=d.id; const name=d.data().name;
-      // dropdowns
-      const opt=document.createElement('option'); opt.value=name; opt.textContent=name; categorySelect.appendChild(opt);
-      const opt2=document.createElement('option'); opt2.value=name; opt2.textContent=name; filterCategory.appendChild(opt2);
-      // manager list
-      const div=document.createElement('div'); div.className='cat-item';
-      div.innerHTML = `<div>${escapeHtml(name)}</div><button data-id="${id}">Delete</button>`;
+      const id=d.id;
+      const name=d.data().name;
+
+      const opt=document.createElement('option');
+      opt.value=name;
+      opt.textContent=name;
+      categorySelect.appendChild(opt);
+
+      const opt2=document.createElement('option');
+      opt2.value=name;
+      opt2.textContent=name;
+      filterCategory.appendChild(opt2);
+
+      const div=document.createElement('div');
+      div.className='cat-item';
+      div.innerHTML = `<div>${escapeHtml(name)}</div>
+                       <button data-id="${id}">Delete</button>`;
       categoryList.appendChild(div);
-      div.querySelector('button').onclick = async ()=> {
-        if (!confirm('Delete category "'+name+'"? This will NOT delete existing items.')) return;
+
+      div.querySelector('button').onclick = async ()=>{
+        if (!confirm(`Delete category "${name}"?`)) return;
         await deleteDoc(doc(db,'inventoryCategories',id));
-        await loadCategories(); await loadInventory();
+        await loadCategories();
+        await loadInventory();
       };
     });
   }
-  addCategoryBtn.onclick = async ()=> {
-    const name = (newCategoryName.value||'').trim();
-    if (!name) { alert('Enter category'); return; }
+
+  addCategoryBtn.onclick = async ()=>{
+    const name = newCategoryName.value.trim();
+    if (!name){ alert('Enter category'); return; }
     await addDoc(collection(db,'inventoryCategories'),{name});
     newCategoryName.value='';
     await loadCategories();
@@ -253,67 +265,70 @@
   // ------------------ ADD ITEM ------------------
   addItemBtn.onclick = async ()=>{
     const payload = {
-      name: (itemName.value||'').trim(),
+      name: itemName.value.trim(),
       qty: Number(quantity.value) || 0,
-      unit: unit.value || 'PCS',
+      unit: unit.value,
       price: Number(price.value) || 0,
-      invoice: (invoice.value||'').trim(),
-      reel: (reel.value||'').trim(),
-      supplier: (supplier.value||'').trim(),
-      gsm: (gsm.value||'').trim(),
-      bf: (bf.value||'').trim(),
+      invoice: invoice.value.trim(),
+      reel: reel.value.trim(),
+      supplier: supplier.value.trim(),
+      gsm: gsm.value.trim(),
+      bf: bf.value.trim(),
       date: dateInput.value || new Date().toISOString().slice(0,10),
-      category: categorySelect.value || '',
+      category: categorySelect.value,
       createdAt: new Date().toISOString()
     };
-    // compute amount and store
-    payload.amount = Number(payload.qty) * Number(payload.price);
+
+    payload.amount = payload.qty * payload.price;
 
     if (!payload.name){ alert('Enter item name'); return;}
     if (!payload.category){ alert('Select category'); return;}
+
     await addDoc(collection(db,'inventory'), payload);
-    // clear
-    itemName.value=''; quantity.value=''; price.value=''; invoice.value=''; reel.value='';
-    supplier.value=''; gsm.value=''; bf.value=''; dateInput.value='';
+
+    itemName.value=''; quantity.value=''; price.value='';
+    invoice.value=''; reel.value=''; supplier.value='';
+    gsm.value=''; bf.value=''; dateInput.value='';
+
     await loadInventory();
   };
 
   // ------------------ LOAD INVENTORY ------------------
   async function loadInventory(){
     inventoryList.innerHTML='';
-    // reset item filter first
     filterItemName.innerHTML = '<option value="all">All Items</option>';
 
-    // fetch all items
     const snapAll = await getDocs(collection(db,'inventory'));
     let itemsAll = snapAll.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // populate item-name filter in a way that matches currently selected category:
-    // if a category is selected, show only names in that category; otherwise show all names.
-    const selectedCategory = (filterCategory.value && filterCategory.value!=='all') ? filterCategory.value : 'all';
+    // Populate item filter options
+    const selectedCategory = filterCategory.value !== 'all' ? filterCategory.value : 'all';
 
-    // Build set of names depending on category selection
     let namesForFilter;
     if (selectedCategory === 'all') {
-      namesForFilter = Array.from(new Set(itemsAll.map(i=>i.name).filter(Boolean)));
+      namesForFilter = [...new Set(itemsAll.map(i => i.name).filter(Boolean))];
     } else {
-      namesForFilter = Array.from(new Set(itemsAll.filter(i => i.category === selectedCategory).map(i=>i.name).filter(Boolean)));
+      namesForFilter = [...new Set(itemsAll.filter(i => i.category === selectedCategory).map(i => i.name))];
     }
-    // populate filterItemName
+
     namesForFilter.forEach(n=>{
-      const op=document.createElement('option'); op.value=n; op.textContent=n; filterItemName.appendChild(op);
+      const op=document.createElement('option');
+      op.value=n;
+      op.textContent=n;
+      filterItemName.appendChild(op);
     });
 
-    // Now apply actual filters to items that will be displayed
+    // Apply filters
     let items = itemsAll.slice();
 
-    if (filterCategory.value && filterCategory.value!=='all'){
+    if (filterCategory.value !== 'all'){
       items = items.filter(i => i.category === filterCategory.value);
     }
-    if (filterItemName.value !== 'all') {
-  items = items.filter(i => String(i.name).trim() === String(filterItemName.value).trim());
-}
+
+    if (filterItemName.value !== 'all'){
+      items = items.filter(i => String(i.name).trim() === String(filterItemName.value).trim());
     }
+
     if (filterDate.value){
       items = items.filter(i => i.date === filterDate.value);
     }
@@ -323,16 +338,17 @@
       return;
     }
 
-    items.forEach(item => {
-      // prefer stored amount, else compute fallback
-      const amount = (typeof item.amount !== 'undefined') ? Number(item.amount) : (Number(item.qty) * Number(item.price));
-      const card = document.createElement('div'); card.className='inventory-item';
+    items.forEach(item=>{
+      const amount = item.amount ?? (item.qty * item.price);
+
+      const card=document.createElement('div');
+      card.className='inventory-item';
       card.innerHTML = `
         <div style="max-width:78%">
-          <h3>${escapeHtml(item.name||'—')}</h3>
-          <div class="meta">Qty: ${item.qty || 0} ${escapeHtml(item.unit||'')}</div>
-          <div class="meta">Date: ${escapeHtml(item.date||'—')}</div>
-          <div class="meta">Category: ${escapeHtml(item.category||'—')}</div>
+          <h3>${escapeHtml(item.name)}</h3>
+          <div class="meta">Qty: ${item.qty} ${escapeHtml(item.unit)}</div>
+          <div class="meta">Date: ${escapeHtml(item.date)}</div>
+          <div class="meta">Category: ${escapeHtml(item.category)}</div>
           <div class="actions">
             <button class="small-btn btn-view">View</button>
             <button class="small-btn btn-edit">Edit</button>
@@ -341,44 +357,45 @@
           </div>
         </div>
         <div style="text-align:right;font-size:1.1rem;font-weight:800;color:var(--accent);min-width:110px">
-          ₹${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'}
+          ₹${Number(amount).toFixed(2)}
         </div>
       `;
       inventoryList.appendChild(card);
 
-      // bind actions
       card.querySelector('.btn-view').onclick = ()=> showView(item.id);
       card.querySelector('.btn-edit').onclick = ()=> showEdit(item.id);
       card.querySelector('.btn-used').onclick = ()=> showUsed(item.id);
       card.querySelector('.btn-delete').onclick = async ()=>{
-        if (!confirm('Delete item "'+item.name+'"? This cannot be undone.')) return;
+        if (!confirm('Delete item?')) return;
         await deleteDoc(doc(db,'inventory',item.id));
         await loadInventory();
       };
     });
   }
 
-  // ------------------ VIEW (Compact Modern Card C1) ------------------
+  // ------------------ VIEW ------------------
   async function showView(id){
-    const ref = doc(db,'inventory',id);
-    const snap = await getDoc(ref);
-    if (!snap.exists()){ alert('Item not found'); await loadInventory(); return; }
-    const it = snap.data();
-    const amount = (Number(it.qty)||0) * (Number(it.price)||0);
+    const ref=doc(db,'inventory',id);
+    const snap=await getDoc(ref);
+    if (!snap.exists()){ alert('Not found'); return; }
+    const it=snap.data();
+
+    const amount = it.amount ?? (it.qty * it.price);
+
     const html = `
       <h2 style="text-align:center;color:var(--accent);margin-top:0">Item Details</h2>
       <div style="padding:8px 6px">
-        <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name||'')}</span></div>
-        <div class="detail-row"><strong>Quantity</strong><span>${it.qty || 0} ${escapeHtml(it.unit||'')}</span></div>
-        <div class="detail-row"><strong>Price (₹)</strong><span>₹${Number(it.price||0).toFixed(2)}</span></div>
-        <div class="detail-row"><strong>Amount (₹)</strong><span>₹${(typeof it.amount !== 'undefined') ? Number(it.amount).toFixed(2) : amount.toFixed(2)}</span></div>
-        <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice||'')}</span></div>
-        <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel||'')}</span></div>
-        <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier||'')}</span></div>
-        <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm||'')}</span></div>
-        <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf||'')}</span></div>
-        <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category||'')}</span></div>
-        <div class="detail-row"><strong>Date</strong><span>${escapeHtml(it.date||'')}</span></div>
+        <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
+        <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${it.unit}</span></div>
+        <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
+        <div class="detail-row"><strong>Amount</strong><span>₹${Number(amount).toFixed(2)}</span></div>
+        <div class="detail-row"><strong>Invoice</strong><span>${escapeHtml(it.invoice)}</span></div>
+        <div class="detail-row"><strong>Reel</strong><span>${escapeHtml(it.reel)}</span></div>
+        <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier)}</span></div>
+        <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm)}</span></div>
+        <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf)}</span></div>
+        <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category)}</span></div>
+        <div class="detail-row"><strong>Date</strong><span>${escapeHtml(it.date)}</span></div>
       </div>
       <div style="text-align:center;margin-top:12px">
         <button class="btn" id="viewClose">Close</button>
@@ -388,144 +405,172 @@
     document.getElementById('viewClose').onclick = closeDetail;
   }
 
-  // ------------------ EDIT (All fields E2) ------------------
+  // ------------------ EDIT ------------------
   async function showEdit(id){
-    const ref = doc(db,'inventory',id);
-    const snap = await getDoc(ref);
-    if (!snap.exists()){ alert('Item not found'); await loadInventory(); return; }
-    const it = snap.data();
+    const ref=doc(db,'inventory',id);
+    const snap=await getDoc(ref);
+    if (!snap.exists()){ alert('Not found'); return; }
+    const it=snap.data();
 
-    // build category options for edit
-    const catSnap = await getDocs(collection(db,'inventoryCategories'));
-    let catOptions = '';
-    catSnap.forEach(c => {
-      const n = c.data().name;
-      catOptions += `<option value="${escapeHtml(n)}" ${n===it.category ? 'selected':''}>${escapeHtml(n)}</option>`;
+    const catSnap=await getDocs(collection(db,'inventoryCategories'));
+    let catOptions='';
+    catSnap.forEach(c=>{
+      const n=c.data().name;
+      catOptions += `<option value="${escapeHtml(n)}" ${n===it.category?'selected':''}>${escapeHtml(n)}</option>`;
     });
 
     const body = `
-      <div class="input"><label>Item Name</label><input id="e_name" value="${escapeHtml(it.name||'')}" /></div>
+      <div class="input"><label>Item Name</label>
+        <input id="e_name" value="${escapeHtml(it.name)}" />
+      </div>
       <div class="row" style="margin-top:8px">
-        <div class="input"><label>Quantity</label><input id="e_qty" type="number" value="${escapeHtml(it.qty||0)}" /></div>
+        <div class="input"><label>Quantity</label>
+          <input id="e_qty" type="number" value="${it.qty}" />
+        </div>
         <div class="input"><label>Unit</label>
-          <select id="e_unit"><option ${it.unit==='PCS'?'selected':''}>PCS</option><option ${it.unit==='KGS'?'selected':''}>KGS</option></select>
+          <select id="e_unit">
+            <option ${it.unit==='PCS'?'selected':''}>PCS</option>
+            <option ${it.unit==='KGS'?'selected':''}>KGS</option>
+          </select>
         </div>
       </div>
-      <div class="input" style="margin-top:8px"><label>Price (₹)</label><input id="e_price" type="number" value="${escapeHtml(it.price||0)}" /></div>
-      <div class="row" style="margin-top:8px">
-        <div class="input"><label>Invoice Number</label><input id="e_invoice" value="${escapeHtml(it.invoice||'')}" /></div>
-        <div class="input"><label>Reel Number</label><input id="e_reel" value="${escapeHtml(it.reel||'')}" /></div>
+      <div class="input" style="margin-top:8px"><label>Price</label>
+        <input id="e_price" type="number" value="${it.price}" />
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="input"><label>Supplier</label><input id="e_supplier" value="${escapeHtml(it.supplier||'')}" /></div>
-        <div class="input"><label>GSM</label><input id="e_gsm" value="${escapeHtml(it.gsm||'')}" /></div>
+        <div class="input"><label>Invoice</label><input id="e_invoice" value="${escapeHtml(it.invoice)}" /></div>
+        <div class="input"><label>Reel</label><input id="e_reel" value="${escapeHtml(it.reel)}" /></div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div class="input"><label>BF</label><input id="e_bf" value="${escapeHtml(it.bf||'')}" /></div>
+        <div class="input"><label>Supplier</label><input id="e_supplier" value="${escapeHtml(it.supplier)}" /></div>
+        <div class="input"><label>GSM</label><input id="e_gsm" value="${escapeHtml(it.gsm)}" /></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="input"><label>BF</label><input id="e_bf" value="${escapeHtml(it.bf)}" /></div>
         <div class="input"><label>Category</label>
           <select id="e_category">${catOptions}</select>
         </div>
       </div>
-      <div class="input" style="margin-top:8px"><label>Date</label><input id="e_date" type="date" value="${escapeHtml(it.date||'')}" /></div>
+      <div class="input" style="margin-top:8px">
+        <label>Date</label><input id="e_date" type="date" value="${escapeHtml(it.date)}" />
+      </div>
     `;
-    const footer = `<button class="btn-close" id="editCancel">Cancel</button><button class="btn-save" id="editSave">Save</button>`;
-    openModal('Edit Item — '+(it.name||''), body, footer);
+
+    const footer = `
+      <button class="btn-close" id="editCancel">Cancel</button>
+      <button class="btn-save" id="editSave">Save</button>
+    `;
+
+    openModal("Edit Item — " + it.name, body, footer);
 
     document.getElementById('editCancel').onclick = hideModal;
     document.getElementById('editSave').onclick = async ()=>{
       const updated = {
-        name: (document.getElementById('e_name').value||'').trim(),
-        qty: Number(document.getElementById('e_qty').value) || 0,
-        unit: document.getElementById('e_unit').value || 'PCS',
-        price: Number(document.getElementById('e_price').value) || 0,
-        invoice: (document.getElementById('e_invoice').value||'').trim(),
-        reel: (document.getElementById('e_reel').value||'').trim(),
-        supplier: (document.getElementById('e_supplier').value||'').trim(),
-        gsm: (document.getElementById('e_gsm').value||'').trim(),
-        bf: (document.getElementById('e_bf').value||'').trim(),
-        category: document.getElementById('e_category').value || '',
-        date: document.getElementById('e_date').value || new Date().toISOString().slice(0,10)
+        name: document.getElementById('e_name').value.trim(),
+        qty: Number(document.getElementById('e_qty').value),
+        unit: document.getElementById('e_unit').value,
+        price: Number(document.getElementById('e_price').value),
+        invoice: document.getElementById('e_invoice').value.trim(),
+        reel: document.getElementById('e_reel').value.trim(),
+        supplier: document.getElementById('e_supplier').value.trim(),
+        gsm: document.getElementById('e_gsm').value.trim(),
+        bf: document.getElementById('e_bf').value.trim(),
+        category: document.getElementById('e_category').value,
+        date: document.getElementById('e_date').value
       };
-      // recalc amount and store
-      updated.amount = Number(updated.qty) * Number(updated.price);
+
+      updated.amount = updated.qty * updated.price;
+
       await updateDoc(ref, updated);
       hideModal();
-      await loadInventory();
+      loadInventory();
     };
   }
 
-  // ------------------ USED (Slide-up B) ------------------
-  // NOTE: removed USED QUANTITY input. We'll copy original item's qty & price and save amount = qty * price.
+  // ------------------ USED ------------------
   let usedTargetId = null;
   async function showUsed(id){
-    const ref = doc(db,'inventory',id);
-    const snap = await getDoc(ref);
-    if (!snap.exists()){ alert('Item not found'); await loadInventory(); return; }
-    const it = snap.data();
+    const ref=doc(db,'inventory',id);
+    const snap=await getDoc(ref);
+    if (!snap.exists()){ alert('Not found'); return; }
+    const it=snap.data();
     usedTargetId = id;
 
-    // modal body — NO used quantity; only Used For + Notes
     const body = `
-      <div style="font-weight:700;margin-bottom:10px">Use Item — ${escapeHtml(it.name||'')}</div>
+      <div style="font-weight:700;margin-bottom:10px">Use Item — ${escapeHtml(it.name)}</div>
 
       <div class="row" style="margin-top:8px">
         <div class="input"><label>Used For</label><input id="u_for" placeholder="job/purpose" /></div>
-        <div class="input"><label>Notes (optional)</label><input id="u_notes" placeholder="notes" /></div>
+        <div class="input"><label>Notes</label><input id="u_notes" placeholder="notes" /></div>
       </div>
 
       <div style="margin-top:12px;color:var(--muted)">
-        When you save, the full item (Qty: ${it.qty || 0}) will be moved to Used Inventory.
-        Amount copied = Qty × Purchase Price = ₹${(Number(it.qty) * Number(it.price)).toFixed(2)}
+        Full item will be moved to Used Inventory.<br>
+        Amount = Qty × Price = ₹${(it.qty * it.price).toFixed(2)}
       </div>
     `;
-    const footer = `<button class="btn-close" id="usedCancel">Cancel</button><button class="btn-save" id="usedSave">Save Used</button>`;
-    openModal('Mark Item as Used', body, footer);
+
+    const footer = `
+      <button class="btn-close" id="usedCancel">Cancel</button>
+      <button class="btn-save" id="usedSave">Save Used</button>
+    `;
+
+    openModal("Mark Item as Used", body, footer);
 
     document.getElementById('usedCancel').onclick = hideModal;
     document.getElementById('usedSave').onclick = async ()=>{
-      if (!confirm('Mark item as USED? This will move the full item to Used Inventory.')) return;
-      const uFor = (document.getElementById('u_for').value||'').trim();
-      const uNotes = (document.getElementById('u_notes').value||'').trim();
+      if (!confirm("Mark item as USED?")) return;
 
-      // build used record by copying the original item
+      const uFor = document.getElementById('u_for').value.trim();
+      const uNotes = document.getElementById('u_notes').value.trim();
+
       const usedPayload = {
         originalItemId: id,
-        name: it.name || '',
-        qty: Number(it.qty) || 0,            // full original quantity
-        unit: it.unit || 'PCS',
-        price: Number(it.price) || 0,
-        amount: (Number(it.qty) || 0) * (Number(it.price) || 0), // amount = qty * price
+        name: it.name,
+        qty: it.qty,
+        unit: it.unit,
+        price: it.price,
+        amount: it.qty * it.price,
         usedFor: uFor,
         notes: uNotes,
-        invoice: it.invoice || '',
-        reel: it.reel || '',
-        supplier: it.supplier || '',
-        gsm: it.gsm || '',
-        bf: it.bf || '',
-        category: it.category || '',
-        originalDate: it.date || '',
+        invoice: it.invoice,
+        reel: it.reel,
+        supplier: it.supplier,
+        gsm: it.gsm,
+        bf: it.bf,
+        category: it.category,
+        originalDate: it.date,
         usedAt: new Date().toISOString()
       };
-      // save used record
+
       await addDoc(collection(db,'inventoryUsed'), usedPayload);
 
-      // remove original from inventory (because full item moved)
       await deleteDoc(doc(db,'inventory',id));
 
       hideModal();
-      await loadInventory();
-      alert('Saved used record and removed item from inventory.');
+      loadInventory();
+      alert("Item moved to used inventory.");
     };
   }
 
   // ------------------ UTILITIES ------------------
   function escapeHtml(s){
-    if (s===null||s===undefined) return '';
-    return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    if (s==null) return '';
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
   }
 
-  // clear filters
-  clearFilters.onclick = ()=> { filterCategory.value='all'; filterItemName.value='all'; filterDate.value=''; loadInventory(); };
+  clearFilters.onclick = ()=>{
+    filterCategory.value='all';
+    filterItemName.value='all';
+    filterDate.value='';
+    loadInventory();
+  };
+
   filterCategory.onchange = loadInventory;
   filterItemName.onchange = loadInventory;
   filterDate.onchange = loadInventory;
@@ -535,9 +580,6 @@
     await loadCategories();
     await loadInventory();
   })();
-
-  // expose for debug
-  window._loadInv = loadInventory;
 
 </script>
 </body>
