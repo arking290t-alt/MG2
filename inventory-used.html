@@ -20,7 +20,7 @@
     background:radial-gradient(circle at 20% 30%, #101821,#070c12);
     color:#e6eef6;
     font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-    padding-bottom:80px; /* space for fixed bar */
+    padding-bottom:80px; 
   }
 
   .container{
@@ -37,6 +37,31 @@
     text-align:center;
     font-size:28px;
     margin-bottom:10px;
+  }
+
+  /* FILTER BAR */
+  .filters{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .filters select, .filters input{
+    padding:10px;
+    border-radius:8px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.06);
+    color:white;
+    min-width:160px;
+  }
+  .filters button{
+    padding:10px 14px;
+    border-radius:8px;
+    border:none;
+    background:var(--danger);
+    color:white;
+    cursor:pointer;
+    font-weight:700;
   }
 
   .used-card{
@@ -66,7 +91,6 @@
     color:white;
   }
 
-  /* VIEW MODAL */
   .center-backdrop{
     position:fixed;
     inset:0;
@@ -94,7 +118,6 @@
 
   .detail-row strong{ color:var(--muted); }
 
-  /* FIXED BOTTOM BAR */
   #fixedTotalBar{
     position:fixed;
     bottom:0;
@@ -116,13 +139,23 @@
 
 <div class="container">
   <h1>Used Inventory</h1>
+
+  <!-- FILTER BAR -->
+  <div class="filters">
+    <select id="filterCategory">
+      <option value="all">All Categories</option>
+    </select>
+
+    <input type="date" id="filterDate">
+
+    <button id="filterClear">Clear</button>
+  </div>
+
   <div id="usedList"></div>
 </div>
 
-<!-- FIXED TOTAL BAR -->
 <div id="fixedTotalBar">Total Qty: 0 | Total Amount: ₹0.00</div>
 
-<!-- VIEW MODAL -->
 <div id="centerBackdrop" class="center-backdrop">
   <div class="center-card" id="detailCard"></div>
 </div>
@@ -152,6 +185,10 @@ const detailCard = document.getElementById("detailCard");
 const centerBackdrop = document.getElementById("centerBackdrop");
 const fixedTotalBar = document.getElementById("fixedTotalBar");
 
+const filterCategory = document.getElementById("filterCategory");
+const filterDate = document.getElementById("filterDate");
+const filterClear = document.getElementById("filterClear");
+
 function escapeHtml(s){
   if(!s) return "";
   return String(s)
@@ -170,17 +207,35 @@ async function loadUsed(){
   let totalQty = 0;
 
   const snap = await getDocs(collection(db,"inventoryUsed"));
+  let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  if (snap.empty){
+  /* BUILD CATEGORY FILTER OPTIONS */
+  filterCategory.innerHTML = `<option value="all">All Categories</option>`;
+  const categories = [...new Set(items.map(i=>i.category).filter(Boolean))];
+  categories.forEach(cat=>{
+    const op = document.createElement("option");
+    op.value = cat;
+    op.textContent = cat;
+    filterCategory.appendChild(op);
+  });
+
+  /* APPLY FILTERS */
+  if (filterCategory.value !== "all") {
+    items = items.filter(i => i.category === filterCategory.value);
+  }
+
+  if (filterDate.value) {
+    items = items.filter(i => String(i.usedAt).slice(0,10) === filterDate.value);
+  }
+
+  if (!items.length){
     usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
     fixedTotalBar.innerHTML = "Total Qty: 0 | Total Amount: ₹0.00";
     return;
   }
 
-  snap.forEach(d=>{
-    const it = d.data();
-    const id = d.id;
-
+  /* DISPLAY ITEMS */
+  items.forEach(it=>{
     totalAmount += Number(it.amount || 0);
     totalQty += Number(it.qty || 0);
 
@@ -197,7 +252,7 @@ async function loadUsed(){
     `;
     usedList.appendChild(card);
 
-    card.querySelector("button").onclick = ()=> showUsedView(id);
+    card.querySelector("button").onclick = ()=> showUsedView(it.id);
   });
 
   fixedTotalBar.innerHTML =
@@ -210,7 +265,6 @@ async function showUsedView(id){
   const snap = await getDoc(ref);
 
   if (!snap.exists()) return alert("Item not found");
-
   const it = snap.data();
 
   detailCard.innerHTML = `
@@ -260,7 +314,16 @@ centerBackdrop.onclick = (e)=>{
   }
 };
 
+filterCategory.onchange = loadUsed;
+filterDate.onchange = loadUsed;
+filterClear.onclick = ()=>{
+  filterCategory.value = "all";
+  filterDate.value = "";
+  loadUsed();
+};
+
 loadUsed();
+
 </script>
 
 </body>
