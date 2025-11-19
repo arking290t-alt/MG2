@@ -1,263 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Used Inventory | MG</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Used Inventory</title>
+
 <style>
-:root{
-  --bg:#0b111b; --panel:#0e1724; --accent:#00b4ff; --muted:#9aa9b6;
-  --card:#0f1417; --danger:#ef4444; --text:#e2e8f0;
-}
-body{margin:0;font-family:Poppins, sans-serif;background:var(--bg);color:var(--muted);padding:28px}
-h1{text-align:center;color:var(--accent);margin:6px 0 18px;font-size:2rem}
-.top-row{display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-.back-btn{background:#0ea5a0;color:#000}
-.filter-select,.filter-date{background:#11181d;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:10px;border-radius:8px}
-.container{max-width:1100px;margin:0 auto}
-.used-card{background:var(--card);padding:16px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;border:1px solid rgba(255,255,255,0.03);color:#e6f2ff}
-.used-left{line-height:1.4}
-.used-actions{display:flex;gap:8px;align-items:center}
-.small-btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-.view-btn{background:#60a5fa;color:#021022}
-.delete-btn{background:var(--danger);color:white}
-.modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999}
-.modal{background:#0f1720;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;padding:18px;border-radius:12px;color:var(--text);box-shadow:0 12px 40px rgba(0,0,0,0.6)}
-.field{margin-bottom:10px}
-.field label{display:block;font-size:0.9rem;color:var(--muted);margin-bottom:6px}
-.field input{width:100%;padding:10px;border-radius:8px;background:#0b1115;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
-.modal-footer{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
-.btn-close{background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:none}
-.btn-del{background:var(--danger);color:#fff;padding:8px 12px;border-radius:8px;border:none}
-.empty-msg{text-align:center;color:#64748b;margin-top:40px;font-size:1rem}
-@media (max-width:520px){.used-card{flex-direction:column;gap:10px}.used-actions{justify-content:flex-start}}
+  :root {
+    --bg:#0b111b;
+    --panel:#111827;
+    --accent:#00b4ff;
+    --muted:#9fb6d4;
+    --danger:#ef4444;
+    --card:#1f2937;
+  }
+  body {
+    margin:0;
+    background:var(--bg);
+    font-family:Poppins, sans-serif;
+    color:white;
+  }
+  .container {
+    max-width:900px;
+    margin:20px auto;
+    background:var(--panel);
+    padding:20px;
+    border-radius:12px;
+  }
+  h1 {
+    text-align:center;
+    color:var(--accent);
+  }
+  .used-item {
+    background:var(--card);
+    padding:18px;
+    border-radius:12px;
+    margin-top:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .meta { color:var(--muted); margin-top:6px; }
+  .btn {
+    background:var(--accent);
+    color:black;
+    padding:8px 12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .btn-delete { background:var(--danger); color:white; }
+  /* View Modal */
+  .modal-backdrop {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+  }
+  .modal-card {
+    background:#0f172a;
+    width:95%;
+    max-width:520px;
+    padding:20px;
+    border-radius:12px;
+  }
+  .detail-row {
+    display:flex;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px dashed rgba(255,255,255,0.1);
+  }
+  .detail-row strong {
+    color:var(--muted);
+  }
 </style>
+
 </head>
 <body>
 
-<h1>Used Inventory History</h1>
-
-<div class="top-row">
-  <a href="inventory.html"><button class="btn back-btn">Back to Inventory</button></a>
-  <select id="filterCategory" class="filter-select"><option value="all">All Categories</option></select>
-  <input id="filterMonth" type="month" class="filter-date">
-</div>
-
 <div class="container">
+  <h1>Used Inventory</h1>
+
   <div id="usedList"></div>
 </div>
 
-<!-- Modal (view-only fields) -->
-<div class="modal-back" id="modalBack" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <h3 id="modalTitle" style="color:var(--accent);margin-top:0">Item Details</h3>
-
-    <div class="field"><label>Item Name</label><input id="v_name" readonly></div>
-    <div class="field"><label>Quantity</label><input id="v_qty" readonly></div>
-    <div class="field"><label>Unit</label><input id="v_unit" readonly></div>
-    <div class="field"><label>Purchasing Price (₹)</label><input id="v_price" readonly></div>
-    <div class="field"><label>Amount (₹)</label><input id="v_amount" readonly></div>
-
-    <div class="field"><label>Invoice Number</label><input id="v_invoice" readonly></div>
-    <div class="field"><label>Reel Number</label><input id="v_reel" readonly></div>
-    <div class="field"><label>Supplier</label><input id="v_supplier" readonly></div>
-
-    <div class="field"><label>GSM</label><input id="v_gsm" readonly></div>
-    <div class="field"><label>BF</label><input id="v_bf" readonly></div>
-    <div class="field"><label>Category</label><input id="v_category" readonly></div>
-
-    <div class="field"><label>Original Date</label><input id="v_date" readonly></div>
-    <div class="field"><label>Used At</label><input id="v_usedAt" readonly></div>
-
-    <div class="modal-footer">
-      <button id="modalDelete" class="btn-del">Delete</button>
-      <button id="modalClose" class="btn-close">Close</button>
-    </div>
-  </div>
+<!-- View Modal -->
+<div id="viewBackdrop" class="modal-backdrop">
+  <div class="modal-card" id="viewCard"></div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const app = initializeApp({
-    apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain:"mg-manager-3ab66.firebaseapp.com",
-    projectId:"mg-manager-3ab66"
+/* FIREBASE IMPORTS */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  deleteDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* Utility */
+function escapeHtml(s){
+  if(!s) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+/* Load Used Inventory */
+async function loadUsed(){
+  const parent = document.getElementById("usedList");
+  parent.innerHTML = "";
+
+  const snap = await getDocs(collection(db,"inventoryUsed"));
+  if (snap.empty){
+    parent.innerHTML = `<p style="text-align:center;color:var(--muted)">No used items found.</p>`;
+    return;
+  }
+
+  snap.forEach(d=>{
+    const it = d.data();
+    const card = document.createElement("div");
+    card.className = "used-item";
+
+    card.innerHTML = `
+      <div>
+        <h3>${escapeHtml(it.name)}</h3>
+        <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
+        <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
+      </div>
+      <button class="btn" onclick="viewUsed('${d.id}')">View</button>
+    `;
+
+    parent.appendChild(card);
   });
-  const db = getFirestore(app);
+}
 
-  const usedListEl = document.getElementById('usedList');
-  const filterCategory = document.getElementById('filterCategory');
-  const filterMonth = document.getElementById('filterMonth');
+window.viewUsed = async function(id){
+  const ref = doc(db,"inventoryUsed",id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()){ alert("Not found"); return; }
 
-  const modalBack = document.getElementById('modalBack');
-  const modalClose = document.getElementById('modalClose');
-  const modalDelete = document.getElementById('modalDelete');
+  const it = snap.data();
 
-  const v_name = document.getElementById('v_name');
-  const v_qty = document.getElementById('v_qty');
-  const v_unit = document.getElementById('v_unit');
-  const v_price = document.getElementById('v_price');
-  const v_amount = document.getElementById('v_amount');
-  const v_invoice = document.getElementById('v_invoice');
-  const v_reel = document.getElementById('v_reel');
-  const v_supplier = document.getElementById('v_supplier');
-  const v_gsm = document.getElementById('v_gsm');
-  const v_bf = document.getElementById('v_bf');
-  const v_category = document.getElementById('v_category');
-  const v_date = document.getElementById('v_date');
-  const v_usedAt = document.getElementById('v_usedAt');
+  const html = `
+    <h2 style="text-align:center;color:var(--accent)">Used Item Details</h2>
 
-  let usedRecords = [];
-  let currentModalId = null;
+    <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
+    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
+    <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
+    <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
 
-  function formatDateIsoToIN(iso){
-    if(!iso) return '';
-    try{
-      const d = new Date(iso);
-      if(isNaN(d)) return iso;
-      return d.toLocaleString('en-IN',{hour12:false});
-    }catch(e){ return iso; }
-  }
+    <div class="detail-row"><strong>Invoice No</strong><span>${escapeHtml(it.invoice)}</span></div>
+    <div class="detail-row"><strong>Reel No</strong><span>${escapeHtml(it.reel)}</span></div>
+    <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier)}</span></div>
+    <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm)}</span></div>
+    <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf)}</span></div>
 
-  async function loadUsedRecords(){
-    usedListEl.innerHTML = "<p class='empty-msg'>Loading...</p>";
-    usedRecords = [];
-    const snap = await getDocs(collection(db, "inventoryUsed"));
-    snap.forEach(s => usedRecords.push({ id: s.id, ...s.data() }));
-    populateCategoryFilter();
-    renderList();
-  }
+    <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category)}</span></div>
 
-  function populateCategoryFilter(){
-    const cats = Array.from(new Set(usedRecords.map(r => r.category).filter(Boolean)));
-    filterCategory.innerHTML = '<option value="all">All Categories</option>';
-    cats.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c; opt.textContent = c;
-      filterCategory.appendChild(opt);
-    });
-  }
+    <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate)}</span></div>
+    <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt)}</span></div>
 
-  function renderList(){
-    usedListEl.innerHTML = '';
-    const selCat = filterCategory.value || 'all';
-    const selMonth = filterMonth.value || '';
+    <!-- FIXED: These were missing -->
+    <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor)}</span></div>
+    <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes)}</span></div>
+    <!-- END FIX -->
 
-    // sort by usedAt newest first
-    const list = usedRecords.slice().sort((a,b)=>{
-      const da = a.usedAt || a.used_at || a.usedDate || '';
-      const db = b.usedAt || b.used_at || b.usedDate || '';
-      return String(db).localeCompare(String(da));
-    });
+    <div style="text-align:center;margin-top:18px">
+      <button class="btn-delete" onclick="deleteUsed('${id}')">Delete</button>
+      <button class="btn" onclick="closeView()">Close</button>
+    </div>
+  `;
 
-    const filtered = list.filter(r=>{
-      if(selCat !== 'all' && (r.category || '') !== selCat) return false;
-      if(selMonth){
-        const usedTs = (r.usedAt || r.used_at || r.usedDate || '').toString();
-        // ISO-like startsWith YYYY-MM
-        if(!usedTs.startsWith(selMonth)) return false;
-      }
-      return true;
-    });
+  document.getElementById("viewCard").innerHTML = html;
+  document.getElementById("viewBackdrop").style.display = "flex";
+};
 
-    if(filtered.length === 0){
-      usedListEl.innerHTML = '<p class="empty-msg">No used items found.</p>';
-      return;
-    }
+window.closeView = function(){
+  document.getElementById("viewBackdrop").style.display = "none";
+};
 
-    filtered.forEach(rec=>{
-      const name = rec.name || '-';
-      const qty = (typeof rec.qty !== 'undefined') ? rec.qty : (rec.originalQty || '-');
-      const unit = rec.unit || 'PCS';
-      const cat = rec.category || '-';
-      const amount = (typeof rec.amount !== 'undefined') ? rec.amount : ( (Number(qty)||0) * (Number(rec.price)||0) );
-      const usedAt = formatDateIsoToIN(rec.usedAt);
+/* Delete */
+window.deleteUsed = async function(id){
+  if (!confirm("Delete this used item?")) return;
+  await deleteDoc(doc(db,"inventoryUsed",id));
+  closeView();
+  loadUsed();
+};
 
-      const card = document.createElement('div');
-      card.className = 'used-card';
+/* Start */
+loadUsed();
 
-      const left = document.createElement('div');
-      left.className = 'used-left';
-      left.innerHTML = `<strong style="color:#fff">${escapeHtml(name)}</strong>
-                        <div style="margin-top:6px">Qty: ${qty} ${unit}<br>Category: ${escapeHtml(cat)}<br>Used At: ${escapeHtml(usedAt)}<br><strong style="color:#00b4ff">₹${Number(amount||0).toFixed(2)}</strong></div>`;
-
-      const actions = document.createElement('div'); actions.className='used-actions';
-      const viewBtn = document.createElement('button'); viewBtn.className='small-btn view-btn'; viewBtn.innerText='View'; viewBtn.onclick = ()=> openModal(rec.id);
-      const delBtn = document.createElement('button'); delBtn.className='small-btn delete-btn'; delBtn.innerText='Delete'; delBtn.onclick = ()=> confirmDelete(rec.id);
-
-      actions.appendChild(viewBtn); actions.appendChild(delBtn);
-
-      card.appendChild(left); card.appendChild(actions);
-      usedListEl.appendChild(card);
-    });
-  }
-
-  function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
-
-  function openModal(id){
-    const rec = usedRecords.find(r=>r.id===id);
-    if(!rec) return alert('Record not found');
-    currentModalId = id;
-
-    v_name.value = rec.name || '';
-    v_qty.value = (typeof rec.qty !== 'undefined') ? rec.qty : (rec.originalQty || '');
-    v_unit.value = rec.unit || '';
-    v_price.value = (typeof rec.price !== 'undefined') ? Number(rec.price).toFixed(2) : '';
-    v_amount.value = (typeof rec.amount !== 'undefined') ? Number(rec.amount).toFixed(2) : ( (Number(v_qty.value)||0) * (Number(rec.price)||0) ).toFixed(2);
-    v_invoice.value = rec.invoice || '';
-    v_reel.value = rec.reel || '';
-    v_supplier.value = rec.supplier || '';
-    v_gsm.value = rec.gsm || '';
-    v_bf.value = rec.bf || '';
-    v_category.value = rec.category || '';
-    v_date.value = rec.originalDate || rec.date || '';
-    v_usedAt.value = formatDateIsoToIN(rec.usedAt);
-
-    modalBack.style.display = 'flex';
-    modalBack.setAttribute('aria-hidden','false');
-  }
-
-  async function confirmDelete(id){
-    if(!confirm('Delete this used record? This will not restore inventory.')) return;
-    await deleteDoc(doc(db,'inventoryUsed',id));
-    usedRecords = usedRecords.filter(r=>r.id!==id);
-    renderList();
-    if(currentModalId===id) closeModal();
-  }
-
-  function closeModal(){
-    modalBack.style.display = 'none';
-    modalBack.setAttribute('aria-hidden','true');
-    currentModalId = null;
-  }
-
-  modalClose.addEventListener('click', closeModal);
-
-  modalDelete.addEventListener('click', async ()=>{
-    if(!currentModalId) return;
-    if(!confirm('Delete this used record? This will not restore inventory.')) return;
-    await deleteDoc(doc(db,'inventoryUsed',currentModalId));
-    usedRecords = usedRecords.filter(r=>r.id!==currentModalId);
-    closeModal();
-    renderList();
-  });
-
-  filterCategory.addEventListener('change', renderList);
-  filterMonth.addEventListener('change', renderList);
-
-  async function loadUsedRecordsInit(){
-    // initial load
-    await loadUsedRecords();
-  }
-
-  loadUsedRecordsInit();
-
-  // expose for debug
-  window.__reloadUsed = loadUsedRecords;
-  window.__usedRecords = usedRecords;
 </script>
+
 </body>
 </html>
