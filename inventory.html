@@ -377,7 +377,8 @@
       };
     });
 
-    totalAmountBox.innerHTML = `Total Amount: ₹${total.toFixed(2)}`;
+    const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+    totalAmountBox.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${total.toFixed(2)}`;
   }
 
   // ------------------ VIEW ------------------
