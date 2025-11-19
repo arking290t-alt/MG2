@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Used Inventory</title>
+
 <style>
   :root{
     --bg:#0b111b; 
@@ -39,36 +40,6 @@
     margin-bottom:10px;
   }
 
-  /* FILTERS */
-  .filter-block{
-    margin-bottom:18px;
-  }
-  .filter-label{
-    color:var(--muted);
-    font-size:14px;
-    margin-bottom:6px;
-    display:block;
-  }
-  .filter-input{
-    padding:10px;
-    width:100%;
-    border-radius:8px;
-    background:rgba(0,0,0,0.3);
-    border:1px solid rgba(255,255,255,0.06);
-    color:white;
-  }
-  #filterClear{
-    margin-top:12px;
-    padding:10px 14px;
-    border-radius:8px;
-    border:none;
-    background:var(--danger);
-    color:white;
-    cursor:pointer;
-    font-weight:700;
-    width:100%;
-  }
-
   .used-card{
     background:var(--card);
     padding:18px;
@@ -79,7 +50,10 @@
     align-items:center;
   }
 
-  .meta{ color:var(--muted); margin-top:6px; }
+  .meta{
+    color:var(--muted);
+    margin-top:6px;
+  }
 
   .btn{
     background:var(--accent);
@@ -120,6 +94,7 @@
     padding:6px 0;
     border-bottom:1px dashed rgba(255,255,255,0.05);
   }
+
   .detail-row strong{
     color:var(--muted);
   }
@@ -138,27 +113,12 @@
     text-align:right;
     z-index:999;
   }
-
 </style>
 </head>
 <body>
 
 <div class="container">
   <h1>Used Inventory</h1>
-
-  <!-- FILTERS LAYOUT 2 -->
-  <div class="filter-block">
-    <label class="filter-label">Select Month (Required)</label>
-    <input type="month" id="filterMonth" class="filter-input">
-  </div>
-
-  <div class="filter-block">
-    <label class="filter-label">Select Day (Optional)</label>
-    <input type="date" id="filterDay" class="filter-input">
-  </div>
-
-  <button id="filterClear">Clear Filters</button>
-
   <div id="usedList"></div>
 </div>
 
@@ -193,10 +153,6 @@ const detailCard = document.getElementById("detailCard");
 const centerBackdrop = document.getElementById("centerBackdrop");
 const fixedTotalBar = document.getElementById("fixedTotalBar");
 
-const filterMonth = document.getElementById("filterMonth");
-const filterDay = document.getElementById("filterDay");
-const filterClear = document.getElementById("filterClear");
-
 function escapeHtml(s){
   if(!s) return "";
   return String(s)
@@ -207,7 +163,7 @@ function escapeHtml(s){
     .replace(/'/g,"&#39;");
 }
 
-/* LOAD USED */
+/* LOAD USED ITEMS */
 async function loadUsed(){
   usedList.innerHTML = "";
 
@@ -215,35 +171,17 @@ async function loadUsed(){
   let totalQty = 0;
 
   const snap = await getDocs(collection(db,"inventoryUsed"));
-  let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  const monthVal = filterMonth.value;   // "2025-11"
-  const dayVal = filterDay.value;       // "2025-11-19"
-
-  /* FILTER LOGIC */
-
-  // If no month selected → show all
-  if (!monthVal) {
-    // ignore day because day alone is not allowed
-  }
-  else {
-    // filter by month
-    items = items.filter(it => String(it.usedAt).slice(0,7) === monthVal);
-
-    // if day also selected
-    if (dayVal) {
-      items = items.filter(it => String(it.usedAt).slice(0,10) === dayVal);
-    }
-  }
-
-  if (!items.length){
+  if (snap.empty){
     usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
     fixedTotalBar.textContent = "Total Qty: 0 | Total Amount: ₹0.00";
     return;
   }
 
-  /* DISPLAY */
-  items.forEach(it=>{
+  snap.forEach(d=>{
+    const it = d.data();
+    const id = d.id;
+
     totalAmount += Number(it.amount || 0);
     totalQty += Number(it.qty || 0);
 
@@ -260,7 +198,7 @@ async function loadUsed(){
     `;
     usedList.appendChild(card);
 
-    card.querySelector("button").onclick = ()=> showUsedView(it.id);
+    card.querySelector("button").onclick = ()=> showUsedView(id);
   });
 
   fixedTotalBar.textContent =
@@ -279,7 +217,7 @@ async function showUsedView(id){
     <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
 
     <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
-    <div class="detail-row"><strong>Qty</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
+    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
     <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
     <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
 
@@ -320,15 +258,6 @@ centerBackdrop.onclick = (e)=>{
   if (e.target === centerBackdrop){
     centerBackdrop.style.display = "none";
   }
-};
-
-filterMonth.onchange = loadUsed;
-filterDay.onchange = loadUsed;
-
-filterClear.onclick = ()=>{
-  filterMonth.value = "";
-  filterDay.value = "";
-  loadUsed();
 };
 
 loadUsed();
