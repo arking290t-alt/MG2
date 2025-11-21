@@ -21,7 +21,7 @@
       <h2 class="welcome">Welcome</h2>
       <p class="subtitle">Manage staff, attendance, payments, jobs & inventory</p>
 
-      <!-- 🔥 UPDATED HORIZONTAL GRID -->
+      <!-- ⭐ NEW CLEAN GROUPED GRID ⭐ -->
       <div class="dashboard-grid" style="
         display:flex;
         gap:20px;
@@ -30,36 +30,28 @@
         margin-top:20px;
       ">
 
-        <a href="staff.html" class="dashboard-card">
-          <h3>Staff</h3>
-          <p>Manage & add staff</p>
+        <!-- ⭐ STAFF MANAGEMENT -->
+        <a href="staff-management.html" class="dashboard-card">
+          <h3>Staff Management</h3>
+          <p>Staff list & attendance</p>
         </a>
 
-        <a href="attendance.html" class="dashboard-card">
-          <h3>Attendance</h3>
-          <p>Open attendance</p>
-        </a>
-
-        <a href="expenses.html" class="dashboard-card">
-          <h3>Expenses</h3>
-          <p>Track business expenses</p>
-        </a>
-
+        <!-- ⭐ JOB UPDATE -->
         <a href="jobs.html" class="dashboard-card">
           <h3>Job Update</h3>
           <p>Add, manage & track job details</p>
         </a>
 
-        <!-- 🚀 INVENTORY -->
-        <a href="inventory.html" class="dashboard-card">
-          <h3>Inventory</h3>
-          <p>Manage & track stock</p>
+        <!-- ⭐ EXPENSES -->
+        <a href="expenses.html" class="dashboard-card">
+          <h3>Expenses</h3>
+          <p>Track business expenses</p>
         </a>
 
-        <!-- 🔥 NEW — USED INVENTORY -->
-        <a href="inventory-used.html" class="dashboard-card">
-          <h3>Used Inventory</h3>
-          <p>History of items used</p>
+        <!-- ⭐ INVENTORY MANAGEMENT -->
+        <a href="inventory-management.html" class="dashboard-card">
+          <h3>Inventory Management</h3>
+          <p>Stock & used inventory</p>
         </a>
 
       </div>
@@ -96,7 +88,6 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
     const migrateBtn = document.getElementById("migrateBtn");
-    const migrateStatus = document.getElementById("migrateStatus");
 
     // Authentication check
     onAuthStateChanged(auth, async (user) => {
