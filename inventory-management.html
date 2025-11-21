@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Management | MG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="dashboard-body">
+
+  <header class="top-bar">
+    <h1 class="logo">MG</h1>
+    <div>
+      <a href="dashboard.html" class="btn-back">← Back</a>
+      <button class="btn-logout" onclick="logoutUser()">Logout</button>
+    </div>
+  </header>
+
+  <main class="dashboard-center">
+    <div class="dashboard-box">
+
+      <h2 class="welcome">Inventory Management</h2>
+      <p class="subtitle">Manage inventory & used items</p>
+
+      <div class="dashboard-grid" style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:20px;
+        justify-content:center;
+        margin-top:20px;
+      ">
+
+        <!-- Inventory -->
+        <a href="inventory.html" class="dashboard-card">
+          <h3>Inventory</h3>
+          <p>Manage & track stock</p>
+        </a>
+
+        <!-- Used Inventory -->
+        <a href="inventory-used.html" class="dashboard-card">
+          <h3>Used Inventory</h3>
+          <p>View usage history</p>
+        </a>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module" src="auth-protect.js"></script>
+
+</body>
+</html>
