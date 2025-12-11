@@ -1,118 +1,461 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Used Inventory | MG</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Used Inventory</title>
+<style>
+  :root{
+    --bg:#0b111b; 
+    --panel:rgba(255,255,255,0.04);
+    --accent:#00b4ff; 
+    --muted:#9fb6d4; 
+    --card:rgba(255,255,255,0.06);
+    --danger:#ef4444;
+  }
 
-  <style>
-    @media print {
-      body {
-        background: #fff !important;
-        color: #000 !important;
-      }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:radial-gradient(circle at 20% 30%, #101821,#070c12);
+    color:#e6eef6;
+    font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    padding-bottom:80px;
+  }
 
-      .top-bar,
-      .btn,
-      .btn-back,
-      .btn-logout,
-      .filters,
-      #fixedTotalBar {
-        display: none !important;
-      }
+  .container{
+    max-width:1100px;
+    margin:20px auto;
+    padding:22px;
+    background:var(--panel);
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.03);
+  }
 
-      .used-card {
-        border: 1px solid #000 !important;
-        background: #fff !important;
-        color: #000 !important;
-        box-shadow: none !important;
-        padding: 12px !important;
-      }
-    }
-  </style>
+  h1{
+    color:var(--accent);
+    text-align:center;
+    font-size:28px;
+    margin-bottom:10px;
+  }
+
+  /* FILTERS */
+  .filters{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:18px;
+    align-items:center;
+  }
+  .filters select,
+  .filters input{
+    padding:10px;
+    border-radius:8px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.06);
+    color:#fff;
+    min-width:160px;
+  }
+  #filterClear{
+    padding:10px 14px;
+    border-radius:8px;
+    border:none;
+    background:var(--danger);
+    color:white;
+    cursor:pointer;
+    font-weight:700;
+  }
+
+  .used-card{
+    background:var(--card);
+    padding:18px;
+    border-radius:12px;
+    margin-top:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .meta{ color:var(--muted); margin-top:6px; }
+
+  .btn{
+    background:var(--accent);
+    border:none;
+    color:#001;
+    padding:8px 12px;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .btn-delete{
+    background:var(--danger);
+    color:white;
+  }
+
+  .center-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+  }
+
+  .center-card{
+    width:95%;
+    max-width:520px;
+    background:#0f1724;
+    padding:18px;
+    border-radius:12px;
+  }
+
+  .detail-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px dashed rgba(255,255,255,0.05);
+  }
+
+  .detail-row strong{ color:var(--muted); }
+
+  #fixedTotalBar{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    background:#0f1724;
+    border-top:1px solid rgba(255,255,255,0.1);
+    padding:14px 22px;
+    font-size:20px;
+    font-weight:700;
+    color:var(--accent);
+    text-align:right;
+    z-index:999;
+  }
+</style>
 </head>
+<body>
 
-<body class="dashboard-body">
+<div class="container">
+  <h1>Used Inventory</h1>
 
-<header class="top-bar">
-  <h1 class="logo">MG</h1>
-  <div>
-    <a href="inventory-management.html" class="btn-back">← Back</a>
-    <button class="btn-logout" onclick="logoutUser()">Logout</button>
+  <!-- FILTERS -->
+  <div class="filters" aria-hidden="false">
+    <select id="filterCategory" aria-label="Filter by category">
+      <option value="all">All Categories</option>
+    </select>
+
+    <input id="filterFullDate" type="date" aria-label="Filter by full date (optional)">
+
+    <input id="filterMonthYear" type="month" aria-label="Filter by month and year (optional)">
+
+    <button id="filterClear" title="Clear filters">Clear Filters</button>
   </div>
-</header>
 
-<main class="dashboard-center">
-  <div class="dashboard-box" style="width:90%;max-width:900px;">
+  <div id="usedList"></div>
+</div>
 
-    <h2 class="welcome">Used Inventory</h2>
-    <p class="subtitle">Usage history & deduction records</p>
+<div id="fixedTotalBar">Total Qty: 0 | Total Amount: ₹0.00</div>
 
-    <!-- PDF BUTTON -->
-    <div style="text-align:right;margin-bottom:15px;">
-      <button class="btn" onclick="printUsedInventory()">Download Used Inventory PDF</button>
-    </div>
-
-    <div id="usedList"></div>
-
-  </div>
-</main>
+<div id="centerBackdrop" class="center-backdrop" role="dialog" aria-modal="true">
+  <div class="center-card" id="detailCard"></div>
+</div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import {
-    getFirestore, collection, getDocs
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-    authDomain: "mg-manager-3ab66.firebaseapp.com",
-    projectId: "mg-manager-3ab66",
-  };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, getDoc, doc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
+};
 
-  const usedList = document.getElementById("usedList");
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  window.printUsedInventory = function () {
-    const hide = document.querySelectorAll("button, .filters, #fixedTotalBar");
-    hide.forEach(el => el.style.display = "none");
+const usedList = document.getElementById("usedList");
+const detailCard = document.getElementById("detailCard");
+const centerBackdrop = document.getElementById("centerBackdrop");
+const fixedTotalBar = document.getElementById("fixedTotalBar");
 
-    window.print();
+const filterCategory = document.getElementById("filterCategory");
+const filterFullDate = document.getElementById("filterFullDate"); // yyyy-mm-dd (from browser)
+const filterMonthYear = document.getElementById("filterMonthYear"); // yyyy-mm (from browser)
+const filterClear = document.getElementById("filterClear");
 
-    setTimeout(() => {
-      hide.forEach(el => (el.style.display = ""));
-    }, 500);
-  };
+function escapeHtml(s){
+  if(s===null||s===undefined) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
 
-  async function loadUsed() {
-    usedList.innerHTML = "<p>Loading...</p>";
-    const snap = await getDocs(collection(db, "inventoryUsed"));
+/* parseUsedAt: accept many formats and return normalized yyyy-mm-dd and yyyy-mm */
+function parseUsedAt(raw){
+  if (!raw || typeof raw !== 'string') return null;
 
-    if (snap.empty) {
-      usedList.innerHTML = "<p>No usage history.</p>";
+  raw = raw.trim();
+
+  // 1) If begins with ISO yyyy-mm-dd
+  let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m){
+    const yyyy = m[1], mm = m[2], dd = m[3];
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 2) If format like MM/DD/YYYY or M/D/YYYY (with optional time and AM/PM)
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m){
+    const mm = String(m[1]).padStart(2,'0');
+    const dd = String(m[2]).padStart(2,'0');
+    const yyyy = m[3];
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 3) If format like DD/MM/YYYY (some users) possibly with comma/time
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m){
+    // To handle ambiguity between MM/DD and DD/MM, we try to detect:
+    // If month number > 12 then it's DD/MM
+    const a = Number(m[1]), b = Number(m[2]), y = m[3];
+    if (a > 12 && b <= 12){
+      // treat as DD/MM/YYYY
+      const dd = String(a).padStart(2,'0');
+      const mm = String(b).padStart(2,'0');
+      return { full: `${y}-${mm}-${dd}`, month: `${y}-${mm}` };
+    }
+    // otherwise earlier branch already handled as MM/DD
+  }
+
+  // 4) If format like "19-11-2025" or "19.11.2025"
+  m = raw.match(/^(\d{1,2})[-.](\d{1,2})[-.](\d{4})/);
+  if (m){
+    const dd = String(m[1]).padStart(2,'0');
+    const mm = String(m[2]).padStart(2,'0');
+    const yyyy = m[3];
+    // ambiguous but assume dd-mm-yyyy -> convert to yyyy-mm-dd
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // 5) Fallback: try Date.parse
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())){
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return { full: `${yyyy}-${mm}-${dd}`, month: `${yyyy}-${mm}` };
+  }
+
+  // could not parse
+  return null;
+}
+
+/* LOAD CATEGORY FILTERS FROM Firestore inventoryCategories */
+async function loadCategories() {
+  filterCategory.innerHTML = '<option value="all">All Categories</option>';
+  try {
+    const snap = await getDocs(collection(db,"inventoryCategories"));
+    snap.forEach(d=>{
+      const name = d.data().name;
+      if (!name) return;
+      const op = document.createElement("option");
+      op.value = name;
+      op.textContent = name;
+      filterCategory.appendChild(op);
+    });
+  } catch (err) {
+    console.error('Failed to load categories', err);
+  }
+}
+
+/* MAIN LOAD USED */
+async function loadUsed(){
+  usedList.innerHTML = "";
+
+  let totalAmount = 0;
+  let totalQty = 0;
+
+  try {
+    const snap = await getDocs(collection(db,"inventoryUsed"));
+
+    const catVal = (filterCategory.value || "all");
+    const fullDateVal = (filterFullDate.value || "");     // yyyy-mm-dd (browser)
+    const monthYearVal = (filterMonthYear.value || "");   // yyyy-mm
+
+    const filtered = [];
+
+    snap.forEach(docSnap=>{
+      const it = docSnap.data();
+      const id = docSnap.id;
+
+      if (!it) return;
+
+      // parse usedAt into normalized forms
+      const parsed = parseUsedAt(String(it.usedAt || ''));
+      if (!parsed){
+        // if cannot parse, still include item when no date filters selected.
+        // but when a date filter is active and cannot parse, item must not match.
+      }
+
+      const itemFullDate = parsed ? parsed.full : null; // yyyy-mm-dd
+      const itemMonthYear = parsed ? parsed.month : null; // yyyy-mm
+
+      let ok = true;
+
+      // CATEGORY filter (if selected)
+      if (catVal !== "all" && it.category !== catVal){
+        ok = false;
+      }
+
+      // FULL DATE filter (if selected) — this TAKES PRIORITY over month-year
+      if (fullDateVal !== ""){
+        // if parsed is null, we can't match -> mark not ok
+        if (!itemFullDate || itemFullDate !== fullDateVal){
+          ok = false;
+        }
+      } else {
+        // month-year only applied when full date is NOT selected
+        if (monthYearVal !== ""){
+          if (!itemMonthYear || itemMonthYear !== monthYearVal){
+            ok = false;
+          }
+        }
+      }
+
+      if (ok){
+        filtered.push({ id, ...it });
+      }
+    });
+
+    // compute totals from filtered list
+    filtered.forEach(it=>{
+      totalAmount += Number(it.amount || 0);
+      totalQty += Number(it.qty || 0);
+    });
+
+    if (filtered.length === 0){
+      usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">No used items found.</p>`;
+      fixedTotalBar.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
       return;
     }
 
-    usedList.innerHTML = "";
-
-    snap.forEach(d => {
-      const u = d.data();
-
-      usedList.innerHTML += `
-        <div class="used-card" style="margin-bottom:15px;">
-          <h3>${u.name}</h3>
-          <p>Used Qty: ${u.usedQty} ${u.unit}</p>
-          <p>Used For: ${u.usedFor}</p>
-          <p>Date: ${u.date}</p>
+    // Render filtered items
+    filtered.forEach(it=>{
+      const card = document.createElement("div");
+      card.className = "used-card";
+      card.innerHTML = `
+        <div style="max-width:78%">
+          <h3>${escapeHtml(it.name)}</h3>
+          <div class="meta">Qty: ${it.qty} ${escapeHtml(it.unit)}</div>
+          <div class="meta">Used At: ${escapeHtml(it.usedAt)}</div>
+          <div class="meta">Category: ${escapeHtml(it.category)}</div>
         </div>
+        <button class="btn">View</button>
       `;
-    });
-  }
+      usedList.appendChild(card);
 
+      card.querySelector("button").onclick = ()=> showUsedView(it.id);
+    });
+
+    fixedTotalBar.innerHTML = `Total Qty: ${totalQty} | Total Amount: ₹${totalAmount.toFixed(2)}`;
+  } catch (err) {
+    console.error('Failed to load used items', err);
+    usedList.innerHTML = `<p style="text-align:center;color:var(--muted);margin-top:18px">Error loading items.</p>`;
+    fixedTotalBar.innerHTML = `Total Qty: 0 | Total Amount: ₹0.00`;
+  }
+}
+
+/* VIEW DETAILS */
+async function showUsedView(id){
+  const ref = doc(db,"inventoryUsed",id);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return alert("Item not found");
+
+  const it = snap.data();
+
+  detailCard.innerHTML = `
+    <h2 style="text-align:center;color:var(--accent);margin-top:0">Used Item Details</h2>
+
+    <div class="detail-row"><strong>Name</strong><span>${escapeHtml(it.name)}</span></div>
+    <div class="detail-row"><strong>Quantity</strong><span>${it.qty} ${escapeHtml(it.unit)}</span></div>
+    <div class="detail-row"><strong>Price</strong><span>₹${Number(it.price).toFixed(2)}</span></div>
+    <div class="detail-row"><strong>Amount</strong><span>₹${Number(it.amount).toFixed(2)}</span></div>
+
+    <div class="detail-row"><strong>Invoice</strong><span>${escapeHtml(it.invoice)}</span></div>
+    <div class="detail-row"><strong>Reel</strong><span>${escapeHtml(it.reel)}</span></div>
+    <div class="detail-row"><strong>Supplier</strong><span>${escapeHtml(it.supplier)}</span></div>
+    <div class="detail-row"><strong>GSM</strong><span>${escapeHtml(it.gsm)}</span></div>
+    <div class="detail-row"><strong>BF</strong><span>${escapeHtml(it.bf)}</span></div>
+
+    <div class="detail-row"><strong>Category</strong><span>${escapeHtml(it.category)}</span></div>
+    <div class="detail-row"><strong>Original Date</strong><span>${escapeHtml(it.originalDate)}</span></div>
+    <div class="detail-row"><strong>Used At</strong><span>${escapeHtml(it.usedAt)}</span></div>
+
+    <div class="detail-row"><strong>Used For</strong><span>${escapeHtml(it.usedFor)}</span></div>
+    <div class="detail-row"><strong>Notes</strong><span>${escapeHtml(it.notes)}</span></div>
+
+    <div style="margin-top:16px;text-align:center;display:flex;gap:12px;justify-content:center">
+      <button class="btn-delete" id="delBtn">Delete</button>
+      <button class="btn" id="closeBtn">Close</button>
+    </div>
+  `;
+
+  centerBackdrop.style.display = "flex";
+
+  document.getElementById("closeBtn").onclick = ()=> {
+    centerBackdrop.style.display = "none";
+  };
+
+  document.getElementById("delBtn").onclick = async ()=>{
+    if (!confirm("Delete this used record?")) return;
+    await deleteDoc(doc(db,"inventoryUsed",id));
+    centerBackdrop.style.display = "none";
+    await loadUsed();
+  };
+}
+
+centerBackdrop.onclick = (e)=>{
+  if (e.target === centerBackdrop){
+    centerBackdrop.style.display = "none";
+  }
+};
+
+/* EVENTS */
+filterCategory.onchange = loadUsed;
+filterFullDate.onchange = () => {
+  // full date selected takes precedence over month
   loadUsed();
+};
+filterMonthYear.onchange = loadUsed;
+
+filterClear.onclick = ()=>{
+  filterCategory.value = "all";
+  filterFullDate.value = "";
+  filterMonthYear.value = "";
+  loadUsed();
+};
+
+/* INIT */
+(async ()=>{
+  await loadCategories();
+  await loadUsed();
+})();
+
 </script>
 
 </body>
