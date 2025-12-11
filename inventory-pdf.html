@@ -7,7 +7,13 @@
 
   <style>
     body { background:#0b111b;color:white;font-family:Poppins;padding:20px;text-align:center; }
-    .box { background:rgba(255,255,255,0.05);padding:25px;border-radius:12px;max-width:500px;margin:auto; }
+    .box {
+      background:rgba(255,255,255,0.05);
+      padding:25px;
+      border-radius:12px;
+      max-width:500px;
+      margin:auto;
+    }
     .btn {
       background:#00b4ff;
       border:none;
@@ -23,6 +29,7 @@
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -48,48 +55,98 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// -------------------- INVENTORY PDF --------------------
+function dateFormat(d){
+  if (!d) return "";
+  return d.replace("T"," ").split(".")[0];
+}
+
+// --------------------------------------------------
+// 📌 INVENTORY PDF (Professional Table Format)
+// --------------------------------------------------
 window.downloadInventoryPDF = async function () {
   const { jsPDF } = window.jspdf;
-  let pdf = new jsPDF();
+  let pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "A4" });
+
+  pdf.setFontSize(18);
+  pdf.text("MG Inventory Report", 40, 40);
 
   const snap = await getDocs(collection(db, "inventory"));
 
-  pdf.setFontSize(16);
-  pdf.text("Inventory Report", 10, 10);
-
-  let y = 20;
+  let tableData = [];
+  let index = 1;
 
   snap.forEach(d => {
     let it = d.data();
-    pdf.setFontSize(12);
-    pdf.text(`${it.name} | Qty: ${it.qty} ${it.unit} | Price: ₹${it.price}`, 10, y);
-    y += 8;
+    let amount = (Number(it.qty) || 0) * (Number(it.price) || 0);
+
+    tableData.push([
+      index,
+      it.name || "",
+      (it.qty || 0) + " " + (it.unit || ""),
+      "₹" + (it.price || 0),
+      "₹" + amount,
+      it.category || "",
+      it.date || ""
+    ]);
+
+    index++;
   });
 
-  pdf.save("inventory.pdf");
+  pdf.autoTable({
+    startY: 70,
+    head: [["S/N", "Item", "Qty", "Price", "Amount", "Category", "Date"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: { fillColor: [0, 180, 255], textColor: 255 },
+    styles: { fontSize: 10, cellPadding: 5 },
+    alternateRowStyles: { fillColor: [230, 247, 255] }
+  });
+
+  pdf.save("inventory-report.pdf");
 };
 
-// -------------------- USED INVENTORY PDF --------------------
+// --------------------------------------------------
+// 📌 USED INVENTORY PDF (Professional Table Format)
+// --------------------------------------------------
 window.downloadUsedPDF = async function () {
   const { jsPDF } = window.jspdf;
-  let pdf = new jsPDF();
+  let pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "A4" });
+
+  pdf.setFontSize(18);
+  pdf.text("MG Used Inventory Report", 40, 40);
 
   const snap = await getDocs(collection(db, "inventoryUsed"));
 
-  pdf.setFontSize(16);
-  pdf.text("Used Inventory Report", 10, 10);
-
-  let y = 20;
+  let tableData = [];
+  let index = 1;
 
   snap.forEach(d => {
     let it = d.data();
-    pdf.setFontSize(12);
-    pdf.text(`${it.name} | Used: ${it.qty} ${it.unit} | Amount: ₹${it.amount}`, 10, y);
-    y += 8;
+
+    tableData.push([
+      index,
+      it.name || "",
+      (it.qty || 0) + " " + (it.unit || ""),
+      "₹" + (it.price || 0),
+      "₹" + (it.amount || 0),
+      it.usedFor || "",
+      dateFormat(it.usedAt)
+    ]);
+
+    index++;
   });
 
-  pdf.save("used-inventory.pdf");
+  pdf.autoTable({
+    startY: 70,
+    head: [["S/N", "Item", "Qty", "Price", "Amount", "Used For", "Used At"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: { fillColor: [0, 180, 255], textColor: 255 },
+    styles: { fontSize: 10, cellPadding: 5 },
+    alternateRowStyles: { fillColor: [230, 247, 255] }
+  });
+
+  pdf.save("used-inventory-report.pdf");
 };
 
 </script>
