@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Export PDF | MG</title>
+
+  <style>
+    body { background:#0b111b;color:white;font-family:Poppins;padding:20px;text-align:center; }
+    .box { background:rgba(255,255,255,0.05);padding:25px;border-radius:12px;max-width:500px;margin:auto; }
+    .btn {
+      background:#00b4ff;
+      border:none;
+      padding:12px 20px;
+      border-radius:10px;
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+      margin-top:10px;
+      width:100%;
+    }
+    .btn:hover { opacity:0.8; }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<div class="box">
+  <h1 style="color:#00b4ff;">Export PDF</h1>
+  <p>Select what you want to download</p>
+
+  <button class="btn" onclick="downloadInventoryPDF()">Download Inventory PDF</button>
+  <button class="btn" onclick="downloadUsedPDF()">Download Used Inventory PDF</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// -------------------- INVENTORY PDF --------------------
+window.downloadInventoryPDF = async function () {
+  const { jsPDF } = window.jspdf;
+  let pdf = new jsPDF();
+
+  const snap = await getDocs(collection(db, "inventory"));
+
+  pdf.setFontSize(16);
+  pdf.text("Inventory Report", 10, 10);
+
+  let y = 20;
+
+  snap.forEach(d => {
+    let it = d.data();
+    pdf.setFontSize(12);
+    pdf.text(`${it.name} | Qty: ${it.qty} ${it.unit} | Price: ₹${it.price}`, 10, y);
+    y += 8;
+  });
+
+  pdf.save("inventory.pdf");
+};
+
+// -------------------- USED INVENTORY PDF --------------------
+window.downloadUsedPDF = async function () {
+  const { jsPDF } = window.jspdf;
+  let pdf = new jsPDF();
+
+  const snap = await getDocs(collection(db, "inventoryUsed"));
+
+  pdf.setFontSize(16);
+  pdf.text("Used Inventory Report", 10, 10);
+
+  let y = 20;
+
+  snap.forEach(d => {
+    let it = d.data();
+    pdf.setFontSize(12);
+    pdf.text(`${it.name} | Used: ${it.qty} ${it.unit} | Amount: ₹${it.amount}`, 10, y);
+    y += 8;
+  });
+
+  pdf.save("used-inventory.pdf");
+};
+
+</script>
+
+</body>
+</html>
