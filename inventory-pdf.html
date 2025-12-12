@@ -2,61 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Inventory PDF | MG</title>
+  <title>Inventory PDF Export | MG</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #0b111b;
-      color: white;
-      padding: 20px;
+      background:#0b111b;
+      font-family:Poppins, sans-serif;
+      color:white;
+      padding:30px;
     }
     .box {
-      max-width: 700px;
-      margin: auto;
-      background: rgba(255,255,255,0.06);
-      padding: 20px;
-      border-radius: 12px;
+      max-width:900px;
+      margin:auto;
+      background:rgba(255,255,255,0.06);
+      padding:25px;
+      border-radius:16px;
     }
     h1 {
-      color: #00b4ff;
+      color:#00b4ff;
+      margin-bottom:10px;
     }
     label {
-      font-size: 14px;
-      color: #ccc;
+      font-size:14px;
+      color:#c7d2e2;
     }
-    input {
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
-      margin-top: 8px;
-      margin-bottom: 15px;
-      width: 200px;
+    input[type="month"] {
+      padding:10px;
+      width:250px;
+      margin-top:10px;
+      margin-bottom:20px;
+      border-radius:10px;
+      border:none;
+      font-size:1rem;
     }
     button {
-      background: #00b4ff;
-      border: none;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
+      background:#00b4ff;
+      border:none;
+      padding:12px 18px;
+      color:white;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      margin-right:10px;
     }
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 14px;
-      background: white;
-      color: black;
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+      background:white;
+      color:black;
+      font-size:14px;
     }
     th, td {
-      padding: 8px;
-      border: 1px solid #ddd;
-      text-align: left;
+      padding:10px;
+      border:1px solid #ccc;
     }
     th {
-      background: #f0f0f0;
-      font-weight: bold;
+      background:#f2f2f2;
+      font-weight:700;
     }
   </style>
 </head>
@@ -69,10 +71,10 @@
   <label>Select Month</label><br>
   <input type="month" id="monthInput">
 
-  <br>
-  <button id="downloadBtn">Download Monthly PDF</button>
-
-  <div id="preview"></div>
+  <div style="margin-top:15px;">
+    <button id="downloadInventory">Download Inventory PDF</button>
+    <button id="downloadUsed">Download Used Inventory PDF</button>
+  </div>
 </div>
 
 
@@ -90,88 +92,126 @@
   const db = getFirestore(app);
 
 
-  document.getElementById("downloadBtn").onclick = async () => {
-    const month = document.getElementById("monthInput").value;
+  // -----------------------
+  // FUNCTION: PRINT WINDOW
+  // -----------------------
+  function openPrintWindow(title, month, tableHTML) {
+    const win = window.open("", "_blank");
 
-    if (!month) {
-      alert("Select a month");
-      return;
-    }
+    win.document.write(`
+      <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial; padding:20px; }
+          table { width:100%; border-collapse:collapse; margin-top:20px; }
+          th, td { border:1px solid #555; padding:8px; text-align:left; }
+          th { background:#eaeaea; }
+        </style>
+      </head>
+      <body>
+        <h2>${title}</h2>
+        <p><strong>Month:</strong> ${month}</p>
+        ${tableHTML}
+      </body>
+      </html>
+    `);
+
+    win.document.close();
+    win.print();
+  }
+
+
+
+  // -----------------------
+  // INVENTORY PDF BUTTON
+  // -----------------------
+  document.getElementById("downloadInventory").onclick = async () => {
+    const month = document.getElementById("monthInput").value;
+    if (!month) return alert("Select a month");
 
     const snap = await getDocs(collection(db, "inventory"));
-    let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                         .filter(i => i.date?.startsWith(month));
 
-    // Filter by month (YYYY-MM)
-    items = items.filter(i => i.date && i.date.startsWith(month));
+    if (items.length === 0) return alert("No inventory found for this month.");
 
-    if (items.length === 0) {
-      alert("No inventory found for this month.");
-      return;
-    }
-
-    let totalAmount = 0;
-
-    // Build table rows
-    let rows = "";
-    items.forEach((item, index) => {
-      const amt = Number(item.qty) * Number(item.price);
-      totalAmount += amt;
-
-      rows += `
+    let total = 0;
+    let rows = items.map((item, i) => {
+      const amt = item.qty * item.price;
+      total += amt;
+      return `
         <tr>
-          <td>${index + 1}</td>
+          <td>${i+1}</td>
           <td>${item.name}</td>
           <td>${item.qty}</td>
           <td>${item.unit}</td>
           <td>₹${item.price}</td>
           <td>₹${amt.toFixed(2)}</td>
           <td>${item.date}</td>
-        </tr>
-      `;
-    });
+        </tr>`;
+    }).join("");
 
-    // Prepare printable HTML
-    const html = `
-      <h2>Inventory Report</h2>
-      <p><strong>Month:</strong> ${month}</p>
-
+    const table = `
       <table>
-        <thead>
-          <tr>
-            <th>S.No</th>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Unit</th>
-            <th>Price</th>
-            <th>Amount</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit</th>
+          <th>Price</th>
+          <th>Amount</th>
+          <th>Date</th>
+        </tr>
+        ${rows}
       </table>
-
-      <h3>Total Amount: ₹${totalAmount.toFixed(2)}</h3>
+      <h3>Total Amount: ₹${total.toFixed(2)}</h3>
     `;
 
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html>
-      <head>
-        <title>Inventory PDF</title>
-        <style>
-          body { font-family: Arial; padding: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #777; padding: 8px; text-align: left; }
-          th { background: #f0f0f0; }
-          h2 { margin-bottom: 5px; }
-        </style>
-      </head>
-      <body>${html}</body>
-      </html>
-    `);
+    openPrintWindow("Inventory Report", month, table);
+  };
 
-    printWindow.document.close();
-    printWindow.print();
+
+
+  // -----------------------
+  // USED INVENTORY PDF BUTTON
+  // -----------------------
+  document.getElementById("downloadUsed").onclick = async () => {
+    const month = document.getElementById("monthInput").value;
+    if (!month) return alert("Select a month");
+
+    const snap = await getDocs(collection(db, "inventoryUsed"));
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                         .filter(i => i.date?.slice(0,7) === month);
+
+    if (items.length === 0) return alert("No used inventory found for this month.");
+
+    let rows = items.map((item, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.name}</td>
+        <td>${item.usedQty}</td>
+        <td>${item.unit}</td>
+        <td>${item.usedFor}</td>
+        <td>${item.date}</td>
+      </tr>
+    `).join("");
+
+    const table = `
+      <table>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Used Qty</th>
+          <th>Unit</th>
+          <th>Used For</th>
+          <th>Date</th>
+        </tr>
+        ${rows}
+      </table>
+    `;
+
+    openPrintWindow("Used Inventory Report", month, table);
   };
 
 </script>
