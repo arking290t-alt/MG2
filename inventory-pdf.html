@@ -1,153 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Export PDF | MG</title>
-
+  <meta charset="UTF-8">
+  <title>Inventory PDF | MG</title>
   <style>
-    body { background:#0b111b;color:white;font-family:Poppins;padding:20px;text-align:center; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b111b;
+      color: white;
+      padding: 20px;
+    }
     .box {
-      background:rgba(255,255,255,0.05);
-      padding:25px;
-      border-radius:12px;
-      max-width:500px;
-      margin:auto;
+      max-width: 700px;
+      margin: auto;
+      background: rgba(255,255,255,0.06);
+      padding: 20px;
+      border-radius: 12px;
     }
-    .btn {
-      background:#00b4ff;
-      border:none;
-      padding:12px 20px;
-      border-radius:10px;
-      color:white;
-      font-weight:600;
-      cursor:pointer;
-      margin-top:10px;
-      width:100%;
+    h1 {
+      color: #00b4ff;
     }
-    .btn:hover { opacity:0.8; }
+    label {
+      font-size: 14px;
+      color: #ccc;
+    }
+    input {
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      width: 200px;
+    }
+    button {
+      background: #00b4ff;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      background: white;
+      color: black;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
   </style>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
 
 <div class="box">
-  <h1 style="color:#00b4ff;">Export PDF</h1>
-  <p>Select what you want to download</p>
+  <h1>Inventory PDF Export</h1>
 
-  <button class="btn" onclick="downloadInventoryPDF()">Download Inventory PDF</button>
-  <button class="btn" onclick="downloadUsedPDF()">Download Used Inventory PDF</button>
+  <label>Select Month</label><br>
+  <input type="month" id="monthInput">
+
+  <br>
+  <button id="downloadBtn">Download Monthly PDF</button>
+
+  <div id="preview"></div>
 </div>
 
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, getDocs, collection } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+    authDomain: "mg-manager-3ab66.firebaseapp.com",
+    projectId: "mg-manager-3ab66",
+  };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-function dateFormat(d){
-  if (!d) return "";
-  return d.replace("T"," ").split(".")[0];
-}
 
-// --------------------------------------------------
-// 📌 INVENTORY PDF (Professional Table Format)
-// --------------------------------------------------
-window.downloadInventoryPDF = async function () {
-  const { jsPDF } = window.jspdf;
-  let pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "A4" });
+  document.getElementById("downloadBtn").onclick = async () => {
+    const month = document.getElementById("monthInput").value;
 
-  pdf.setFontSize(18);
-  pdf.text("MG Inventory Report", 40, 40);
+    if (!month) {
+      alert("Select a month");
+      return;
+    }
 
-  const snap = await getDocs(collection(db, "inventory"));
+    const snap = await getDocs(collection(db, "inventory"));
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  let tableData = [];
-  let index = 1;
+    // Filter by month (YYYY-MM)
+    items = items.filter(i => i.date && i.date.startsWith(month));
 
-  snap.forEach(d => {
-    let it = d.data();
-    let amount = (Number(it.qty) || 0) * (Number(it.price) || 0);
+    if (items.length === 0) {
+      alert("No inventory found for this month.");
+      return;
+    }
 
-    tableData.push([
-      index,
-      it.name || "",
-      (it.qty || 0) + " " + (it.unit || ""),
-      "₹" + (it.price || 0),
-      "₹" + amount,
-      it.category || "",
-      it.date || ""
-    ]);
+    let totalAmount = 0;
 
-    index++;
-  });
+    // Build table rows
+    let rows = "";
+    items.forEach((item, index) => {
+      const amt = Number(item.qty) * Number(item.price);
+      totalAmount += amt;
 
-  pdf.autoTable({
-    startY: 70,
-    head: [["S/N", "Item", "Qty", "Price", "Amount", "Category", "Date"]],
-    body: tableData,
-    theme: "grid",
-    headStyles: { fillColor: [0, 180, 255], textColor: 255 },
-    styles: { fontSize: 10, cellPadding: 5 },
-    alternateRowStyles: { fillColor: [230, 247, 255] }
-  });
+      rows += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.qty}</td>
+          <td>${item.unit}</td>
+          <td>₹${item.price}</td>
+          <td>₹${amt.toFixed(2)}</td>
+          <td>${item.date}</td>
+        </tr>
+      `;
+    });
 
-  pdf.save("inventory-report.pdf");
-};
+    // Prepare printable HTML
+    const html = `
+      <h2>Inventory Report</h2>
+      <p><strong>Month:</strong> ${month}</p>
 
-// --------------------------------------------------
-// 📌 USED INVENTORY PDF (Professional Table Format)
-// --------------------------------------------------
-window.downloadUsedPDF = async function () {
-  const { jsPDF } = window.jspdf;
-  let pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "A4" });
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Price</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
 
-  pdf.setFontSize(18);
-  pdf.text("MG Used Inventory Report", 40, 40);
+      <h3>Total Amount: ₹${totalAmount.toFixed(2)}</h3>
+    `;
 
-  const snap = await getDocs(collection(db, "inventoryUsed"));
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(`
+      <html>
+      <head>
+        <title>Inventory PDF</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #777; padding: 8px; text-align: left; }
+          th { background: #f0f0f0; }
+          h2 { margin-bottom: 5px; }
+        </style>
+      </head>
+      <body>${html}</body>
+      </html>
+    `);
 
-  let tableData = [];
-  let index = 1;
-
-  snap.forEach(d => {
-    let it = d.data();
-
-    tableData.push([
-      index,
-      it.name || "",
-      (it.qty || 0) + " " + (it.unit || ""),
-      "₹" + (it.price || 0),
-      "₹" + (it.amount || 0),
-      it.usedFor || "",
-      dateFormat(it.usedAt)
-    ]);
-
-    index++;
-  });
-
-  pdf.autoTable({
-    startY: 70,
-    head: [["S/N", "Item", "Qty", "Price", "Amount", "Used For", "Used At"]],
-    body: tableData,
-    theme: "grid",
-    headStyles: { fillColor: [0, 180, 255], textColor: 255 },
-    styles: { fontSize: 10, cellPadding: 5 },
-    alternateRowStyles: { fillColor: [230, 247, 255] }
-  });
-
-  pdf.save("used-inventory-report.pdf");
-};
+    printWindow.document.close();
+    printWindow.print();
+  };
 
 </script>
 
