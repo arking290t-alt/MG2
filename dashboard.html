@@ -1,107 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard | MG</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>MG Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  background:#0b111b;
+  font-family:Poppins,sans-serif;
+  color:white;
+}
+
+/* AI BUTTON */
+#aiBtn{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#00b4ff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  cursor:pointer;
+  box-shadow:0 0 20px rgba(0,180,255,0.6);
+  z-index:9999;
+}
+
+/* AI CHAT BOX */
+#aiBox{
+  position:fixed;
+  bottom:90px;
+  right:20px;
+  width:340px;
+  height:420px;
+  background:#0f1724;
+  border-radius:14px;
+  display:none;
+  flex-direction:column;
+  box-shadow:0 0 30px rgba(0,180,255,0.5);
+  z-index:9999;
+}
+
+#aiHeader{
+  background:#00b4ff;
+  color:#000;
+  padding:12px;
+  font-weight:700;
+  text-align:center;
+  border-radius:14px 14px 0 0;
+}
+
+#aiChat{
+  flex:1;
+  padding:10px;
+  overflow-y:auto;
+  font-size:14px;
+}
+
+.msg-user{
+  margin-bottom:8px;
+}
+.msg-ai{
+  margin-bottom:8px;
+  color:#00b4ff;
+}
+
+#aiInput{
+  border:none;
+  padding:12px;
+  outline:none;
+  background:#0b111b;
+  color:white;
+  border-radius:0 0 14px 14px;
+}
+</style>
 </head>
 
-<body class="dashboard-body">
-  <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
-    </div>
-  </header>
+<body>
 
-  <main class="dashboard-center">
-    <div class="dashboard-box">
+<h1 style="padding:20px;color:#00b4ff;">MG Dashboard</h1>
 
-      <h2 class="welcome">Welcome</h2>
-      <p class="subtitle">Manage staff, attendance, payments, jobs & inventory</p>
+<!-- AI BUTTON -->
+<div id="aiBtn">🤖</div>
 
-      <!-- ⭐ NEW CLEAN GROUPED GRID ⭐ -->
-      <div class="dashboard-grid" style="
-        display:flex;
-        gap:20px;
-        justify-content:center;
-        flex-wrap:wrap;
-        margin-top:20px;
-      ">
+<!-- AI BOX -->
+<div id="aiBox">
+  <div id="aiHeader">MG AI Assistant</div>
+  <div id="aiChat"></div>
+  <input id="aiInput" placeholder="Ask something and press Enter..." />
+</div>
 
-        <!-- ⭐ STAFF MANAGEMENT -->
-        <a href="staff-management.html" class="dashboard-card">
-          <h3>Staff Management</h3>
-          <p>Staff list & attendance</p>
-        </a>
+<script>
+const aiBtn = document.getElementById("aiBtn");
+const aiBox = document.getElementById("aiBox");
+const aiInput = document.getElementById("aiInput");
+const aiChat = document.getElementById("aiChat");
 
-        <!-- ⭐ JOB UPDATE -->
-        <a href="jobs.html" class="dashboard-card">
-          <h3>Job Update</h3>
-          <p>Add, manage & track job details</p>
-        </a>
+/* TOGGLE */
+aiBtn.onclick = () => {
+  aiBox.style.display = aiBox.style.display === "flex" ? "none" : "flex";
+};
 
-        <!-- ⭐ EXPENSES -->
-        <a href="expenses.html" class="dashboard-card">
-          <h3>Expenses</h3>
-          <p>Track business expenses</p>
-        </a>
+/* SEND MESSAGE */
+aiInput.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
 
-        <!-- ⭐ INVENTORY MANAGEMENT -->
-        <a href="inventory-management.html" class="dashboard-card">
-          <h3>Inventory Management</h3>
-          <p>Stock & used inventory</p>
-        </a>
+  const text = aiInput.value.trim();
+  if (!text) return;
 
-      </div>
+  aiChat.innerHTML += `<div class="msg-user"><b>You:</b> ${text}</div>`;
+  aiInput.value = "";
+  aiChat.scrollTop = aiChat.scrollHeight;
 
-      <div style="margin-top:18px;">
-        <button id="migrateBtn" class="migrate-btn" style="display:none">
-          Migrate Local Data → Firestore
-        </button>
-        <span id="migrateStatus" class="small"></span>
-      </div>
+  const res = await fetch(
+    "https://YOUR-WORKER-NAME.workers.dev",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    }
+  );
 
-    </div>
-  </main>
+  const data = await res.json();
 
-  <script type="module">
-    // Firebase initialization
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-      authDomain: "mg-manager-3ab66.firebaseapp.com",
-      projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.firebasestorage.app",
-      messagingSenderId: "330667005987",
-      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const logoutBtn = document.getElementById("logoutBtn");
-    const migrateBtn = document.getElementById("migrateBtn");
-
-    // Authentication check
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) return (location.href = "login.html");
-      const snap = await getDoc(doc(db, "users", user.uid));
-      const role = snap.exists() && snap.data().role ? snap.data().role : "staff";
-      if (role === "owner") migrateBtn.style.display = "inline-block";
-    });
-
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
-      location.href = "login.html";
-    };
-  </script>
+  aiChat.innerHTML += `<div class="msg-ai"><b>AI:</b> ${data.reply}</div>`;
+  aiChat.scrollTop = aiChat.scrollHeight;
+});
+</script>
 
 </body>
 </html>
