@@ -2,219 +2,196 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MG Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MG Dashboard</title>
 
 <style>
-/* ================= BASE ================= */
-body {
-  margin: 0;
-  font-family: Poppins, sans-serif;
-  background: radial-gradient(circle at top right, #0b1118, #080b10);
-  color: #e5eaf0;
+body{
+  margin:0;
+  font-family:Poppins, sans-serif;
+  background:radial-gradient(circle at top left,#0b111b,#06090f);
+  color:white;
 }
 
-/* ================= HEADER ================= */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 30px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+/* HEADER */
+header{
+  padding:20px 30px;
+  font-size:26px;
+  font-weight:700;
+  color:#00b4ff;
 }
 
-.logo {
-  font-size: 26px;
-  font-weight: 700;
-  color: #00b4ff;
+/* MAIN */
+.main{
+  padding:40px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
 }
 
-/* ================= DASHBOARD ================= */
-.dashboard {
-  padding: 40px;
-  padding-right: 380px; /* IMPORTANT: space for AI */
+.card{
+  background:rgba(255,255,255,0.05);
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  cursor:pointer;
+  transition:.3s;
+}
+.card:hover{
+  background:rgba(0,180,255,0.12);
+  transform:translateY(-5px);
+}
+.card h3{
+  color:#00b4ff;
+  margin-bottom:10px;
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap: 25px;
+/* AI BUTTON */
+#ai-toggle{
+  position:fixed;
+  bottom:25px;
+  right:25px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  border:none;
+  background:#00b4ff;
+  font-size:26px;
+  cursor:pointer;
+  z-index:9999;
+  box-shadow:0 0 25px rgba(0,180,255,.7);
 }
 
-.card {
-  background: rgba(255,255,255,0.06);
-  border-radius: 18px;
-  padding: 25px;
-  text-align: center;
-  transition: 0.3s;
-  cursor: pointer;
+/* AI CHAT */
+#ai-box{
+  position:fixed;
+  bottom:100px;
+  right:25px;
+  width:320px;
+  height:420px;
+  background:#0f1724;
+  border-radius:16px;
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  z-index:9999;
+  box-shadow:0 0 30px rgba(0,180,255,.6);
 }
 
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 0 25px rgba(0,180,255,0.35);
+#ai-header{
+  background:#00b4ff;
+  color:#001;
+  padding:10px;
+  text-align:center;
+  font-weight:700;
 }
 
-.card h3 {
-  color: #00b4ff;
-  margin-bottom: 8px;
+#ai-messages{
+  flex:1;
+  padding:10px;
+  overflow-y:auto;
+  font-size:14px;
 }
 
-/* ================= AI BUTTON ================= */
-#ai-toggle {
-  position: fixed;
-  bottom: 25px;
-  right: 25px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #00b4ff;
-  border: none;
-  cursor: pointer;
-  font-size: 24px;
-  color: #001;
-  z-index: 1000;
-  box-shadow: 0 0 20px rgba(0,180,255,0.6);
+#ai-input-area{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.1);
 }
-
-/* ================= AI PANEL ================= */
-#ai-container {
-  position: fixed;
-  bottom: 90px;
-  right: 30px;
-  width: 320px;
-  height: 420px;
-  background: #0f1724;
-  border-radius: 18px;
-  box-shadow: 0 0 35px rgba(0,180,255,0.45);
-  display: none;
-  z-index: 999;
-  overflow: hidden;
+#ai-input{
+  flex:1;
+  background:none;
+  border:none;
+  padding:10px;
+  color:white;
+  outline:none;
 }
-
-#ai-header {
-  background: #00b4ff;
-  color: #001;
-  padding: 12px;
-  font-weight: 700;
-  text-align: center;
-}
-
-#ai-messages {
-  height: 300px;
-  overflow-y: auto;
-  padding: 12px;
-  font-size: 14px;
-}
-
-.msg-user { color:#9fb6d4; margin-bottom:6px; }
-.msg-ai { color:#00b4ff; margin-bottom:12px; }
-
-#ai-input {
-  display: flex;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-#ai-input input {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  background: transparent;
-  color: white;
-  outline: none;
-}
-
-#ai-input button {
-  background: #00b4ff;
-  border: none;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-weight: 700;
-}
-
-/* ================= MOBILE ================= */
-@media(max-width:768px){
-  .dashboard {
-    padding-right: 40px;
-  }
-  #ai-container {
-    right: 10px;
-    width: 92%;
-  }
+#ai-send{
+  background:#00b4ff;
+  border:none;
+  padding:10px 14px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <div class="logo">MG Dashboard</div>
-</header>
+<header>MG Dashboard</header>
 
-<!-- ================= DASHBOARD CONTENT ================= -->
-<div class="dashboard">
-  <div class="cards">
-    <div class="card"><h3>Inventory</h3><p>Manage stock</p></div>
-    <div class="card"><h3>Jobs</h3><p>Production tracking</p></div>
-    <div class="card"><h3>Staff</h3><p>Attendance & salary</p></div>
-    <div class="card"><h3>Reports</h3><p>PDF & analytics</p></div>
+<div class="main">
+  <div class="card" onclick="location.href='inventory.html'">
+    <h3>Inventory</h3>
+    <p>Manage stock & materials</p>
+  </div>
+
+  <div class="card" onclick="location.href='jobs.html'">
+    <h3>Jobs</h3>
+    <p>Track production jobs</p>
+  </div>
+
+  <div class="card" onclick="location.href='staff.html'">
+    <h3>Staff</h3>
+    <p>Employees & attendance</p>
+  </div>
+
+  <div class="card" onclick="location.href='expenses.html'">
+    <h3>Expenses</h3>
+    <p>Company spending</p>
   </div>
 </div>
 
-<!-- ================= AI UI ================= -->
+<!-- AI -->
 <button id="ai-toggle">🤖</button>
 
-<div id="ai-container">
+<div id="ai-box">
   <div id="ai-header">MG AI Assistant</div>
   <div id="ai-messages"></div>
-  <div id="ai-input">
-    <input id="ai-text" placeholder="Ask anything…" />
+
+  <div id="ai-input-area">
+    <input id="ai-input" placeholder="Ask anything..." />
     <button id="ai-send">➤</button>
   </div>
 </div>
 
-<!-- ================= AI SCRIPT ================= -->
 <script>
-const AI_API_URL = "https://ai-backend.arking290t.workers.dev/";
+const AI_URL = "https://ai-backend.arking290t.workers.dev/";
 
-const aiBox = document.getElementById("ai-container");
 const toggle = document.getElementById("ai-toggle");
+const box = document.getElementById("ai-box");
 const sendBtn = document.getElementById("ai-send");
-const input = document.getElementById("ai-text");
+const input = document.getElementById("ai-input");
 const messages = document.getElementById("ai-messages");
 
 toggle.onclick = () => {
-  aiBox.style.display = aiBox.style.display === "none" ? "block" : "none";
+  box.style.display = box.style.display === "flex" ? "none" : "flex";
 };
 
 sendBtn.onclick = sendMessage;
-input.addEventListener("keydown", e => e.key === "Enter" && sendMessage());
+input.addEventListener("keydown", e => e.key==="Enter" && sendMessage());
 
-async function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
+async function sendMessage(){
+  const msg = input.value.trim();
+  if(!msg) return;
 
-  messages.innerHTML += `<div class="msg-user"><b>You:</b> ${text}</div>`;
+  messages.innerHTML += `<div style="color:#9fb6d4"><b>You:</b> ${msg}</div>`;
   input.value = "";
 
-  try {
-    const res = await fetch(AI_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
+  try{
+    const res = await fetch(AI_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message: msg })
     });
 
     const data = await res.json();
-    messages.innerHTML += `<div class="msg-ai"><b>AI:</b> ${data.reply}</div>`;
+    messages.innerHTML += `<div style="color:#00b4ff;margin-bottom:10px"><b>AI:</b> ${data.reply}</div>`;
     messages.scrollTop = messages.scrollHeight;
 
-  } catch (e) {
-    messages.innerHTML += `<div class="msg-ai">AI error. Try again.</div>`;
+  }catch(e){
+    messages.innerHTML += `<div style="color:red">AI error</div>`;
   }
 }
 </script>
 
 </body>
 </html>
-
