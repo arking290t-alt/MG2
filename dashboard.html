@@ -1,197 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MG Dashboard</title>
-
-<style>
-body{
-  margin:0;
-  font-family:Poppins, sans-serif;
-  background:radial-gradient(circle at top left,#0b111b,#06090f);
-  color:white;
-}
-
-/* HEADER */
-header{
-  padding:20px 30px;
-  font-size:26px;
-  font-weight:700;
-  color:#00b4ff;
-}
-
-/* MAIN */
-.main{
-  padding:40px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:20px;
-}
-
-.card{
-  background:rgba(255,255,255,0.05);
-  padding:30px;
-  border-radius:16px;
-  text-align:center;
-  cursor:pointer;
-  transition:.3s;
-}
-.card:hover{
-  background:rgba(0,180,255,0.12);
-  transform:translateY(-5px);
-}
-.card h3{
-  color:#00b4ff;
-  margin-bottom:10px;
-}
-
-/* AI BUTTON */
-#ai-toggle{
-  position:fixed;
-  bottom:25px;
-  right:25px;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  border:none;
-  background:#00b4ff;
-  font-size:26px;
-  cursor:pointer;
-  z-index:9999;
-  box-shadow:0 0 25px rgba(0,180,255,.7);
-}
-
-/* AI CHAT */
-#ai-box{
-  position:fixed;
-  bottom:100px;
-  right:25px;
-  width:320px;
-  height:420px;
-  background:#0f1724;
-  border-radius:16px;
-  display:none;
-  flex-direction:column;
-  overflow:hidden;
-  z-index:9999;
-  box-shadow:0 0 30px rgba(0,180,255,.6);
-}
-
-#ai-header{
-  background:#00b4ff;
-  color:#001;
-  padding:10px;
-  text-align:center;
-  font-weight:700;
-}
-
-#ai-messages{
-  flex:1;
-  padding:10px;
-  overflow-y:auto;
-  font-size:14px;
-}
-
-#ai-input-area{
-  display:flex;
-  border-top:1px solid rgba(255,255,255,.1);
-}
-#ai-input{
-  flex:1;
-  background:none;
-  border:none;
-  padding:10px;
-  color:white;
-  outline:none;
-}
-#ai-send{
-  background:#00b4ff;
-  border:none;
-  padding:10px 14px;
-  cursor:pointer;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | MG</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body>
+<body class="dashboard-body">
+  <header class="top-bar">
+    <h1 class="logo">MG</h1>
+    <div>
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </div>
+  </header>
 
-<header>MG Dashboard</header>
+  <main class="dashboard-center">
+    <div class="dashboard-box">
 
-<div class="main">
-  <div class="card" onclick="location.href='inventory.html'">
-    <h3>Inventory</h3>
-    <p>Manage stock & materials</p>
-  </div>
+      <h2 class="welcome">Welcome</h2>
+      <p class="subtitle">Manage staff, attendance, payments, jobs & inventory</p>
 
-  <div class="card" onclick="location.href='jobs.html'">
-    <h3>Jobs</h3>
-    <p>Track production jobs</p>
-  </div>
+      <!-- ⭐ DASHBOARD GRID -->
+      <div class="dashboard-grid" style="
+        display:flex;
+        gap:20px;
+        justify-content:center;
+        flex-wrap:wrap;
+        margin-top:20px;
+      ">
 
-  <div class="card" onclick="location.href='staff.html'">
-    <h3>Staff</h3>
-    <p>Employees & attendance</p>
-  </div>
+        <!-- STAFF MANAGEMENT -->
+        <a href="staff-management.html" class="dashboard-card">
+          <h3>Staff Management</h3>
+          <p>Staff list & attendance</p>
+        </a>
 
-  <div class="card" onclick="location.href='expenses.html'">
-    <h3>Expenses</h3>
-    <p>Company spending</p>
-  </div>
-</div>
+        <!-- JOB UPDATE -->
+        <a href="jobs.html" class="dashboard-card">
+          <h3>Job Update</h3>
+          <p>Add, manage & track job details</p>
+        </a>
 
-<!-- AI -->
-<button id="ai-toggle">🤖</button>
+        <!-- EXPENSES -->
+        <a href="expenses.html" class="dashboard-card">
+          <h3>Expenses</h3>
+          <p>Track business expenses</p>
+        </a>
 
-<div id="ai-box">
-  <div id="ai-header">MG AI Assistant</div>
-  <div id="ai-messages"></div>
+        <!-- INVENTORY MANAGEMENT -->
+        <a href="inventory-management.html" class="dashboard-card">
+          <h3>Inventory Management</h3>
+          <p>Stock & used inventory</p>
+        </a>
 
-  <div id="ai-input-area">
-    <input id="ai-input" placeholder="Ask anything..." />
-    <button id="ai-send">➤</button>
-  </div>
-</div>
+      </div>
 
-<script>
-const AI_URL = "https://ai-backend.arking290t.workers.dev/";
+      <div style="margin-top:18px;">
+        <button id="migrateBtn" class="migrate-btn" style="display:none">
+          Migrate Local Data → Firestore
+        </button>
+        <span id="migrateStatus" class="small"></span>
+      </div>
 
-const toggle = document.getElementById("ai-toggle");
-const box = document.getElementById("ai-box");
-const sendBtn = document.getElementById("ai-send");
-const input = document.getElementById("ai-input");
-const messages = document.getElementById("ai-messages");
+    </div>
+  </main>
 
-toggle.onclick = () => {
-  box.style.display = box.style.display === "flex" ? "none" : "flex";
-};
+  <script type="module">
+    // Firebase initialization
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-sendBtn.onclick = sendMessage;
-input.addEventListener("keydown", e => e.key==="Enter" && sendMessage());
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
 
-async function sendMessage(){
-  const msg = input.value.trim();
-  if(!msg) return;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  messages.innerHTML += `<div style="color:#9fb6d4"><b>You:</b> ${msg}</div>`;
-  input.value = "";
+    const logoutBtn = document.getElementById("logoutBtn");
+    const migrateBtn = document.getElementById("migrateBtn");
 
-  try{
-    const res = await fetch(AI_URL,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message: msg })
+    // Authentication check
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return (location.href = "login.html");
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const role = snap.exists() && snap.data().role ? snap.data().role : "staff";
+      if (role === "owner") migrateBtn.style.display = "inline-block";
     });
 
-    const data = await res.json();
-    messages.innerHTML += `<div style="color:#00b4ff;margin-bottom:10px"><b>AI:</b> ${data.reply}</div>`;
-    messages.scrollTop = messages.scrollHeight;
-
-  }catch(e){
-    messages.innerHTML += `<div style="color:red">AI error</div>`;
-  }
-}
-</script>
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      location.href = "login.html";
+    };
+  </script>
 
 </body>
 </html>
