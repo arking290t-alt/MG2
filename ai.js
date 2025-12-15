@@ -3,14 +3,12 @@ async function askAI(message) {
     "https://mg-ai-backend-kksjbyhykfxrrq8dgx2tvn.streamlit.app/?message=" +
     encodeURIComponent(message);
 
-  console.log("AI URL:", url);
+  const res = await fetch(url, { cache: "no-store" });
 
-  const res = await fetch(url);
-  console.log("Response status:", res.status);
+  if (!res.ok) {
+    throw new Error("Network error");
+  }
 
-  const text = await res.text();
-  console.log("Raw response:", text);
-
-  const data = JSON.parse(text);
+  const data = await res.json();
   return data.reply;
 }
