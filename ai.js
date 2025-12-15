@@ -1,27 +1,33 @@
-async function askAI(message) {
+async function askAI(message, attempt = 1) {
   const url =
     "https://mg-ai-backend-kksjbyhykfxrrq8dgx2tvn.streamlit.app/?message=" +
     encodeURIComponent(message);
 
-  const res = await fetch(url, {
-    method: "GET",
-    mode: "cors",
-    cache: "no-store"
-  });
-
-  const text = await res.text();   // 👈 IMPORTANT
-  console.log("AI raw response:", text);
-
-  let data;
   try {
-    data = JSON.parse(text);
-  } catch (e) {
-    throw new Error("Invalid JSON from AI");
-  }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000); // 20s
 
-  if (!data.reply) {
-    throw new Error("No reply field");
-  }
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      signal: controller.signal
+    });
 
-  return data.reply;
+    clearTimeout(timeout);
+
+    const text = await res.text();
+    const data = JSON.parse(text);
+
+    if (!data.reply) throw new Error("No reply");
+
+    return data.reply;
+
+  } catch (err) {
+    // 🔁 Auto-retry once (Streamlit waking up)
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 2500));
+      return askAI(message, attempt + 1);
+    }
+    throw err;
+  }
 }
