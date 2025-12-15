@@ -21,7 +21,7 @@
       <h2 class="welcome">Welcome</h2>
       <p class="subtitle">Manage staff, attendance, payments, jobs & inventory</p>
 
-      <!-- ⭐ DASHBOARD GRID -->
+      <!-- DASHBOARD GRID -->
       <div class="dashboard-grid" style="
         display:flex;
         gap:20px;
@@ -96,10 +96,12 @@
     </div>
   </main>
 
-  <!-- 🔗 AI JS -->
+  <!-- ========================= -->
+  <!-- 🤖 AI SCRIPTS (NON-MODULE) -->
+  <!-- ========================= -->
+
   <script src="ai.js"></script>
 
-  <!-- 🤖 AI CHAT LOGIC -->
   <script>
     async function sendAI() {
       const input = document.getElementById("ai-input");
@@ -115,12 +117,16 @@
         chat.innerHTML += `<p><b>AI:</b> ${reply}</p>`;
         chat.scrollTop = chat.scrollHeight;
       } catch (e) {
-        chat.innerHTML += `<p style="color:red;">AI error</p>`;
+        chat.innerHTML += `<p style="color:red;">AI is waking up, try again</p>`;
+        console.error(e);
       }
     }
   </script>
 
-  <!-- 🔥 FIREBASE (UNCHANGED) -->
+  <!-- ========================= -->
+  <!-- 🔥 FIREBASE (MODULE SCRIPT) -->
+  <!-- ========================= -->
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
@@ -144,7 +150,11 @@
     const migrateBtn = document.getElementById("migrateBtn");
 
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return (location.href = "login.html");
+      if (!user) {
+        location.href = "login.html";
+        return;
+      }
+
       const snap = await getDoc(doc(db, "users", user.uid));
       const role = snap.exists() && snap.data().role ? snap.data().role : "staff";
       if (role === "owner") migrateBtn.style.display = "inline-block";
