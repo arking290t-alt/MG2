@@ -1,6 +1,6 @@
 async function askAI(message) {
   const url =
-    "https://mg-ai.streamlit.app/?message=" +
+    "https://mg-ai-backend-kksjbyhykfxrrq8dgx2tvn.streamlit.app/?message=" +
     encodeURIComponent(message);
 
   const res = await fetch(url);
