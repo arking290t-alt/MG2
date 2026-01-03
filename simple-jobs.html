@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jobs | MG</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .job-form {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:20px;
+    }
+    .job-form input,
+    .job-form select {
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.05);
+      color:white;
+      min-width:200px;
+    }
+    .job-item {
+      background:rgba(255,255,255,0.05);
+      padding:14px;
+      border-radius:10px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .job-item small { color:#9fb6d4; }
+  </style>
+</head>
+
+<body class="dashboard-body">
+
+<header class="top-bar">
+  <h1 class="logo">MG</h1>
+  <div>
+    <a href="dashboard.html" class="btn-back">← Back</a>
+    <button class="btn-logout" onclick="logoutUser()">Logout</button>
+  </div>
+</header>
+
+<main class="dashboard-center">
+  <div class="dashboard-box" style="max-width:900px;width:100%;">
+
+    <h2 class="welcome">Jobs</h2>
+    <p class="subtitle">Add and manage customer jobs</p>
+
+    <!-- ADD CATEGORY -->
+    <div style="margin-bottom:15px;">
+      <input id="newCategory" placeholder="New Job Category">
+      <button class="add-btn" id="addCategoryBtn">Add Category</button>
+    </div>
+
+    <!-- JOB FORM -->
+    <div class="job-form">
+      <select id="categorySelect">
+        <option value="">Select Category</option>
+      </select>
+      <input id="jobName" placeholder="Job Name">
+      <input id="customerName" placeholder="Customer Name">
+      <input id="customerPhone" placeholder="Customer Phone">
+      <button class="add-btn" id="addJobBtn">Add Job</button>
+    </div>
+
+    <!-- JOB LIST -->
+    <div id="jobList"></div>
+
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const categorySelect = document.getElementById("categorySelect");
+const jobList = document.getElementById("jobList");
+
+// LOAD CATEGORIES
+async function loadCategories(){
+  categorySelect.innerHTML = `<option value="">Select Category</option>`;
+  const snap = await getDocs(collection(db,"simpleJobCategories"));
+  snap.forEach(d=>{
+    const opt = document.createElement("option");
+    opt.value = d.data().name;
+    opt.textContent = d.data().name;
+    categorySelect.appendChild(opt);
+  });
+}
+
+// ADD CATEGORY
+document.getElementById("addCategoryBtn").onclick = async ()=>{
+  const name = document.getElementById("newCategory").value.trim();
+  if(!name) return alert("Enter category");
+  await addDoc(collection(db,"simpleJobCategories"),{ name });
+  document.getElementById("newCategory").value="";
+  loadCategories();
+};
+
+// ADD JOB
+document.getElementById("addJobBtn").onclick = async ()=>{
+  const category = categorySelect.value;
+  const jobName = document.getElementById("jobName").value.trim();
+  const customerName = document.getElementById("customerName").value.trim();
+  const phone = document.getElementById("customerPhone").value.trim();
+
+  if(!category || !jobName || !customerName || !phone){
+    return alert("Fill all fields");
+  }
+
+  await addDoc(collection(db,"simpleJobs"),{
+    category,
+    jobName,
+    customerName,
+    phone,
+    createdAt: new Date().toISOString()
+  });
+
+  document.getElementById("jobName").value="";
+  document.getElementById("customerName").value="";
+  document.getElementById("customerPhone").value="";
+
+  loadJobs();
+};
+
+// LOAD JOBS
+async function loadJobs(){
+  jobList.innerHTML="";
+  const snap = await getDocs(collection(db,"simpleJobs"));
+  snap.forEach(d=>{
+    const j = d.data();
+    const div = document.createElement("div");
+    div.className="job-item";
+    div.innerHTML = `
+      <div>
+        <strong>${j.jobName}</strong><br>
+        <small>${j.category} | ${j.customerName} | ${j.phone}</small>
+      </div>
+      <small>${j.createdAt?.slice(0,10)}</small>
+    `;
+    jobList.appendChild(div);
+  });
+}
+
+loadCategories();
+loadJobs();
+</script>
+
+<script type="module" src="auth-protect.js"></script>
+
+</body>
+</html>
