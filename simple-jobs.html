@@ -1,107 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
 <title>Jobs | MG</title>
-<link rel="stylesheet" href="style.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-  /* FIX dropdown visibility */
-  select option {
-    color: #000;
-    background: #fff;
-  }
+body{
+  background:#0b111b;
+  font-family:Poppins,sans-serif;
+  color:#e5eaf0;
+  margin:0;
+}
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 24px;
+  background:rgba(255,255,255,0.05);
+}
+.logo{color:#00b4ff;font-size:1.6rem;font-weight:700;}
+.btn{background:#00b4ff;border:none;color:#000;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+.container{
+  max-width:900px;
+  margin:40px auto;
+  background:rgba(255,255,255,0.06);
+  padding:30px;
+  border-radius:18px;
+}
+h1{text-align:center;color:#00b4ff;margin-bottom:6px}
+.subtitle{text-align:center;color:#9fb6d4;margin-bottom:25px}
 
-  .job-form {
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-    margin-bottom:20px;
-  }
+/* form */
+.form-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+input,select{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.15);
+  background:#1c232b;
+  color:#fff;
+  outline:none;
+}
+select option{
+  background:#1c232b;
+  color:#fff;
+}
+.add-btn{
+  margin-top:10px;
+  background:#00b4ff;
+  border:none;
+  padding:10px 18px;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
 
-  .job-form input,
-  .job-form select {
-    padding:10px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.15);
-    background:rgba(255,255,255,0.05);
-    color:white;
-    min-width:180px;
-  }
-
-  .job-item {
-    background:rgba(255,255,255,0.05);
-    padding:14px;
-    border-radius:12px;
-    margin-bottom:12px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-  }
-
-  .job-meta small {
-    color:#9fb6d4;
-  }
-
-  .complete-btn {
-    background:#22c55e;
-    border:none;
-    padding:6px 10px;
-    border-radius:6px;
-    color:#000;
-    font-weight:600;
-    cursor:pointer;
-  }
-
-  .completed-badge {
-    color:#22c55e;
-    font-weight:700;
-  }
+/* job card */
+.job-item{
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;
+  padding:16px 18px;
+  margin-top:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.job-meta small{color:#9fb6d4}
+.complete-btn{
+  background:#22c55e;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
+.completed{
+  color:#22c55e;
+  font-weight:700;
+  margin-top:4px;
+}
+.pending{color:#ffd400;font-weight:700}
 </style>
 </head>
 
-<body class="dashboard-body">
+<body>
 
-<header class="top-bar">
-  <h1 class="logo">MG</h1>
+<header>
+  <div class="logo">MG</div>
   <div>
-    <a href="dashboard.html" class="btn-back">← Back</a>
-    <button class="btn-logout" onclick="logoutUser()">Logout</button>
+    <button class="btn" onclick="location.href='dashboard.html'">← Back</button>
   </div>
 </header>
 
-<main class="dashboard-center">
-<div class="dashboard-box" style="max-width:1000px;width:100%;">
+<div class="container">
+  <h1>Jobs</h1>
+  <div class="subtitle">Add and manage customer jobs</div>
 
-<h2 class="welcome">Jobs</h2>
-<p class="subtitle">Add and manage customer jobs</p>
+  <!-- CATEGORY -->
+  <div class="form-row">
+    <input id="newCategory" placeholder="New Job Category">
+    <button class="btn" onclick="addCategory()">Add Category</button>
+  </div>
 
-<!-- ADD CATEGORY -->
-<div style="margin-bottom:15px;">
-  <input id="newCategory" placeholder="New Job Category">
-  <button class="add-btn" id="addCategoryBtn">Add Category</button>
+  <!-- JOB FORM -->
+  <div class="form-row">
+    <select id="categorySelect">
+      <option value="">Select Category</option>
+    </select>
+    <input id="jobName" placeholder="Job Name">
+    <input id="customerName" placeholder="Customer Name">
+    <input id="customerPhone" placeholder="Customer Phone">
+    <input id="amount" type="number" placeholder="Amount ₹">
+  </div>
+
+  <button class="add-btn" onclick="addJob()">Add Job</button>
+
+  <!-- JOB LIST -->
+  <div id="jobList"></div>
 </div>
-
-<!-- JOB FORM -->
-<div class="job-form">
-  <select id="categorySelect">
-    <option value="">Select Category</option>
-  </select>
-
-  <input id="jobName" placeholder="Job Name">
-  <input id="customerName" placeholder="Customer Name">
-  <input id="customerPhone" placeholder="Customer Phone">
-  <input id="amount" type="number" placeholder="Amount ₹">
-
-  <button class="add-btn" id="addJobBtn">Add Job</button>
-</div>
-
-<!-- JOB LIST -->
-<div id="jobList"></div>
-
-</div>
-</main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
@@ -118,47 +139,44 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const categorySelect = document.getElementById("categorySelect");
+const catSelect = document.getElementById("categorySelect");
 const jobList = document.getElementById("jobList");
 
-// LOAD CATEGORIES
 async function loadCategories(){
-  categorySelect.innerHTML = `<option value="">Select Category</option>`;
+  catSelect.innerHTML = `<option value="">Select Category</option>`;
   const snap = await getDocs(collection(db,"simpleJobCategories"));
   snap.forEach(d=>{
-    const opt = document.createElement("option");
-    opt.value = d.data().name;
-    opt.textContent = d.data().name;
-    categorySelect.appendChild(opt);
+    const o=document.createElement("option");
+    o.value=d.data().name;
+    o.textContent=d.data().name;
+    catSelect.appendChild(o);
   });
 }
 
-// ADD CATEGORY
-document.getElementById("addCategoryBtn").onclick = async ()=>{
-  const name = newCategory.value.trim();
+window.addCategory = async ()=>{
+  const name = document.getElementById("newCategory").value.trim();
   if(!name) return alert("Enter category");
-  await addDoc(collection(db,"simpleJobCategories"),{ name });
-  newCategory.value="";
+  await addDoc(collection(db,"simpleJobCategories"),{name});
+  document.getElementById("newCategory").value="";
   loadCategories();
 };
 
-// ADD JOB
-document.getElementById("addJobBtn").onclick = async ()=>{
+window.addJob = async ()=>{
   const job = {
-    category: categorySelect.value,
+    category: catSelect.value,
     jobName: jobName.value.trim(),
     customerName: customerName.value.trim(),
     phone: customerPhone.value.trim(),
     amount: Number(amount.value) || 0,
-    status: "pending",
-    createdAt: new Date().toISOString()
+    status:"pending",
+    jobDate:new Date().toISOString().slice(0,10)
   };
 
-  if(!job.category || !job.jobName || !job.customerName || !job.phone){
-    return alert("Fill all details");
+  if(!job.category||!job.jobName||!job.customerName||!job.phone){
+    return alert("Fill all fields");
   }
 
-  await addDoc(collection(db,"simpleJobs"), job);
+  await addDoc(collection(db,"simpleJobs"),job);
 
   jobName.value="";
   customerName.value="";
@@ -168,56 +186,48 @@ document.getElementById("addJobBtn").onclick = async ()=>{
   loadJobs();
 };
 
-// MARK COMPLETED
-async function completeJob(id){
-  const by = prompt("Completed By?");
-  if(!by) return;
-
-  const money = prompt("Money Received ₹?");
-  if(money === null || isNaN(money)) return;
-
-  await updateDoc(doc(db,"simpleJobs",id),{
-    status:"completed",
-    completedBy: by,
-    moneyReceived: Number(money),
-    completedAt: new Date().toISOString()
-  });
-
-  loadJobs();
-}
-
-// LOAD JOBS
 async function loadJobs(){
   jobList.innerHTML="";
   const snap = await getDocs(collection(db,"simpleJobs"));
 
   snap.forEach(d=>{
-    const j = d.data();
-    const div = document.createElement("div");
+    const j=d.data();
+    const div=document.createElement("div");
     div.className="job-item";
 
-    div.innerHTML = `
+    div.innerHTML=`
       <div class="job-meta">
         <strong>${j.jobName}</strong><br>
-        <small>
-          ${j.category} | ${j.customerName} | ${j.phone} | ₹${j.amount}
-        </small><br>
-        ${j.status === "completed" ? `
-          <span class="completed-badge">
-            ✔ Completed by ${j.completedBy} | ₹${j.moneyReceived}
-          </span>` : ""}
-      </div>
-
-      <div>
-        ${j.status === "pending"
-          ? `<button class="complete-btn">Complete</button>`
-          : `<small>${j.completedAt?.slice(0,10)}</small>`
+        <small>${j.category} | ${j.customerName} | ${j.phone} | ₹${j.amount}</small><br>
+        <small>Date: ${j.jobDate}</small><br>
+        ${
+          j.status==="completed"
+          ? `<div class="completed">✔ Completed by ${j.completedBy} | ₹${j.moneyReceived} | ${j.completedDate}</div>`
+          : `<div class="pending">Pending</div>`
         }
       </div>
+      ${
+        j.status==="pending"
+        ? `<button class="complete-btn">Complete</button>`
+        : ``
+      }
     `;
 
-    if(j.status === "pending"){
-      div.querySelector(".complete-btn").onclick = ()=>completeJob(d.id);
+    if(j.status==="pending"){
+      div.querySelector(".complete-btn").onclick = async ()=>{
+        const by = prompt("Completed By?");
+        if(!by) return;
+        const money = prompt("Money Received ₹?");
+        if(isNaN(money)) return;
+
+        await updateDoc(doc(db,"simpleJobs",d.id),{
+          status:"completed",
+          completedBy:by,
+          moneyReceived:Number(money),
+          completedDate:new Date().toISOString().slice(0,10)
+        });
+        loadJobs();
+      };
     }
 
     jobList.appendChild(div);
@@ -227,8 +237,6 @@ async function loadJobs(){
 loadCategories();
 loadJobs();
 </script>
-
-<script type="module" src="auth-protect.js"></script>
 
 </body>
 </html>
