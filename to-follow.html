@@ -2,137 +2,90 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>To Follow Clients | MG</title>
+<title>To Follow | MG</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root{
-  --bg:#0b111b;
-  --panel:rgba(255,255,255,0.06);
-  --border:rgba(255,255,255,0.12);
-  --accent:#00b4ff;
-  --text:#e5eaf0;
-  --muted:#9fb0c5;
-  --green:#22c55e;
-  --red:#ef4444;
-}
-
-*{box-sizing:border-box;font-family:Poppins,sans-serif;}
-
 body{
   margin:0;
-  background:radial-gradient(circle at top,#101826,#070b11);
-  color:var(--text);
+  font-family:Poppins, sans-serif;
+  background:radial-gradient(circle at top,#0e141b,#070c12);
+  color:#e5eaf0;
 }
-
-/* HEADER */
 header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:16px 28px;
+  padding:16px 24px;
   background:rgba(255,255,255,0.04);
-  border-bottom:1px solid var(--border);
 }
-.logo{font-size:1.6rem;font-weight:700;color:var(--accent);}
-.back-btn{
-  border:1px solid var(--accent);
-  background:transparent;
-  color:var(--accent);
-  padding:8px 16px;
+.logo{color:#00b4ff;font-size:1.6rem;font-weight:700}
+.back{
+  border:1px solid #00b4ff;
+  background:none;
+  color:#00b4ff;
+  padding:8px 14px;
   border-radius:8px;
   cursor:pointer;
 }
-.back-btn:hover{background:var(--accent);color:#000}
 
-/* MAIN */
-.main{
-  padding:40px;
-  display:flex;
-  justify-content:center;
+.container{
+  max-width:1000px;
+  margin:30px auto;
+  background:rgba(255,255,255,0.05);
+  padding:30px;
+  border-radius:18px;
 }
 
-.panel{
-  width:100%;
-  max-width:1200px;
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:35px;
-  backdrop-filter:blur(18px);
-}
+h1{color:#00b4ff;margin-bottom:5px}
+.sub{color:#a1acba;margin-bottom:20px}
 
-h1{margin:0;color:var(--accent);}
-.subtitle{color:var(--muted);margin-bottom:25px}
-
-/* FORM */
 .form{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:16px;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-bottom:20px;
 }
 .form input{
-  padding:12px 14px;
+  padding:12px;
   border-radius:10px;
-  border:1px solid var(--border);
-  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.07);
   color:white;
-  outline:none;
 }
 .form button{
-  grid-column:span 4;
-  width:200px;
-  padding:12px;
+  grid-column:1/span 5;
+  background:#00b4ff;
+  color:black;
   border:none;
+  padding:12px;
   border-radius:10px;
-  background:var(--accent);
   font-weight:600;
   cursor:pointer;
 }
 
-/* CLIENT LIST */
-.list{margin-top:35px}
 .client{
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:16px 20px;
+  background:rgba(255,255,255,0.06);
+  padding:14px;
+  border-radius:12px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:12px;
+  margin-bottom:10px;
 }
-.client-info small{color:var(--muted)}
+.client small{color:#a1acba}
+
 .actions button{
-  margin-left:8px;
-  padding:6px 12px;
-  border-radius:8px;
+  margin-left:6px;
+  padding:6px 10px;
+  border-radius:6px;
   border:none;
   cursor:pointer;
-  font-size:0.85rem;
+  font-size:0.8rem;
 }
-.view{background:#64748b;color:white}
-.done{background:var(--green);color:white}
-.notdone{background:var(--red);color:white}
-
-/* POPUP */
-.popup{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.6);
-  display:none;
-  justify-content:center;
-  align-items:center;
-}
-.popup-box{
-  background:#111827;
-  border-radius:16px;
-  padding:25px;
-  width:320px;
-}
-.popup-box h3{margin-top:0;color:var(--accent)}
-.popup-box p{font-size:0.9rem;color:var(--muted)}
-.close{margin-top:15px;width:100%;padding:10px;border:none;border-radius:8px;background:var(--accent)}
+.view{background:#00b4ff;color:black}
+.done{background:#22c55e;color:black}
+.notdone{background:#ef4444;color:white}
 </style>
 </head>
 
@@ -140,103 +93,114 @@ h1{margin:0;color:var(--accent);}
 
 <header>
   <div class="logo">MG</div>
-  <button class="back-btn" onclick="location.href='follow-client.html'">← Back</button>
+  <button class="back" onclick="history.back()">← Back</button>
 </header>
 
-<div class="main">
-  <div class="panel">
+<div class="container">
+  <h1>To Follow</h1>
+  <div class="sub">Add clients and track follow-up status</div>
 
-    <h1>To Follow</h1>
-    <div class="subtitle">Add clients and track follow-up status</div>
-
-    <div class="form">
-      <input id="company" placeholder="Company Name">
-      <input id="name" placeholder="Client Name">
-      <input id="phone" placeholder="Phone Number">
-      <input id="type" placeholder="Type">
-      <button onclick="addClient()">Save Client</button>
-    </div>
-
-    <div class="list" id="list"></div>
-
+  <!-- ADD CLIENT -->
+  <div class="form">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
+    <input id="phone" placeholder="Phone (optional)">
+    <input id="type" placeholder="Job Type">
+    <input id="date" type="date">
+    <button onclick="saveClient()">Save Client</button>
   </div>
-</div>
 
-<!-- VIEW POPUP -->
-<div class="popup" id="popup">
-  <div class="popup-box">
-    <h3>Client Details</h3>
-    <p id="popupData"></p>
-    <button class="close" onclick="closePopup()">Close</button>
-  </div>
+  <div id="list"></div>
 </div>
 
 <script>
-const listEl=document.getElementById("list");
+const list = document.getElementById("list");
 
-function getData(key){
-  return JSON.parse(localStorage.getItem(key)||"[]");
+function getData(){
+  return JSON.parse(localStorage.getItem("clients") || "[]");
 }
-function setData(key,data){
-  localStorage.setItem(key,JSON.stringify(data));
+function setData(d){
+  localStorage.setItem("clients", JSON.stringify(d));
 }
 
-function addClient(){
-  const c={
-    company:company.value,
-    name:name.value,
-    phone:phone.value,
-    type:type.value,
-    date:new Date().toLocaleDateString()
+function saveClient(){
+  const company = document.getElementById("company").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const type = document.getElementById("type").value.trim();
+  const date = document.getElementById("date").value;
+
+  // ✅ STRICT & CORRECT VALIDATION
+  if(company === "" || name === "" || type === "" || date === ""){
+    alert("Please fill all required fields");
+    return;
+  }
+
+  const client = {
+    id: Date.now(),
+    company,
+    name,
+    phone,
+    type,
+    date,
+    status: "follow"
   };
-  if(!c.name||!c.phone) return alert("Enter required details");
-  const data=getData("toFollow");
-  data.push(c);
-  setData("toFollow",data);
+
+  const data = getData();
+  data.push(client);
+  setData(data);
+
+  document.getElementById("company").value="";
+  document.getElementById("name").value="";
+  document.getElementById("phone").value="";
+  document.getElementById("type").value="";
+  document.getElementById("date").value="";
+
   render();
-  document.querySelectorAll("input").forEach(i=>i.value="");
 }
 
 function render(){
-  const data=getData("toFollow");
-  listEl.innerHTML=data.length?"":"<small>No clients</small>";
-  data.forEach((c,i)=>{
-    listEl.innerHTML+=`
-      <div class="client">
-        <div class="client-info">
-          <strong>${c.company}</strong><br>
-          <small>${c.name} | ${c.phone}</small>
-        </div>
-        <div class="actions">
-          <button class="view" onclick='view(${i})'>View</button>
-          <button class="done" onclick='move(${i},"completed")'>Completed</button>
-          <button class="notdone" onclick='move(${i},"notCompleted")'>Not</button>
-        </div>
-      </div>`;
+  const data = getData().filter(c=>c.status==="follow");
+  list.innerHTML = data.length ? "" : "<small>No clients</small>";
+
+  data.forEach(c=>{
+    const div = document.createElement("div");
+    div.className="client";
+    div.innerHTML = `
+      <div>
+        <strong>${c.company}</strong><br>
+        <small>${c.name} | ${c.type} | ${c.phone || "-"} | ${c.date}</small>
+      </div>
+      <div class="actions">
+        <button class="view" onclick="viewClient(${c.id})">View</button>
+        <button class="done" onclick="mark(${c.id},'completed')">Completed</button>
+        <button class="notdone" onclick="mark(${c.id},'not')">Not</button>
+      </div>
+    `;
+    list.appendChild(div);
   });
 }
 
-function move(i,key){
-  const from=getData("toFollow");
-  const item=from.splice(i,1)[0];
-  setData("toFollow",from);
-  const target=getData(key);
-  target.push(item);
-  setData(key,target);
-  render();
+function mark(id,status){
+  const data = getData();
+  const i = data.findIndex(c=>c.id===id);
+  if(i !== -1){
+    data[i].status = status;
+    setData(data);
+    render();
+  }
 }
 
-function view(i){
-  const c=getData("toFollow")[i];
-  popupData.innerHTML=`
-    Company: ${c.company}<br>
-    Name: ${c.name}<br>
-    Phone: ${c.phone}<br>
-    Type: ${c.type}<br>
-    Date: ${c.date}`;
-  popup.style.display="flex";
+function viewClient(id){
+  const c = getData().find(x=>x.id===id);
+  alert(
+`Company: ${c.company}
+Name: ${c.name}
+Phone: ${c.phone || "-"}
+Type: ${c.type}
+Date: ${c.date}`
+  );
 }
-function closePopup(){popup.style.display="none"}
 
 render();
 </script>
