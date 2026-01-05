@@ -1,179 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Not Completed Clients | MG</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Not Completed Clients</title>
 <style>
-:root{
-  --bg:#0b111b;
-  --panel:rgba(255,255,255,0.06);
-  --border:rgba(255,255,255,0.12);
-  --accent:#00b4ff;
-  --text:#e5eaf0;
-  --muted:#9fb0c5;
-  --red:#ef4444;
-}
-
-*{box-sizing:border-box;font-family:Poppins,sans-serif;}
-
-body{
-  margin:0;
-  background:radial-gradient(circle at top,#101826,#070b11);
-  color:var(--text);
-}
-
-/* HEADER */
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 28px;
-  background:rgba(255,255,255,0.04);
-  border-bottom:1px solid var(--border);
-}
-.logo{font-size:1.6rem;font-weight:700;color:var(--accent);}
-.back-btn{
-  border:1px solid var(--accent);
-  background:transparent;
-  color:var(--accent);
-  padding:8px 16px;
-  border-radius:8px;
-  cursor:pointer;
-}
-.back-btn:hover{background:var(--accent);color:#000}
-
-/* MAIN */
-.main{
-  padding:40px;
-  display:flex;
-  justify-content:center;
-}
-
-.panel{
-  width:100%;
-  max-width:1100px;
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:35px;
-  backdrop-filter:blur(18px);
-}
-
-h1{margin:0;color:var(--red);}
-.subtitle{color:var(--muted);margin-bottom:25px}
-
-/* LIST */
-.client{
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:16px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-}
-.client small{color:var(--muted)}
-.view{
-  background:#64748b;
-  color:white;
-  border:none;
-  padding:6px 12px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-/* POPUP */
-.popup{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.6);
-  display:none;
-  justify-content:center;
-  align-items:center;
-}
-.popup-box{
-  background:#111827;
-  border-radius:16px;
-  padding:25px;
-  width:320px;
-}
-.popup-box h3{margin-top:0;color:var(--accent)}
-.popup-box p{font-size:0.9rem;color:var(--muted)}
-.close{
-  margin-top:15px;
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:var(--accent);
-}
+body{background:#0b111b;color:#e5eaf0;font-family:Poppins}
+.container{max-width:900px;margin:60px auto}
+.client{background:#1f2937;padding:15px;border-radius:10px;margin-bottom:10px}
+.remark{color:#f87171;font-weight:600}
 </style>
 </head>
-
 <body>
 
-<header>
-  <div class="logo">MG</div>
-  <button class="back-btn" onclick="location.href='follow-client.html'">← Back</button>
-</header>
-
-<div class="main">
-  <div class="panel">
-
-    <h1>Not Completed Clients</h1>
-    <div class="subtitle">Clients marked as not completed</div>
-
-    <div id="list"></div>
-
-  </div>
-</div>
-
-<!-- VIEW POPUP -->
-<div class="popup" id="popup">
-  <div class="popup-box">
-    <h3>Client Details</h3>
-    <p id="popupData"></p>
-    <button class="close" onclick="popup.style.display='none'">Close</button>
-  </div>
+<div class="container">
+<h1 style="color:#ef4444">Not Completed Clients</h1>
+<div id="list"></div>
 </div>
 
 <script>
+const data=JSON.parse(localStorage.getItem("clients"))||[];
 const list=document.getElementById("list");
+const bad=data.filter(c=>c.status==="not-completed");
 
-function getData(){
-  return JSON.parse(localStorage.getItem("notCompleted")||"[]");
-}
-
-function render(){
-  const data=getData();
-  list.innerHTML=data.length?"":"<small>No not-completed clients</small>";
-  data.forEach((c,i)=>{
-    list.innerHTML+=`
-      <div class="client">
-        <div>
-          <strong>${c.company}</strong><br>
-          <small>${c.name} | ${c.phone}</small>
-        </div>
-        <button class="view" onclick='view(${i})'>View</button>
-      </div>`;
-  });
-}
-
-function view(i){
-  const c=getData()[i];
-  popupData.innerHTML=`
-    Company: ${c.company}<br>
-    Name: ${c.name}<br>
-    Phone: ${c.phone}<br>
-    Type: ${c.type}<br>
-    Date: ${c.date}`;
-  popup.style.display="flex";
-}
-
-render();
+list.innerHTML=bad.length?bad.map(c=>`
+<div class="client">
+<b>${c.company}</b> — ${c.name}<br>
+${c.type} | ${c.phone} | ${c.date}<br>
+<div class="remark">Remark: ${c.remark}</div>
+<button onclick='alert(JSON.stringify(${JSON.stringify(c)},null,2))'>View</button>
+</div>
+`).join(""):"No pending clients";
 </script>
 
 </body>
