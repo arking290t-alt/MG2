@@ -11,29 +11,21 @@ body{
   font-family:Poppins,Arial,sans-serif;
   color:#fff;
 }
-
 header{
   padding:20px 40px;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-
-.logo{
-  font-size:22px;
-  font-weight:700;
-  color:#00b4ff;
-}
-
+.logo{color:#00b4ff;font-size:22px;font-weight:700}
 .back{
   border:1px solid #00b4ff;
+  background:transparent;
+  color:#00b4ff;
   padding:8px 16px;
   border-radius:10px;
-  color:#00b4ff;
-  background:transparent;
   cursor:pointer;
 }
-
 .container{
   max-width:1200px;
   margin:40px auto;
@@ -41,23 +33,14 @@ header{
   padding:30px;
   border-radius:20px;
 }
-
-h1{
-  color:#00b4ff;
-  margin-bottom:10px;
-}
-
-.subtitle{
-  color:#9ca3af;
-  margin-bottom:20px;
-}
+h1{color:#00b4ff}
+.subtitle{color:#9ca3af;margin-bottom:20px}
 
 .form{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:12px;
 }
-
 input{
   padding:12px;
   border-radius:10px;
@@ -65,11 +48,6 @@ input{
   background:#1f2937;
   color:#fff;
 }
-
-input::placeholder{
-  color:#6b7280;
-}
-
 .save{
   margin-top:15px;
   width:100%;
@@ -82,38 +60,56 @@ input::placeholder{
   cursor:pointer;
 }
 
-.table{
-  margin-top:30px;
-}
-
 .row{
   display:grid;
   grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 2fr;
   gap:10px;
-  align-items:center;
   background:#1f2937;
   padding:12px;
   border-radius:14px;
-  margin-bottom:10px;
+  margin-top:12px;
+  align-items:center;
 }
-
 .btn{
   padding:6px 12px;
   border:none;
   border-radius:8px;
-  font-size:13px;
-  cursor:pointer;
   color:#fff;
+  cursor:pointer;
+  font-size:13px;
 }
-
 .view{background:#3b82f6}
 .done{background:#22c55e}
 .not{background:#ef4444}
 .del{background:#6b7280}
 
-.empty{
-  color:#9ca3af;
-  margin-top:10px;
+.empty{color:#9ca3af;margin-top:10px}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal-box{
+  background:#111827;
+  padding:25px;
+  border-radius:16px;
+  width:400px;
+}
+.modal h3{color:#00b4ff;margin-bottom:10px}
+.modal p{margin:6px 0;color:#d1d5db}
+.close{
+  margin-top:15px;
+  width:100%;
+  padding:10px;
+  background:#0ea5e9;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -134,102 +130,109 @@ input::placeholder{
     <input id="name" placeholder="Client Name *">
     <input id="phone" placeholder="Phone (optional)">
     <input id="type" placeholder="Job Type *">
-    <input id="date" placeholder="Date (DD/MM/YYYY) *">
+    <input id="date" type="date">
   </div>
 
   <button class="save" onclick="saveClient()">Save Client</button>
 
-  <div class="table" id="list"></div>
+  <div id="list"></div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>Client Details</h3>
+    <div id="modalContent"></div>
+    <button class="close" onclick="closeModal()">Close</button>
+  </div>
 </div>
 
 <script>
-const KEY_FOLLOW = "toFollowClients";
-const KEY_DONE = "completedClients";
-const KEY_NOT = "notCompletedClients";
-
-const get = k => JSON.parse(localStorage.getItem(k)) || [];
-const set = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+const FOLLOW="toFollowClients", DONE="completedClients", NOT="notCompletedClients";
+const get=k=>JSON.parse(localStorage.getItem(k))||[];
+const set=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
 function saveClient(){
-  const company = document.getElementById("company").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const type = document.getElementById("type").value.trim();
-  const date = document.getElementById("date").value.trim();
+  const company=companyInput.value.trim();
+  const name=nameInput.value.trim();
+  const phone=phoneInput.value.trim();
+  const type=typeInput.value.trim();
+  const date=dateInput.value;
 
-  if(company==="" || name==="" || type==="" || date===""){
-    alert("Please fill all required fields (*)");
+  if(!company||!name||!type||!date){
+    alert("Fill required fields");
     return;
   }
 
-  const data = get(KEY_FOLLOW);
-  data.push({ company, name, phone, type, date });
-  set(KEY_FOLLOW, data);
+  const data=get(FOLLOW);
+  data.push({company,name,phone,type,date});
+  set(FOLLOW,data);
 
-  document.querySelectorAll("input").forEach(i => i.value="");
+  document.querySelectorAll("input").forEach(i=>i.value="");
   render();
 }
 
+function viewClient(c){
+  modalContent.innerHTML=`
+    <p><b>Company:</b> ${c.company}</p>
+    <p><b>Name:</b> ${c.name}</p>
+    <p><b>Phone:</b> ${c.phone||"-"}</p>
+    <p><b>Job:</b> ${c.type}</p>
+    <p><b>Date:</b> ${c.date}</p>
+    ${c.remark?`<p><b>Remark:</b> ${c.remark}</p>`:""}
+  `;
+  modal.style.display="flex";
+}
+function closeModal(){modal.style.display="none"}
+
 function markCompleted(i){
-  const follow = get(KEY_FOLLOW);
-  const done = get(KEY_DONE);
-  done.push(follow[i]);
-  follow.splice(i,1);
-  set(KEY_FOLLOW, follow);
-  set(KEY_DONE, done);
-  render();
+  const f=get(FOLLOW), d=get(DONE);
+  d.push(f[i]); f.splice(i,1);
+  set(FOLLOW,f); set(DONE,d); render();
 }
 
 function markNot(i){
-  const remark = prompt("Enter remark for Not Completed");
+  const remark=prompt("Enter remark");
   if(!remark) return;
-
-  const follow = get(KEY_FOLLOW);
-  const not = get(KEY_NOT);
-  follow[i].remark = remark;
-  not.push(follow[i]);
-  follow.splice(i,1);
-
-  set(KEY_FOLLOW, follow);
-  set(KEY_NOT, not);
-  render();
+  const f=get(FOLLOW), n=get(NOT);
+  f[i].remark=remark;
+  n.push(f[i]); f.splice(i,1);
+  set(FOLLOW,f); set(NOT,n); render();
 }
 
 function delClient(i){
-  if(!confirm("Delete this client?")) return;
-  const follow = get(KEY_FOLLOW);
-  follow.splice(i,1);
-  set(KEY_FOLLOW, follow);
-  render();
+  if(!confirm("Delete client?"))return;
+  const f=get(FOLLOW); f.splice(i,1);
+  set(FOLLOW,f); render();
 }
 
 function render(){
-  const list = document.getElementById("list");
-  const data = get(KEY_FOLLOW);
-  list.innerHTML = "";
-
-  if(data.length === 0){
-    list.innerHTML = `<p class="empty">No clients</p>`;
-    return;
-  }
-
+  const list=document.getElementById("list");
+  const data=get(FOLLOW);
+  list.innerHTML=data.length?"" : `<p class="empty">No clients</p>`;
   data.forEach((c,i)=>{
-    list.innerHTML += `
+    list.innerHTML+=`
       <div class="row">
         <div>${c.company}</div>
         <div>${c.name}</div>
-        <div>${c.phone || "-"}</div>
+        <div>${c.phone||"-"}</div>
         <div>${c.type}</div>
         <div>${c.date}</div>
         <div>
+          <button class="btn view" onclick='viewClient(${JSON.stringify(c)})'>View</button>
           <button class="btn done" onclick="markCompleted(${i})">Completed</button>
           <button class="btn not" onclick="markNot(${i})">Not</button>
           <button class="btn del" onclick="delClient(${i})">Delete</button>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
+
+const companyInput=company;
+const nameInput=name;
+const phoneInput=phone;
+const typeInput=type;
+const dateInput=date;
 
 render();
 </script>
