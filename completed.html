@@ -4,14 +4,16 @@
 <title>Completed Clients</title>
 <style>
 body{background:#0b111b;color:#fff;font-family:Poppins}
-.box{max-width:900px;margin:40px auto}
-.row{background:#1f2937;padding:12px;border-radius:10px;margin:10px 0}
-button{background:#ef4444;border:none;padding:6px 10px;border-radius:6px}
+.container{max-width:1000px;margin:40px auto;background:rgba(255,255,255,0.05);
+padding:30px;border-radius:18px}
+.row{background:#1f2937;padding:14px;border-radius:12px;margin-bottom:10px}
+button{background:#ef4444;border:none;padding:6px 12px;border-radius:6px}
+h1{color:#22c55e}
 </style>
 </head>
 <body>
-<div class="box">
-<h1 style="color:#22c55e">Completed Clients</h1>
+<div class="container">
+<h1>Completed Clients</h1>
 <div id="list"></div>
 </div>
 
@@ -19,21 +21,22 @@ button{background:#ef4444;border:none;padding:6px 10px;border-radius:6px}
 const list=document.getElementById("list");
 let arr=JSON.parse(localStorage.getItem("completedClients"))||[];
 
-if(arr.length===0){list.innerHTML="<p>No completed clients</p>";}
+if(!arr.length) list.innerHTML="<p>No completed clients</p>";
 
 arr.forEach((c,i)=>{
   list.innerHTML+=`
   <div class="row">
     <b>${c.company}</b> | ${c.name} | ${c.phone||"-"} | ${c.type} | ${c.date}
-    <button onclick="del(${i})">Delete</button>
+    <br><button onclick="del(${i})">Delete</button>
   </div>`;
 });
 
 function del(i){
-  if(!confirm("Delete?"))return;
-  arr.splice(i,1);
-  localStorage.setItem("completedClients",JSON.stringify(arr));
-  location.reload();
+  if(confirm("Delete?")){
+    arr.splice(i,1);
+    localStorage.setItem("completedClients",JSON.stringify(arr));
+    location.reload();
+  }
 }
 </script>
 </body>
