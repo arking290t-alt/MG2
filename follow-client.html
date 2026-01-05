@@ -8,7 +8,7 @@
 <style>
 body{
   margin:0;
-  font-family:Poppins, sans-serif;
+  font-family:Poppins,sans-serif;
   background:radial-gradient(circle at top,#0e141b,#070c12);
   color:#e5eaf0;
 }
@@ -30,7 +30,7 @@ header{
 }
 
 .container{
-  max-width:1000px;
+  max-width:1100px;
   margin:30px auto;
   background:rgba(255,255,255,0.05);
   padding:30px;
@@ -64,8 +64,15 @@ h1{color:#00b4ff;margin-bottom:5px}
   cursor:pointer;
 }
 
-.section{margin-top:30px}
-.section h2{margin-bottom:10px}
+.section{
+  margin-top:30px;
+}
+.section h2{
+  margin-bottom:10px;
+}
+.follow{color:#00b4ff}
+.completed{color:#22c55e}
+.not{color:#ef4444}
 
 .client{
   background:rgba(255,255,255,0.06);
@@ -101,9 +108,9 @@ h1{color:#00b4ff;margin-bottom:5px}
 
 <div class="container">
   <h1>Follow Clients</h1>
-  <div class="sub">Add client and mark status later</div>
+  <div class="sub">Add client and update status later</div>
 
-  <!-- ADD CLIENT -->
+  <!-- ADD CLIENT (ONLY TO FOLLOW) -->
   <div class="form">
     <input id="company" placeholder="Company Name">
     <input id="name" placeholder="Client Name">
@@ -114,14 +121,24 @@ h1{color:#00b4ff;margin-bottom:5px}
 
   <!-- TO FOLLOW -->
   <div class="section">
-    <h2>To Follow</h2>
-    <div id="followList"></div>
+    <h2 class="follow">To Follow</h2>
+    <div id="followList"><small>No clients</small></div>
+  </div>
+
+  <!-- COMPLETED -->
+  <div class="section">
+    <h2 class="completed">Completed</h2>
+    <div id="completedList"><small>No completed</small></div>
+  </div>
+
+  <!-- NOT COMPLETED -->
+  <div class="section">
+    <h2 class="not">Not Completed</h2>
+    <div id="notList"><small>No pending</small></div>
   </div>
 </div>
 
 <script>
-const followList = document.getElementById("followList");
-
 function getData(){
   return JSON.parse(localStorage.getItem("clients") || "[]");
 }
@@ -130,19 +147,22 @@ function setData(d){
 }
 
 function saveClient(){
-  const company = companyInput.value.trim();
-  const name = nameInput.value.trim();
-  const type = typeInput.value.trim();
-  const phone = phoneInput.value.trim();
+  const company = companyEl.value.trim();
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  const type = typeEl.value.trim();
 
   if(!company || !name || !type){
-    alert("Enter required details");
+    alert("Please fill required fields");
     return;
   }
 
   const client = {
     id: Date.now(),
-    company, name, phone, type,
+    company,
+    name,
+    phone,
+    type,
     date: new Date().toLocaleDateString(),
     status: "follow"
   };
@@ -151,55 +171,79 @@ function saveClient(){
   data.push(client);
   setData(data);
 
-  companyInput.value="";
-  nameInput.value="";
-  phoneInput.value="";
-  typeInput.value="";
+  companyEl.value="";
+  nameEl.value="";
+  phoneEl.value="";
+  typeEl.value="";
 
   render();
 }
+
+const companyEl = document.getElementById("company");
+const nameEl = document.getElementById("name");
+const phoneEl = document.getElementById("phone");
+const typeEl = document.getElementById("type");
 
 function render(){
-  const data = getData().filter(c=>c.status==="follow");
-  followList.innerHTML = data.length ? "" : "<small>No clients</small>";
+  const data = getData();
+  followList.innerHTML = "";
+  completedList.innerHTML = "";
+  notList.innerHTML = "";
 
-  data.forEach(c=>{
-    const div = document.createElement("div");
-    div.className="client";
-    div.innerHTML = `
+  let f=0,c=0,n=0;
+
+  data.forEach(cl=>{
+    const el = document.createElement("div");
+    el.className="client";
+    el.innerHTML=`
       <div>
-        <strong>${c.company}</strong><br>
-        <small>${c.name} | ${c.type} | ${c.phone || "—"} | ${c.date}</small>
+        <strong>${cl.company}</strong><br>
+        <small>${cl.name} | ${cl.type} | ${cl.phone||"-"} | ${cl.date}</small>
       </div>
       <div class="actions">
-        <button class="view" onclick="viewClient(${c.id})">View</button>
-        <button class="done" onclick="mark(${c.id},'completed')">Completed</button>
-        <button class="notdone" onclick="mark(${c.id},'not')">Not</button>
+        <button class="view" onclick="viewClient(${cl.id})">View</button>
+        ${cl.status==="follow" ? `
+          <button class="done" onclick="setStatus(${cl.id},'completed')">Completed</button>
+          <button class="notdone" onclick="setStatus(${cl.id},'not')">Not</button>
+        ` : ``}
       </div>
     `;
-    followList.appendChild(div);
+
+    if(cl.status==="follow"){followList.appendChild(el);f++}
+    if(cl.status==="completed"){completedList.appendChild(el);c++}
+    if(cl.status==="not"){notList.appendChild(el);n++}
   });
+
+  if(!f) followList.innerHTML="<small>No clients</small>";
+  if(!c) completedList.innerHTML="<small>No completed</small>";
+  if(!n) notList.innerHTML="<small>No pending</small>";
 }
 
-function mark(id,status){
+function setStatus(id,status){
   const data = getData();
-  const i = data.findIndex(c=>c.id===id);
-  data[i].status = status;
-  setData(data);
-  render();
+  const i = data.findIndex(x=>x.id===id);
+  if(i>-1){
+    data[i].status=status;
+    setData(data);
+    render();
+  }
 }
 
 function viewClient(id){
   const c = getData().find(x=>x.id===id);
   alert(
-    `Company: ${c.company}\nName: ${c.name}\nPhone: ${c.phone || "-"}\nType: ${c.type}\nDate: ${c.date}`
+`Company: ${c.company}
+Name: ${c.name}
+Phone: ${c.phone||"-"}
+Type: ${c.type}
+Date: ${c.date}
+Status: ${c.status}`
   );
 }
 
-const companyInput = document.getElementById("company");
-const nameInput = document.getElementById("name");
-const phoneInput = document.getElementById("phone");
-const typeInput = document.getElementById("type");
+const followList=document.getElementById("followList");
+const completedList=document.getElementById("completedList");
+const notList=document.getElementById("notList");
 
 render();
 </script>
