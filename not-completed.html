@@ -19,66 +19,75 @@ header{
 }
 .logo{color:#00b4ff;font-size:22px;font-weight:700}
 .back{
-  border:1px solid #00b4ff;
+  border:1px solid #ef4444;
   background:transparent;
-  color:#00b4ff;
+  color:#ef4444;
   padding:8px 16px;
   border-radius:10px;
   cursor:pointer;
 }
+
 .container{
-  max-width:1200px;
+  max-width:1100px;
   margin:40px auto;
   background:rgba(255,255,255,0.05);
   padding:30px;
   border-radius:20px;
 }
+
 h1{color:#ef4444}
 
 .row{
   display:grid;
-  grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 1.5fr;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;
   gap:10px;
   background:#1f2937;
   padding:12px;
   border-radius:14px;
-  margin-top:12px;
+  margin-top:10px;
   align-items:center;
 }
+
 .btn{
-  padding:6px 12px;
+  padding:6px 10px;
   border:none;
   border-radius:8px;
-  color:#fff;
   cursor:pointer;
   font-size:13px;
 }
-.view{background:#3b82f6}
-.del{background:#6b7280}
+.view{background:#3b82f6;color:#fff}
+.del{background:#6b7280;color:#fff}
+
 .empty{color:#9ca3af;margin-top:10px}
 
 /* MODAL */
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.6);
+  background:rgba(0,0,0,.6);
   display:none;
   align-items:center;
   justify-content:center;
 }
-.modal-box{
+.box{
   background:#111827;
   padding:25px;
   border-radius:16px;
-  width:400px;
+  width:380px;
 }
-.modal h3{color:#ef4444}
-.modal p{margin:6px 0;color:#d1d5db}
-.close{
-  margin-top:15px;
+.box h3{color:#ef4444}
+.box p{margin:6px 0;color:#d1d5db}
+.box .remark{
+  background:#1f2937;
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
+  color:#fca5a5;
+}
+.box button{
+  margin-top:12px;
   width:100%;
   padding:10px;
-  background:#ef4444;
   border:none;
   border-radius:10px;
   cursor:pointer;
@@ -98,56 +107,69 @@ h1{color:#ef4444}
   <div id="list"></div>
 </div>
 
-<div class="modal" id="modal">
-  <div class="modal-box">
+<!-- VIEW MODAL -->
+<div class="modal" id="viewModal">
+  <div class="box">
     <h3>Client Details</h3>
-    <div id="modalContent"></div>
-    <button class="close" onclick="closeModal()">Close</button>
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
   </div>
 </div>
 
 <script>
-const KEY="notCompletedClients";
+const KEY="followClients";
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-function viewClient(c){
-  modalContent.innerHTML=`
-    <p><b>Company:</b> ${c.company}</p>
-    <p><b>Name:</b> ${c.name}</p>
-    <p><b>Phone:</b> ${c.phone||"-"}</p>
-    <p><b>Job:</b> ${c.type}</p>
-    <p><b>Date:</b> ${c.date}</p>
-    <p><b>Remark:</b> ${c.remark}</p>
-  `;
-  modal.style.display="flex";
-}
-function closeModal(){modal.style.display="none"}
-
-function delClient(i){
-  if(!confirm("Delete client?"))return;
-  const d=get(); d.splice(i,1); set(d); render();
-}
-
 function render(){
-  const list=document.getElementById("list");
-  const data=get();
-  list.innerHTML=data.length?"" : `<p class="empty">No pending clients</p>`;
-  data.forEach((c,i)=>{
-    list.innerHTML+=`
+  const box=document.getElementById("list");
+  const data=get().filter(x=>x.status==="not");
+
+  box.innerHTML=data.length?"":"<p class='empty'>No pending clients</p>";
+
+  data.forEach((x,i)=>{
+    box.innerHTML+=`
       <div class="row">
-        <div>${c.company}</div>
-        <div>${c.name}</div>
-        <div>${c.phone||"-"}</div>
-        <div>${c.type}</div>
-        <div>${c.date}</div>
+        <div>${x.company}</div>
+        <div>${x.name}</div>
+        <div>${x.phone||"-"}</div>
+        <div>${x.job}</div>
+        <div>${x.date}</div>
         <div>
-          <button class="btn view" onclick='viewClient(${JSON.stringify(c)})'>View</button>
-          <button class="btn del" onclick="delClient(${i})">Delete</button>
+          <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
+          <button class="btn del" onclick="del(${i})">Delete</button>
         </div>
       </div>`;
   });
 }
+
+function view(x){
+  viewData.innerHTML=`
+    <p><b>Company:</b> ${x.company}</p>
+    <p><b>Name:</b> ${x.name}</p>
+    <p><b>Phone:</b> ${x.phone||"-"}</p>
+    <p><b>Job:</b> ${x.job}</p>
+    <p><b>Date:</b> ${x.date}</p>
+    <div class="remark"><b>Remark:</b><br>${x.remark||"No remark"}</div>
+  `;
+  viewModal.style.display="flex";
+}
+
+function del(index){
+  if(!confirm("Delete not completed client?")) return;
+  const all=get();
+  const pending=all.filter(x=>x.status==="not");
+  const item=pending[index];
+  const pos=all.indexOf(item);
+  all.splice(pos,1);
+  set(all);
+  render();
+}
+
+function closeModal(){
+  viewModal.style.display="none";
+}
+
 render();
 </script>
 
