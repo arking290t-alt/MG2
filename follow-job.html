@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Follow Jobs | MG</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body {
+    margin:0;
+    font-family: Poppins, sans-serif;
+    background: radial-gradient(circle at top, #0e141b, #070b10);
+    color:#e5eaf0;
+  }
+
+  header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px 28px;
+    background:rgba(255,255,255,0.05);
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+
+  .logo {
+    font-size:1.6rem;
+    font-weight:700;
+    color:#00b4ff;
+  }
+
+  .btn {
+    padding:8px 14px;
+    border-radius:8px;
+    border:1px solid #00b4ff;
+    background:transparent;
+    color:#00b4ff;
+    cursor:pointer;
+    font-weight:600;
+  }
+
+  .container {
+    max-width:900px;
+    margin:40px auto;
+    background:rgba(255,255,255,0.05);
+    border-radius:18px;
+    padding:30px;
+    box-shadow:0 0 40px rgba(0,180,255,0.15);
+  }
+
+  h1 {
+    color:#00b4ff;
+    margin-bottom:5px;
+  }
+
+  .subtitle {
+    color:#9fb6d4;
+    margin-bottom:25px;
+  }
+
+  .form {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap:14px;
+  }
+
+  input {
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.07);
+    color:white;
+    outline:none;
+  }
+
+  .add-btn {
+    grid-column: span 2;
+    padding:10px;
+    background:#00b4ff;
+    border:none;
+    color:black;
+    border-radius:10px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .section {
+    margin-top:30px;
+  }
+
+  .section h2 {
+    margin-bottom:12px;
+  }
+
+  .follow { color:#ffd400; }
+  .completed { color:#22c55e; }
+  .notdone { color:#ef4444; }
+
+  .job-card {
+    background:rgba(255,255,255,0.06);
+    padding:14px 16px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .job-info {
+    font-size:0.9rem;
+  }
+
+  .job-actions button {
+    margin-left:6px;
+    padding:6px 10px;
+    border-radius:6px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+  }
+
+  .btn-complete { background:#22c55e; color:black; }
+  .btn-not { background:#ef4444; color:white; }
+  .btn-del { background:#444; color:white; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">MG</div>
+  <button class="btn" onclick="history.back()">← Back</button>
+</header>
+
+<div class="container">
+  <h1>Follow Jobs</h1>
+  <div class="subtitle">Track follow-up jobs and mark status</div>
+
+  <!-- ADD FOLLOW JOB -->
+  <div class="form">
+    <input id="company" placeholder="Company Name">
+    <input id="client" placeholder="Client Name">
+    <input id="phone" placeholder="Phone Number">
+    <input id="type" placeholder="Job Type">
+    <button class="add-btn" onclick="addJob()">Save Follow Job</button>
+  </div>
+
+  <!-- FOLLOW -->
+  <div class="section">
+    <h2 class="follow">Follow</h2>
+    <div id="followList"></div>
+  </div>
+
+  <!-- COMPLETED -->
+  <div class="section">
+    <h2 class="completed">Completed</h2>
+    <div id="completedList"></div>
+  </div>
+
+  <!-- NOT COMPLETED -->
+  <div class="section">
+    <h2 class="notdone">Not Completed</h2>
+    <div id="notList"></div>
+  </div>
+</div>
+
+<script>
+  let jobs = JSON.parse(localStorage.getItem("followJobs")) || [];
+
+  function save() {
+    localStorage.setItem("followJobs", JSON.stringify(jobs));
+    render();
+  }
+
+  function addJob() {
+    const company = companyInput.value.trim();
+    const client = clientInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const type = typeInput.value.trim();
+
+    if (!company || !client) return alert("Enter company & client name");
+
+    jobs.push({
+      id: Date.now(),
+      company, client, phone, type,
+      status: "follow"
+    });
+
+    companyInput.value = clientInput.value = phoneInput.value = typeInput.value = "";
+    save();
+  }
+
+  function setStatus(id, status) {
+    const j = jobs.find(x => x.id === id);
+    if (j) j.status = status;
+    save();
+  }
+
+  function del(id) {
+    jobs = jobs.filter(j => j.id !== id);
+    save();
+  }
+
+  function render() {
+    followList.innerHTML = completedList.innerHTML = notList.innerHTML = "";
+
+    jobs.forEach(j => {
+      const div = document.createElement("div");
+      div.className = "job-card";
+      div.innerHTML = `
+        <div class="job-info">
+          <strong>${j.company}</strong><br>
+          ${j.client} | ${j.phone || "-"} | ${j.type || "-"}
+        </div>
+        <div class="job-actions">
+          ${j.status === "follow" ? `
+            <button class="btn-complete" onclick="setStatus(${j.id}, 'completed')">✔</button>
+            <button class="btn-not" onclick="setStatus(${j.id}, 'not')">✖</button>
+          ` : ""}
+          <button class="btn-del" onclick="del(${j.id})">🗑</button>
+        </div>
+      `;
+
+      if (j.status === "follow") followList.appendChild(div);
+      if (j.status === "completed") completedList.appendChild(div);
+      if (j.status === "not") notList.appendChild(div);
+    });
+  }
+
+  const companyInput = document.getElementById("company");
+  const clientInput = document.getElementById("client");
+  const phoneInput = document.getElementById("phone");
+  const typeInput = document.getElementById("type");
+
+  render();
+</script>
+
+</body>
+</html>
