@@ -1,71 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>To Follow</title>
+<meta charset="UTF-8">
+<title>To Follow Clients | MG</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body{background:#0b111b;color:white;font-family:Poppins}
-.box{max-width:1000px;margin:40px auto;padding:30px;background:rgba(255,255,255,0.05);border-radius:20px}
-input{padding:12px;border-radius:8px;border:none;background:#1b2432;color:white;width:100%}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer}
-.blue{background:#00b4ff}
-.green{background:#22c55e}
-.red{background:#ef4444;color:white}
-.client{margin-top:12px;padding:14px;background:rgba(255,255,255,0.08);border-radius:12px;display:flex;justify-content:space-between}
+:root{
+  --bg:#0b111b;
+  --panel:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.12);
+  --accent:#00b4ff;
+  --text:#e5eaf0;
+  --muted:#9fb0c5;
+  --green:#22c55e;
+  --red:#ef4444;
+}
+
+*{box-sizing:border-box;font-family:Poppins,sans-serif;}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#101826,#070b11);
+  color:var(--text);
+}
+
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 28px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid var(--border);
+}
+.logo{font-size:1.6rem;font-weight:700;color:var(--accent);}
+.back-btn{
+  border:1px solid var(--accent);
+  background:transparent;
+  color:var(--accent);
+  padding:8px 16px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.back-btn:hover{background:var(--accent);color:#000}
+
+/* MAIN */
+.main{
+  padding:40px;
+  display:flex;
+  justify-content:center;
+}
+
+.panel{
+  width:100%;
+  max-width:1200px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:35px;
+  backdrop-filter:blur(18px);
+}
+
+h1{margin:0;color:var(--accent);}
+.subtitle{color:var(--muted);margin-bottom:25px}
+
+/* FORM */
+.form{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+.form input{
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.05);
+  color:white;
+  outline:none;
+}
+.form button{
+  grid-column:span 4;
+  width:200px;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* CLIENT LIST */
+.list{margin-top:35px}
+.client{
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.client-info small{color:var(--muted)}
+.actions button{
+  margin-left:8px;
+  padding:6px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-size:0.85rem;
+}
+.view{background:#64748b;color:white}
+.done{background:var(--green);color:white}
+.notdone{background:var(--red);color:white}
+
+/* POPUP */
+.popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+.popup-box{
+  background:#111827;
+  border-radius:16px;
+  padding:25px;
+  width:320px;
+}
+.popup-box h3{margin-top:0;color:var(--accent)}
+.popup-box p{font-size:0.9rem;color:var(--muted)}
+.close{margin-top:15px;width:100%;padding:10px;border:none;border-radius:8px;background:var(--accent)}
 </style>
 </head>
+
 <body>
 
-<div class="box">
-<h2>To Follow</h2>
+<header>
+  <div class="logo">MG</div>
+  <button class="back-btn" onclick="location.href='follow-client.html'">← Back</button>
+</header>
 
-<div class="grid">
-  <input id="company" placeholder="Company">
-  <input id="name" placeholder="Client Name">
-  <input id="phone" placeholder="Phone">
-  <input id="type" placeholder="Type">
+<div class="main">
+  <div class="panel">
+
+    <h1>To Follow</h1>
+    <div class="subtitle">Add clients and track follow-up status</div>
+
+    <div class="form">
+      <input id="company" placeholder="Company Name">
+      <input id="name" placeholder="Client Name">
+      <input id="phone" placeholder="Phone Number">
+      <input id="type" placeholder="Type">
+      <button onclick="addClient()">Save Client</button>
+    </div>
+
+    <div class="list" id="list"></div>
+
+  </div>
 </div>
 
-<button class="blue" onclick="addClient()">Save Client</button>
-
-<div id="list"></div>
+<!-- VIEW POPUP -->
+<div class="popup" id="popup">
+  <div class="popup-box">
+    <h3>Client Details</h3>
+    <p id="popupData"></p>
+    <button class="close" onclick="closePopup()">Close</button>
+  </div>
 </div>
 
 <script>
-let store = JSON.parse(localStorage.getItem("clients")) || {follow:[],done:[],not:[]};
+const listEl=document.getElementById("list");
 
-function save(){localStorage.setItem("clients",JSON.stringify(store));render();}
+function getData(key){
+  return JSON.parse(localStorage.getItem(key)||"[]");
+}
+function setData(key,data){
+  localStorage.setItem(key,JSON.stringify(data));
+}
 
 function addClient(){
-  store.follow.push({
+  const c={
     company:company.value,
     name:name.value,
     phone:phone.value,
     type:type.value,
     date:new Date().toLocaleDateString()
-  });
-  company.value=name.value=phone.value=type.value="";
-  save();
-}
-
-function move(i,to){
-  store[to].push(store.follow[i]);
-  store.follow.splice(i,1);
-  save();
+  };
+  if(!c.name||!c.phone) return alert("Enter required details");
+  const data=getData("toFollow");
+  data.push(c);
+  setData("toFollow",data);
+  render();
+  document.querySelectorAll("input").forEach(i=>i.value="");
 }
 
 function render(){
-  list.innerHTML = store.follow.map((c,i)=>`
-    <div class="client">
-      <div><b>${c.company}</b><br>${c.name} | ${c.phone}</div>
-      <div>
-        <button class="blue" onclick="alert(JSON.stringify(${JSON.stringify(c)},null,2))">View</button>
-        <button class="green" onclick="move(${i},'done')">Completed</button>
-        <button class="red" onclick="move(${i},'not')">Not</button>
-      </div>
-    </div>
-  `).join("") || "No clients";
+  const data=getData("toFollow");
+  listEl.innerHTML=data.length?"":"<small>No clients</small>";
+  data.forEach((c,i)=>{
+    listEl.innerHTML+=`
+      <div class="client">
+        <div class="client-info">
+          <strong>${c.company}</strong><br>
+          <small>${c.name} | ${c.phone}</small>
+        </div>
+        <div class="actions">
+          <button class="view" onclick='view(${i})'>View</button>
+          <button class="done" onclick='move(${i},"completed")'>Completed</button>
+          <button class="notdone" onclick='move(${i},"notCompleted")'>Not</button>
+        </div>
+      </div>`;
+  });
 }
+
+function move(i,key){
+  const from=getData("toFollow");
+  const item=from.splice(i,1)[0];
+  setData("toFollow",from);
+  const target=getData(key);
+  target.push(item);
+  setData(key,target);
+  render();
+}
+
+function view(i){
+  const c=getData("toFollow")[i];
+  popupData.innerHTML=`
+    Company: ${c.company}<br>
+    Name: ${c.name}<br>
+    Phone: ${c.phone}<br>
+    Type: ${c.type}<br>
+    Date: ${c.date}`;
+  popup.style.display="flex";
+}
+function closePopup(){popup.style.display="none"}
+
 render();
 </script>
 
