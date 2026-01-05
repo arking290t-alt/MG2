@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Jobs | MG</title>
+<title>Simple Jobs | MG</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -13,81 +13,68 @@ body{
   margin:0;
 }
 header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 24px;
   background:rgba(255,255,255,0.05);
+  padding:14px 22px;
+  display:flex;
+  gap:12px;
 }
-.logo{color:#00b4ff;font-size:1.6rem;font-weight:700;}
-.btn{
-  background:#00b4ff;
-  border:none;
-  color:#000;
+.tab{
   padding:8px 14px;
   border-radius:8px;
-  font-weight:600;
   cursor:pointer;
+  font-weight:600;
+  background:rgba(255,255,255,0.05);
+}
+.tab.active{
+  background:#00b4ff;
+  color:black;
 }
 .container{
   max-width:900px;
-  margin:40px auto;
-  background:rgba(255,255,255,0.06);
-  padding:30px;
-  border-radius:18px;
+  margin:30px auto;
+  background:rgba(255,255,255,0.05);
+  padding:25px;
+  border-radius:16px;
 }
-h1{text-align:center;color:#00b4ff;}
-.subtitle{text-align:center;color:#9fb6d4;margin-bottom:24px}
+.hidden{display:none}
 
-/* form */
-.form-row{
+.form{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:12px;
-  margin-bottom:14px;
+  margin-bottom:18px;
 }
-input,select{
+input{
   padding:10px;
   border-radius:8px;
-  border:1px solid rgba(255,255,255,0.15);
-  background:#1c232b;
-  color:#fff;
-}
-select option{
-  background:#1c232b;
-  color:#fff;
-}
-.add-btn{
-  background:#00b4ff;
   border:none;
-  padding:10px 18px;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
-  margin-bottom:20px;
+  background:#111827;
+  color:white;
 }
+button{
+  padding:8px 14px;
+  border-radius:8px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+}
+.save{background:#00b4ff;color:black}
+.done{background:#22c55e;color:black}
+.not{background:#ef4444;color:white}
 
-/* job card */
-.job-item{
-  background:rgba(255,255,255,0.05);
-  border-radius:14px;
-  padding:16px 18px;
-  margin-top:14px;
+.card{
+  background:rgba(255,255,255,0.06);
+  padding:14px;
+  border-radius:12px;
+  margin-top:10px;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-.job-meta small{color:#9fb6d4;display:block}
-.pending{color:#ffd400;font-weight:700}
-.completed{color:#22c55e;font-weight:700}
-
-.complete-btn{
-  background:#22c55e;
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:700;
+.card small{color:#9fb6d4}
+.section-title{
+  margin-top:24px;
+  color:#ffd400;
 }
 </style>
 </head>
@@ -95,35 +82,47 @@ select option{
 <body>
 
 <header>
-  <div class="logo">MG</div>
-  <button class="btn" onclick="location.href='dashboard.html'">← Back</button>
+  <div class="tab active" onclick="openTab('client')">Client</div>
+  <div class="tab" onclick="openTab('job')">Job</div>
+  <div class="tab" onclick="openTab('jobs')">Jobs</div>
 </header>
 
 <div class="container">
-  <h1>Jobs</h1>
-  <div class="subtitle">Add and manage customer jobs</div>
 
-  <!-- CATEGORY -->
-  <div class="form-row">
-    <input id="newCategory" placeholder="New Job Category">
-    <button class="btn" onclick="addCategory()">Add Category</button>
+<!-- CLIENT TAB -->
+<div id="client">
+
+  <h2>Client Follow</h2>
+
+  <div class="form">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
+    <input id="phone" placeholder="Phone Number">
+    <input id="type" placeholder="Type">
+    <button class="save" onclick="addClient()">Save Client</button>
   </div>
 
-  <!-- JOB FORM -->
-  <div class="form-row">
-    <select id="categorySelect">
-      <option value="">Select Category</option>
-    </select>
-    <input id="jobName" placeholder="Job Name">
-    <input id="customerName" placeholder="Customer Name">
-    <input id="customerPhone" placeholder="Customer Phone">
-    <input id="amount" type="number" placeholder="Amount ₹">
-  </div>
+  <h3 class="section-title">Follow</h3>
+  <div id="followList"></div>
 
-  <button class="add-btn" onclick="addJob()">Add Job</button>
+  <h3 class="section-title">Completed</h3>
+  <div id="completedList"></div>
 
-  <!-- JOB LIST -->
-  <div id="jobList"></div>
+  <h3 class="section-title">Not Completed</h3>
+  <div id="notCompletedList"></div>
+
+</div>
+
+<!-- JOB TAB -->
+<div id="job" class="hidden">
+  <h2>Job (Coming Next)</h2>
+</div>
+
+<!-- JOBS TAB -->
+<div id="jobs" class="hidden">
+  <h2>Jobs (Coming Next)</h2>
+</div>
+
 </div>
 
 <script type="module">
@@ -141,110 +140,71 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const catSelect = document.getElementById("categorySelect");
-const jobList = document.getElementById("jobList");
-
-/* ---------- CATEGORIES ---------- */
-async function loadCategories(){
-  catSelect.innerHTML = `<option value="">Select Category</option>`;
-  const snap = await getDocs(collection(db,"simpleJobCategories"));
-  snap.forEach(d=>{
-    const o=document.createElement("option");
-    o.value=d.data().name;
-    o.textContent=d.data().name;
-    catSelect.appendChild(o);
+/* TABS */
+window.openTab = (id)=>{
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  event.target.classList.add("active");
+  ["client","job","jobs"].forEach(x=>{
+    document.getElementById(x).classList.add("hidden");
   });
-}
-
-window.addCategory = async ()=>{
-  const name=document.getElementById("newCategory").value.trim();
-  if(!name) return alert("Enter category");
-  await addDoc(collection(db,"simpleJobCategories"),{name});
-  document.getElementById("newCategory").value="";
-  loadCategories();
+  document.getElementById(id).classList.remove("hidden");
 };
 
-/* ---------- ADD JOB ---------- */
-window.addJob = async ()=>{
-  const job={
-    category:catSelect.value,
-    jobName:jobName.value.trim(),
-    customerName:customerName.value.trim(),
-    phone:customerPhone.value.trim(),
-    amount:Number(amount.value)||0,
-    status:"pending",
-    jobDate:new Date().toISOString().slice(0,10)
-  };
+/* ADD CLIENT */
+window.addClient = async ()=>{
+  if(!company.value || !name.value || !phone.value) return alert("Fill all fields");
 
-  if(!job.category||!job.jobName||!job.customerName||!job.phone){
-    return alert("Fill all fields");
-  }
+  await addDoc(collection(db,"clients"),{
+    company:company.value,
+    name:name.value,
+    phone:phone.value,
+    type:type.value,
+    status:"follow",
+    createdAt:new Date().toISOString()
+  });
 
-  await addDoc(collection(db,"simpleJobs"),job);
-
-  jobName.value="";
-  customerName.value="";
-  customerPhone.value="";
-  amount.value="";
-
-  loadJobs();
+  company.value=name.value=phone.value=type.value="";
+  loadClients();
 };
 
-/* ---------- LOAD JOBS ---------- */
-async function loadJobs(){
-  jobList.innerHTML="";
-  const snap=await getDocs(collection(db,"simpleJobs"));
+/* LOAD CLIENTS */
+async function loadClients(){
+  followList.innerHTML="";
+  completedList.innerHTML="";
+  notCompletedList.innerHTML="";
 
+  const snap = await getDocs(collection(db,"clients"));
   snap.forEach(d=>{
-    const j=d.data();
+    const c=d.data();
     const div=document.createElement("div");
-    div.className="job-item";
-
+    div.className="card";
     div.innerHTML=`
-      <div class="job-meta">
-        <strong>${j.jobName}</strong>
-        <small>${j.category} | ${j.customerName} | ${j.phone}</small>
-        <small>Amount: ₹${j.amount}</small>
-        <small>Date: ${j.jobDate}</small>
-        ${
-          j.status==="completed"
-          ? `<div class="completed">✔ Completed<br>
-             By: ${j.completedBy}<br>
-             Received: ₹${j.moneyReceived}<br>
-             Date: ${j.completedDate}
-            </div>`
-          : `<div class="pending">Pending</div>`
-        }
+      <div>
+        <strong>${c.company}</strong><br>
+        <small>${c.name} | ${c.phone} | ${c.type}</small>
       </div>
-      ${
-        j.status==="pending"
-        ? `<button class="complete-btn">Complete</button>`
-        : ``
-      }
+      <div>
+        <button class="done">Completed</button>
+        <button class="not">Not</button>
+      </div>
     `;
 
-    if(j.status==="pending"){
-      div.querySelector(".complete-btn").onclick=async()=>{
-        const by=prompt("Completed By?");
-        const money=prompt("Money Received ₹?");
-        if(!by||isNaN(money)) return;
+    div.querySelector(".done").onclick=()=>updateStatus(d.id,"completed");
+    div.querySelector(".not").onclick=()=>updateStatus(d.id,"not_completed");
 
-        await updateDoc(doc(db,"simpleJobs",d.id),{
-          status:"completed",
-          completedBy:by,
-          moneyReceived:Number(money),
-          completedDate:new Date().toISOString().slice(0,10)
-        });
-        loadJobs();
-      };
-    }
-
-    jobList.appendChild(div);
+    if(c.status==="follow") followList.appendChild(div);
+    if(c.status==="completed") completedList.appendChild(div);
+    if(c.status==="not_completed") notCompletedList.appendChild(div);
   });
 }
 
-loadCategories();
-loadJobs();
+/* UPDATE STATUS */
+async function updateStatus(id,status){
+  await updateDoc(doc(db,"clients",id),{status});
+  loadClients();
+}
+
+loadClients();
 </script>
 
 </body>
