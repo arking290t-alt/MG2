@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>To Follow</title>
+<style>
+body{background:#0b111b;color:white;font-family:Poppins}
+.box{max-width:1000px;margin:40px auto;padding:30px;background:rgba(255,255,255,0.05);border-radius:20px}
+input{padding:12px;border-radius:8px;border:none;background:#1b2432;color:white;width:100%}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer}
+.blue{background:#00b4ff}
+.green{background:#22c55e}
+.red{background:#ef4444;color:white}
+.client{margin-top:12px;padding:14px;background:rgba(255,255,255,0.08);border-radius:12px;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>To Follow</h2>
+
+<div class="grid">
+  <input id="company" placeholder="Company">
+  <input id="name" placeholder="Client Name">
+  <input id="phone" placeholder="Phone">
+  <input id="type" placeholder="Type">
+</div>
+
+<button class="blue" onclick="addClient()">Save Client</button>
+
+<div id="list"></div>
+</div>
+
+<script>
+let store = JSON.parse(localStorage.getItem("clients")) || {follow:[],done:[],not:[]};
+
+function save(){localStorage.setItem("clients",JSON.stringify(store));render();}
+
+function addClient(){
+  store.follow.push({
+    company:company.value,
+    name:name.value,
+    phone:phone.value,
+    type:type.value,
+    date:new Date().toLocaleDateString()
+  });
+  company.value=name.value=phone.value=type.value="";
+  save();
+}
+
+function move(i,to){
+  store[to].push(store.follow[i]);
+  store.follow.splice(i,1);
+  save();
+}
+
+function render(){
+  list.innerHTML = store.follow.map((c,i)=>`
+    <div class="client">
+      <div><b>${c.company}</b><br>${c.name} | ${c.phone}</div>
+      <div>
+        <button class="blue" onclick="alert(JSON.stringify(${JSON.stringify(c)},null,2))">View</button>
+        <button class="green" onclick="move(${i},'done')">Completed</button>
+        <button class="red" onclick="move(${i},'not')">Not</button>
+      </div>
+    </div>
+  `).join("") || "No clients";
+}
+render();
+</script>
+
+</body>
+</html>
