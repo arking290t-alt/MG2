@@ -34,29 +34,27 @@ header{
   border-radius:20px;
 }
 h1{color:#00b4ff}
-.subtitle{color:#9ca3af;margin-bottom:20px}
 
 .form{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:12px;
+  margin-bottom:15px;
 }
 input{
   padding:12px;
-  border-radius:10px;
-  border:none;
   background:#1f2937;
+  border:1px solid #374151;
+  border-radius:12px;
   color:#fff;
 }
-.save{
-  margin-top:15px;
-  width:100%;
+button.save{
+  grid-column:1/-1;
   padding:14px;
   background:#0ea5e9;
-  color:#000;
   border:none;
   border-radius:14px;
-  font-weight:700;
+  font-size:15px;
   cursor:pointer;
 }
 
@@ -71,11 +69,11 @@ input{
   align-items:center;
 }
 .btn{
-  padding:6px 12px;
+  padding:6px 10px;
   border:none;
   border-radius:8px;
-  color:#fff;
   cursor:pointer;
+  color:#fff;
   font-size:13px;
 }
 .view{background:#3b82f6}
@@ -89,24 +87,31 @@ input{
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.6);
+  background:rgba(0,0,0,.6);
   display:none;
   align-items:center;
   justify-content:center;
 }
-.modal-box{
+.box{
   background:#111827;
   padding:25px;
   border-radius:16px;
   width:400px;
 }
-.modal h3{color:#00b4ff;margin-bottom:10px}
-.modal p{margin:6px 0;color:#d1d5db}
-.close{
-  margin-top:15px;
+.box h3{color:#0ea5e9}
+.box p{margin:6px 0;color:#d1d5db}
+.box textarea{
   width:100%;
   padding:10px;
-  background:#0ea5e9;
+  background:#1f2937;
+  color:#fff;
+  border-radius:10px;
+  border:1px solid #374151;
+}
+.box button{
+  margin-top:10px;
+  width:100%;
+  padding:10px;
   border:none;
   border-radius:10px;
   cursor:pointer;
@@ -123,93 +128,122 @@ input{
 
 <div class="container">
   <h1>To Follow Clients</h1>
-  <p class="subtitle">Add clients and follow up later</p>
 
   <div class="form">
-    <input id="company" placeholder="Company Name *">
-    <input id="name" placeholder="Client Name *">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
     <input id="phone" placeholder="Phone (optional)">
-    <input id="type" placeholder="Job Type *">
+    <input id="type" placeholder="Job Type">
     <input id="date" type="date">
+    <button class="save" onclick="saveClient()">Save Client</button>
   </div>
-
-  <button class="save" onclick="saveClient()">Save Client</button>
 
   <div id="list"></div>
 </div>
 
 <!-- VIEW MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-box">
+<div class="modal" id="viewModal">
+  <div class="box">
     <h3>Client Details</h3>
-    <div id="modalContent"></div>
-    <button class="close" onclick="closeModal()">Close</button>
+    <div id="viewContent"></div>
+    <button onclick="closeView()">Close</button>
+  </div>
+</div>
+
+<!-- REMARK MODAL -->
+<div class="modal" id="remarkModal">
+  <div class="box">
+    <h3>Remark</h3>
+    <textarea id="remarkText" placeholder="Enter remark"></textarea>
+    <button style="background:#ef4444" onclick="confirmNot()">Confirm</button>
   </div>
 </div>
 
 <script>
-const FOLLOW="toFollowClients", DONE="completedClients", NOT="notCompletedClients";
-const get=k=>JSON.parse(localStorage.getItem(k))||[];
-const set=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const KEY="toFollowClients";
+let notIndex=null;
+
+const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
+const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
 function saveClient(){
-  const company=companyInput.value.trim();
-  const name=nameInput.value.trim();
-  const phone=phoneInput.value.trim();
-  const type=typeInput.value.trim();
-  const date=dateInput.value;
+  const c=company.value.trim();
+  const n=name.value.trim();
+  const t=type.value.trim();
+  const d=date.value;
 
-  if(!company||!name||!type||!date){
-    alert("Fill required fields");
+  if(!c||!n||!t||!d){
+    alert("Please fill required fields");
     return;
   }
 
-  const data=get(FOLLOW);
-  data.push({company,name,phone,type,date});
-  set(FOLLOW,data);
+  const data=get();
+  data.push({
+    company:c,
+    name:n,
+    phone:phone.value.trim(),
+    type:t,
+    date:d
+  });
+  set(data);
 
-  document.querySelectorAll("input").forEach(i=>i.value="");
+  company.value=name.value=phone.value=type.value=date.value="";
   render();
 }
 
 function viewClient(c){
-  modalContent.innerHTML=`
+  viewContent.innerHTML=`
     <p><b>Company:</b> ${c.company}</p>
     <p><b>Name:</b> ${c.name}</p>
     <p><b>Phone:</b> ${c.phone||"-"}</p>
     <p><b>Job:</b> ${c.type}</p>
     <p><b>Date:</b> ${c.date}</p>
-    ${c.remark?`<p><b>Remark:</b> ${c.remark}</p>`:""}
   `;
-  modal.style.display="flex";
+  viewModal.style.display="flex";
 }
-function closeModal(){modal.style.display="none"}
+function closeView(){viewModal.style.display="none"}
 
-function markCompleted(i){
-  const f=get(FOLLOW), d=get(DONE);
-  d.push(f[i]); f.splice(i,1);
-  set(FOLLOW,f); set(DONE,d); render();
+function completeClient(i){
+  const data=get();
+  const done=JSON.parse(localStorage.getItem("completedClients"))||[];
+  done.push(data[i]);
+  localStorage.setItem("completedClients",JSON.stringify(done));
+  data.splice(i,1);
+  set(data);
+  render();
 }
 
-function markNot(i){
-  const remark=prompt("Enter remark");
-  if(!remark) return;
-  const f=get(FOLLOW), n=get(NOT);
-  f[i].remark=remark;
-  n.push(f[i]); f.splice(i,1);
-  set(FOLLOW,f); set(NOT,n); render();
+function askNot(i){
+  notIndex=i;
+  remarkModal.style.display="flex";
+}
+
+function confirmNot(){
+  const remark=remarkText.value.trim();
+  if(!remark){alert("Enter remark");return;}
+  const data=get();
+  const bad=JSON.parse(localStorage.getItem("notCompletedClients"))||[];
+  bad.push({...data[notIndex],remark});
+  localStorage.setItem("notCompletedClients",JSON.stringify(bad));
+  data.splice(notIndex,1);
+  set(data);
+  remarkText.value="";
+  remarkModal.style.display="none";
+  render();
 }
 
 function delClient(i){
   if(!confirm("Delete client?"))return;
-  const f=get(FOLLOW); f.splice(i,1);
-  set(FOLLOW,f); render();
+  const data=get();
+  data.splice(i,1);
+  set(data);
+  render();
 }
 
 function render(){
   const list=document.getElementById("list");
-  const data=get(FOLLOW);
-  list.innerHTML=data.length?"" : `<p class="empty">No clients</p>`;
+  const data=get();
+  list.innerHTML=data.length?"":"<p class='empty'>No clients</p>";
   data.forEach((c,i)=>{
     list.innerHTML+=`
       <div class="row">
@@ -220,20 +254,13 @@ function render(){
         <div>${c.date}</div>
         <div>
           <button class="btn view" onclick='viewClient(${JSON.stringify(c)})'>View</button>
-          <button class="btn done" onclick="markCompleted(${i})">Completed</button>
-          <button class="btn not" onclick="markNot(${i})">Not</button>
+          <button class="btn done" onclick="completeClient(${i})">Completed</button>
+          <button class="btn not" onclick="askNot(${i})">Not</button>
           <button class="btn del" onclick="delClient(${i})">Delete</button>
         </div>
       </div>`;
   });
 }
-
-const companyInput=company;
-const nameInput=name;
-const phoneInput=phone;
-const typeInput=type;
-const dateInput=date;
-
 render();
 </script>
 
