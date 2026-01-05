@@ -2,204 +2,143 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>To Follow | MG</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>To Follow Clients</title>
 <style>
 body{
-  margin:0;
-  font-family:Poppins, sans-serif;
-  background:radial-gradient(circle at top,#0e141b,#070c12);
+  background:#0b111b;
+  font-family:Poppins,sans-serif;
   color:#e5eaf0;
 }
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 24px;
-  background:rgba(255,255,255,0.04);
-}
-.logo{color:#00b4ff;font-size:1.6rem;font-weight:700}
-.back{
-  border:1px solid #00b4ff;
-  background:none;
-  color:#00b4ff;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
 .container{
-  max-width:1000px;
-  margin:30px auto;
-  background:rgba(255,255,255,0.05);
+  max-width:1100px;
+  margin:60px auto;
+  background:rgba(255,255,255,0.06);
   padding:30px;
-  border-radius:18px;
+  border-radius:20px;
 }
-
-h1{color:#00b4ff;margin-bottom:5px}
-.sub{color:#a1acba;margin-bottom:20px}
-
-.form{
+h1{color:#00b4ff}
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  background:#1b2430;
+  color:#fff;
+}
+.grid{
   display:grid;
   grid-template-columns:repeat(5,1fr);
-  gap:14px;
-  margin-bottom:20px;
+  gap:15px;
 }
-.form input{
-  padding:12px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,0.1);
-  background:rgba(255,255,255,0.07);
-  color:white;
-}
-.form button{
-  grid-column:1/span 5;
-  background:#00b4ff;
-  color:black;
+button{
+  padding:10px 16px;
+  border-radius:8px;
   border:none;
-  padding:12px;
-  border-radius:10px;
+  cursor:pointer;
   font-weight:600;
-  cursor:pointer;
 }
-
+.btn-save{background:#00b4ff;color:#000;margin-top:15px}
+.btn-view{background:#444;color:#fff}
+.btn-done{background:#22c55e;color:#000}
+.btn-not{background:#ef4444;color:#000}
 .client{
-  background:rgba(255,255,255,0.06);
-  padding:14px;
+  background:rgba(255,255,255,0.05);
+  padding:15px;
   border-radius:12px;
+  margin-top:12px;
+}
+.actions{
   display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
+  gap:10px;
+  margin-top:10px;
 }
-.client small{color:#a1acba}
-
-.actions button{
-  margin-left:6px;
-  padding:6px 10px;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
-  font-size:0.8rem;
-}
-.view{background:#00b4ff;color:black}
-.done{background:#22c55e;color:black}
-.notdone{background:#ef4444;color:white}
 </style>
 </head>
-
 <body>
 
-<header>
-  <div class="logo">MG</div>
-  <button class="back" onclick="history.back()">← Back</button>
-</header>
-
 <div class="container">
-  <h1>To Follow</h1>
-  <div class="sub">Add clients and track follow-up status</div>
+<h1>To Follow Clients</h1>
 
-  <!-- ADD CLIENT -->
-  <div class="form">
-    <input id="company" placeholder="Company Name">
-    <input id="name" placeholder="Client Name">
-    <input id="phone" placeholder="Phone (optional)">
-    <input id="type" placeholder="Job Type">
-    <input id="date" type="date">
-    <button onclick="saveClient()">Save Client</button>
-  </div>
+<div class="grid">
+<input id="company" placeholder="Company Name">
+<input id="name" placeholder="Client Name">
+<input id="phone" placeholder="Phone">
+<input id="type" placeholder="Job Type">
+<input id="date" type="date">
+</div>
 
-  <div id="list"></div>
+<button class="btn-save" onclick="saveClient()">Save Client</button>
+
+<div id="list"></div>
 </div>
 
 <script>
-const list = document.getElementById("list");
+const KEY="clients";
 
 function getData(){
-  return JSON.parse(localStorage.getItem("clients") || "[]");
+  return JSON.parse(localStorage.getItem(KEY))||[];
 }
 function setData(d){
-  localStorage.setItem("clients", JSON.stringify(d));
+  localStorage.setItem(KEY,JSON.stringify(d));
 }
 
 function saveClient(){
-  const company = document.getElementById("company").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const type = document.getElementById("type").value.trim();
-  const date = document.getElementById("date").value;
+  const company=companyInput.value.trim();
+  const name=nameInput.value.trim();
+  const date=dateInput.value;
 
-  // ✅ STRICT & CORRECT VALIDATION
-  if(company === "" || name === "" || type === "" || date === ""){
-    alert("Please fill all required fields");
+  if(!company||!name||!date){
+    alert("Enter required details");
     return;
   }
 
-  const client = {
-    id: Date.now(),
+  const data=getData();
+  data.push({
+    id:Date.now(),
     company,
     name,
-    phone,
-    type,
+    phone:phone.value,
+    type:type.value,
     date,
-    status: "follow"
-  };
-
-  const data = getData();
-  data.push(client);
+    status:"follow",
+    remark:""
+  });
   setData(data);
+  clearInputs();
+  render();
+}
 
-  document.getElementById("company").value="";
-  document.getElementById("name").value="";
-  document.getElementById("phone").value="";
-  document.getElementById("type").value="";
-  document.getElementById("date").value="";
+function clearInputs(){
+  document.querySelectorAll("input").forEach(i=>i.value="");
+}
 
+function mark(id,status){
+  const data=getData();
+  const c=data.find(x=>x.id===id);
+  if(status==="not-completed"){
+    const r=prompt("Enter remark");
+    if(!r) return;
+    c.remark=r;
+  }
+  c.status=status;
+  setData(data);
   render();
 }
 
 function render(){
-  const data = getData().filter(c=>c.status==="follow");
-  list.innerHTML = data.length ? "" : "<small>No clients</small>";
-
-  data.forEach(c=>{
-    const div = document.createElement("div");
-    div.className="client";
-    div.innerHTML = `
-      <div>
-        <strong>${c.company}</strong><br>
-        <small>${c.name} | ${c.type} | ${c.phone || "-"} | ${c.date}</small>
-      </div>
+  const box=document.getElementById("list");
+  const data=getData().filter(c=>c.status==="follow");
+  box.innerHTML=data.length?data.map(c=>`
+    <div class="client">
+      <b>${c.company}</b> — ${c.name}<br>
+      ${c.type} | ${c.phone} | ${c.date}
       <div class="actions">
-        <button class="view" onclick="viewClient(${c.id})">View</button>
-        <button class="done" onclick="mark(${c.id},'completed')">Completed</button>
-        <button class="notdone" onclick="mark(${c.id},'not')">Not</button>
+        <button class="btn-view" onclick='alert(JSON.stringify(${JSON.stringify(c)},null,2))'>View</button>
+        <button class="btn-done" onclick="mark(${c.id},'completed')">Completed</button>
+        <button class="btn-not" onclick="mark(${c.id},'not-completed')">Not Completed</button>
       </div>
-    `;
-    list.appendChild(div);
-  });
-}
-
-function mark(id,status){
-  const data = getData();
-  const i = data.findIndex(c=>c.id===id);
-  if(i !== -1){
-    data[i].status = status;
-    setData(data);
-    render();
-  }
-}
-
-function viewClient(id){
-  const c = getData().find(x=>x.id===id);
-  alert(
-`Company: ${c.company}
-Name: ${c.name}
-Phone: ${c.phone || "-"}
-Type: ${c.type}
-Date: ${c.date}`
-  );
+    </div>
+  `).join(""):"<p>No clients</p>";
 }
 
 render();
