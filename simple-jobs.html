@@ -6,205 +6,202 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+:root{
+  --bg:#0b111b;
+  --panel:#161e28;
+  --accent:#00b4ff;
+  --text:#e5eef7;
+  --muted:#9fb3c8;
+  --done:#22c55e;
+  --not:#ef4444;
+}
+*{box-sizing:border-box;font-family:Poppins,system-ui;}
 body{
-  background:#0b111b;
-  font-family:Poppins,sans-serif;
-  color:#e5eaf0;
   margin:0;
+  background:radial-gradient(circle at top,#0e1724,#060a10);
+  color:var(--text);
 }
 header{
+  padding:16px 24px;
   background:rgba(255,255,255,0.05);
-  padding:14px 22px;
-  display:flex;
-  gap:12px;
-}
-.tab{
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-  background:rgba(255,255,255,0.05);
-}
-.tab.active{
-  background:#00b4ff;
-  color:black;
-}
-.container{
-  max-width:900px;
-  margin:30px auto;
-  background:rgba(255,255,255,0.05);
-  padding:25px;
-  border-radius:16px;
-}
-.hidden{display:none}
-
-.form{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:12px;
-  margin-bottom:18px;
-}
-input{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#111827;
-  color:white;
-}
-button{
-  padding:8px 14px;
-  border-radius:8px;
-  border:none;
-  font-weight:600;
-  cursor:pointer;
-}
-.save{background:#00b4ff;color:black}
-.done{background:#22c55e;color:black}
-.not{background:#ef4444;color:white}
-
-.card{
-  background:rgba(255,255,255,0.06);
-  padding:14px;
-  border-radius:12px;
-  margin-top:10px;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-.card small{color:#9fb6d4}
-.section-title{
-  margin-top:24px;
-  color:#ffd400;
+.logo{color:var(--accent);font-size:1.6rem;font-weight:700;}
+.container{
+  max-width:900px;
+  margin:30px auto;
+  background:var(--panel);
+  border-radius:18px;
+  padding:30px;
+  box-shadow:0 0 40px rgba(0,180,255,0.15);
 }
+h2{color:var(--accent);margin-bottom:5px}
+.subtitle{color:var(--muted);margin-bottom:20px}
+
+/* FORM */
+.form-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+}
+input{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:#0f1622;
+  color:white;
+}
+button{
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+.btn-main{background:var(--accent);color:black;}
+.btn-view{background:#3b82f6;color:white;}
+.btn-done{background:var(--done);color:black;}
+.btn-not{background:var(--not);color:white;}
+.section{margin-top:30px}
+
+/* CLIENT CARD */
+.card{
+  background:rgba(255,255,255,0.05);
+  border-radius:14px;
+  padding:14px 16px;
+  margin-top:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.card small{color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--muted);text-align:center;margin-top:10px}
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="tab active" onclick="openTab('client')">Client</div>
-  <div class="tab" onclick="openTab('job')">Job</div>
-  <div class="tab" onclick="openTab('jobs')">Jobs</div>
+  <div class="logo">MG</div>
 </header>
 
 <div class="container">
+  <h2>Client</h2>
+  <div class="subtitle">Add client first, then mark status</div>
 
-<!-- CLIENT TAB -->
-<div id="client">
-
-  <h2>Client Follow</h2>
-
-  <div class="form">
+  <!-- ADD CLIENT -->
+  <div class="form-row">
     <input id="company" placeholder="Company Name">
-    <input id="name" placeholder="Client Name">
+    <input id="client" placeholder="Client Name">
     <input id="phone" placeholder="Phone Number">
-    <input id="type" placeholder="Type">
-    <button class="save" onclick="addClient()">Save Client</button>
+    <input id="type" placeholder="Job Type">
   </div>
 
-  <h3 class="section-title">Follow</h3>
-  <div id="followList"></div>
+  <div style="margin-top:14px">
+    <button class="btn-main" onclick="saveClient()">Save Client</button>
+  </div>
 
-  <h3 class="section-title">Completed</h3>
-  <div id="completedList"></div>
+  <!-- CLIENT LIST -->
+  <div class="section">
+    <h2>Clients</h2>
+    <div id="clientList"></div>
+  </div>
 
-  <h3 class="section-title">Not Completed</h3>
-  <div id="notCompletedList"></div>
+  <!-- COMPLETED -->
+  <div class="section">
+    <h2 style="color:var(--done)">Completed</h2>
+    <div id="completedList"></div>
+  </div>
 
+  <!-- NOT COMPLETED -->
+  <div class="section">
+    <h2 style="color:var(--not)">Not Completed</h2>
+    <div id="notList"></div>
+  </div>
 </div>
 
-<!-- JOB TAB -->
-<div id="job" class="hidden">
-  <h2>Job (Coming Next)</h2>
-</div>
+<script>
+let clients = JSON.parse(localStorage.getItem("clients")) || [];
+let completed = JSON.parse(localStorage.getItem("completed")) || [];
+let notCompleted = JSON.parse(localStorage.getItem("notCompleted")) || [];
 
-<!-- JOBS TAB -->
-<div id="jobs" class="hidden">
-  <h2>Jobs (Coming Next)</h2>
-</div>
+function saveData(){
+  localStorage.setItem("clients",JSON.stringify(clients));
+  localStorage.setItem("completed",JSON.stringify(completed));
+  localStorage.setItem("notCompleted",JSON.stringify(notCompleted));
+}
 
-</div>
+function saveClient(){
+  const c = company.value.trim();
+  const n = client.value.trim();
+  const p = phone.value.trim();
+  const t = type.value.trim();
+  if(!c||!n||!p||!t) return alert("Fill all fields");
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, updateDoc, doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* TABS */
-window.openTab = (id)=>{
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  event.target.classList.add("active");
-  ["client","job","jobs"].forEach(x=>{
-    document.getElementById(x).classList.add("hidden");
-  });
-  document.getElementById(id).classList.remove("hidden");
-};
-
-/* ADD CLIENT */
-window.addClient = async ()=>{
-  if(!company.value || !name.value || !phone.value) return alert("Fill all fields");
-
-  await addDoc(collection(db,"clients"),{
-    company:company.value,
-    name:name.value,
-    phone:phone.value,
-    type:type.value,
-    status:"follow",
-    createdAt:new Date().toISOString()
+  clients.push({
+    id:Date.now(),
+    company:c,
+    name:n,
+    phone:p,
+    type:t,
+    date:new Date().toLocaleDateString()
   });
 
-  company.value=name.value=phone.value=type.value="";
-  loadClients();
-};
+  company.value=client.value=phone.value=type.value="";
+  saveData();
+  render();
+}
 
-/* LOAD CLIENTS */
-async function loadClients(){
-  followList.innerHTML="";
-  completedList.innerHTML="";
-  notCompletedList.innerHTML="";
+function moveClient(id,target){
+  const idx = clients.findIndex(c=>c.id===id);
+  if(idx<0) return;
+  const item = clients.splice(idx,1)[0];
+  target.push(item);
+  saveData();
+  render();
+}
 
-  const snap = await getDocs(collection(db,"clients"));
-  snap.forEach(d=>{
-    const c=d.data();
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML=`
-      <div>
-        <strong>${c.company}</strong><br>
-        <small>${c.name} | ${c.phone} | ${c.type}</small>
-      </div>
-      <div>
-        <button class="done">Completed</button>
-        <button class="not">Not</button>
-      </div>
-    `;
+function render(){
+  clientList.innerHTML = clients.length ? "" : `<div class="empty">No clients</div>`;
+  completedList.innerHTML = completed.length ? "" : `<div class="empty">No completed</div>`;
+  notList.innerHTML = notCompleted.length ? "" : `<div class="empty">No pending</div>`;
 
-    div.querySelector(".done").onclick=()=>updateStatus(d.id,"completed");
-    div.querySelector(".not").onclick=()=>updateStatus(d.id,"not_completed");
+  clients.forEach(c=>{
+    clientList.innerHTML += `
+      <div class="card">
+        <div>
+          <strong>${c.company}</strong><br>
+          <small>${c.name} | ${c.phone} | ${c.type}</small>
+        </div>
+        <div class="actions">
+          <button class="btn-view" onclick="alert(
+            'Company: ${c.company}\\nClient: ${c.name}\\nPhone: ${c.phone}\\nType: ${c.type}'
+          )">View</button>
+          <button class="btn-done" onclick="moveClient(${c.id},completed)">Completed</button>
+          <button class="btn-not" onclick="moveClient(${c.id},notCompleted)">Not</button>
+        </div>
+      </div>`;
+  });
 
-    if(c.status==="follow") followList.appendChild(div);
-    if(c.status==="completed") completedList.appendChild(div);
-    if(c.status==="not_completed") notCompletedList.appendChild(div);
+  completed.forEach(c=>{
+    completedList.innerHTML += `
+      <div class="card">
+        <div><strong>${c.company}</strong><br><small>${c.name}</small></div>
+      </div>`;
+  });
+
+  notCompleted.forEach(c=>{
+    notList.innerHTML += `
+      <div class="card">
+        <div><strong>${c.company}</strong><br><small>${c.name}</small></div>
+      </div>`;
   });
 }
 
-/* UPDATE STATUS */
-async function updateStatus(id,status){
-  await updateDoc(doc(db,"clients",id),{status});
-  loadClients();
-}
-
-loadClients();
+render();
 </script>
 
 </body>
