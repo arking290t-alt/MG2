@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Completed</title>
+<style>
+body{background:#0b111b;color:white;font-family:Poppins}
+.box{max-width:900px;margin:60px auto;padding:30px;background:rgba(255,255,255,0.05);border-radius:20px}
+.client{padding:14px;margin-bottom:10px;background:rgba(255,255,255,0.08);border-radius:12px;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2 style="color:#22c55e">Completed</h2>
+<div id="list"></div>
+</div>
+
+<script>
+let store = JSON.parse(localStorage.getItem("clients")) || {done:[]};
+list.innerHTML = store.done.map(c=>`
+<div class="client">
+  <div><b>${c.company}</b><br>${c.name} | ${c.phone}</div>
+  <button onclick="alert(JSON.stringify(${JSON.stringify(c)},null,2))">View</button>
+</div>
+`).join("") || "No completed";
+</script>
+
+</body>
+</html>
