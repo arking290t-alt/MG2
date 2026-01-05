@@ -3,27 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <title>To Follow Clients</title>
+
 <style>
 body{
   margin:0;
   background:#0b111b;
-  font-family:Poppins,Arial;
+  font-family:Poppins,Arial,sans-serif;
   color:#fff;
 }
+
+header{
+  padding:20px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
+  font-size:22px;
+  font-weight:700;
+  color:#00b4ff;
+}
+
+.back{
+  border:1px solid #00b4ff;
+  padding:8px 16px;
+  border-radius:10px;
+  color:#00b4ff;
+  background:transparent;
+  cursor:pointer;
+}
+
 .container{
   max-width:1200px;
   margin:40px auto;
   background:rgba(255,255,255,0.05);
   padding:30px;
-  border-radius:18px;
+  border-radius:20px;
 }
-h1{color:#00b4ff;margin-bottom:20px}
+
+h1{
+  color:#00b4ff;
+  margin-bottom:10px;
+}
+
+.subtitle{
+  color:#9ca3af;
+  margin-bottom:20px;
+}
 
 .form{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:12px;
 }
+
 input{
   padding:12px;
   border-radius:10px;
@@ -31,6 +65,11 @@ input{
   background:#1f2937;
   color:#fff;
 }
+
+input::placeholder{
+  color:#6b7280;
+}
+
 .save{
   margin-top:15px;
   width:100%;
@@ -38,14 +77,15 @@ input{
   background:#0ea5e9;
   color:#000;
   border:none;
-  border-radius:12px;
-  font-weight:600;
+  border-radius:14px;
+  font-weight:700;
   cursor:pointer;
 }
 
 .table{
   margin-top:30px;
 }
+
 .row{
   display:grid;
   grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 2fr;
@@ -53,113 +93,146 @@ input{
   align-items:center;
   background:#1f2937;
   padding:12px;
-  border-radius:12px;
+  border-radius:14px;
   margin-bottom:10px;
 }
+
 .btn{
-  padding:6px 10px;
+  padding:6px 12px;
   border:none;
-  border-radius:6px;
-  cursor:pointer;
+  border-radius:8px;
   font-size:13px;
+  cursor:pointer;
+  color:#fff;
 }
+
 .view{background:#3b82f6}
 .done{background:#22c55e}
 .not{background:#ef4444}
 .del{background:#6b7280}
+
+.empty{
+  color:#9ca3af;
+  margin-top:10px;
+}
 </style>
 </head>
 
 <body>
+
+<header>
+  <div class="logo">MG</div>
+  <button class="back" onclick="history.back()">← Back</button>
+</header>
+
 <div class="container">
-<h1>To Follow Clients</h1>
+  <h1>To Follow Clients</h1>
+  <p class="subtitle">Add clients and follow up later</p>
 
-<div class="form">
-  <input id="company" placeholder="Company Name">
-  <input id="name" placeholder="Client Name">
-  <input id="phone" placeholder="Phone">
-  <input id="type" placeholder="Job Type">
-  <input id="date" placeholder="Date (DD/MM/YYYY)">
-</div>
+  <div class="form">
+    <input id="company" placeholder="Company Name *">
+    <input id="name" placeholder="Client Name *">
+    <input id="phone" placeholder="Phone (optional)">
+    <input id="type" placeholder="Job Type *">
+    <input id="date" placeholder="Date (DD/MM/YYYY) *">
+  </div>
 
-<button class="save" onclick="saveClient()">Save Client</button>
+  <button class="save" onclick="saveClient()">Save Client</button>
 
-<div class="table" id="list"></div>
+  <div class="table" id="list"></div>
 </div>
 
 <script>
-function get(k){return JSON.parse(localStorage.getItem(k))||[]}
-function set(k,v){localStorage.setItem(k,JSON.stringify(v))}
+const KEY_FOLLOW = "toFollowClients";
+const KEY_DONE = "completedClients";
+const KEY_NOT = "notCompletedClients";
+
+const get = k => JSON.parse(localStorage.getItem(k)) || [];
+const set = (k,v) => localStorage.setItem(k, JSON.stringify(v));
 
 function saveClient(){
-  if(!company.value||!name.value||!type.value||!date.value){
-    alert("Fill required fields"); return;
+  const company = document.getElementById("company").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const type = document.getElementById("type").value.trim();
+  const date = document.getElementById("date").value.trim();
+
+  if(company==="" || name==="" || type==="" || date===""){
+    alert("Please fill all required fields (*)");
+    return;
   }
-  const arr=get("toFollowClients");
-  arr.push({
-    company:company.value,
-    name:name.value,
-    phone:phone.value,
-    type:type.value,
-    date:date.value
-  });
-  set("toFollowClients",arr);
-  company.value=name.value=phone.value=type.value=date.value="";
+
+  const data = get(KEY_FOLLOW);
+  data.push({ company, name, phone, type, date });
+  set(KEY_FOLLOW, data);
+
+  document.querySelectorAll("input").forEach(i => i.value="");
   render();
 }
 
-function completed(i){
-  const f=get("toFollowClients");
-  const c=get("completedClients");
-  c.push(f[i]);
-  f.splice(i,1);
-  set("toFollowClients",f);
-  set("completedClients",c);
+function markCompleted(i){
+  const follow = get(KEY_FOLLOW);
+  const done = get(KEY_DONE);
+  done.push(follow[i]);
+  follow.splice(i,1);
+  set(KEY_FOLLOW, follow);
+  set(KEY_DONE, done);
   render();
 }
 
-function notCompleted(i){
-  const remark=prompt("Enter remark");
+function markNot(i){
+  const remark = prompt("Enter remark for Not Completed");
   if(!remark) return;
-  const f=get("toFollowClients");
-  const n=get("notCompletedClients");
-  f[i].remark=remark;
-  n.push(f[i]);
-  f.splice(i,1);
-  set("toFollowClients",f);
-  set("notCompletedClients",n);
+
+  const follow = get(KEY_FOLLOW);
+  const not = get(KEY_NOT);
+  follow[i].remark = remark;
+  not.push(follow[i]);
+  follow.splice(i,1);
+
+  set(KEY_FOLLOW, follow);
+  set(KEY_NOT, not);
   render();
 }
 
-function del(i){
-  const f=get("toFollowClients");
-  if(confirm("Delete client?")){
-    f.splice(i,1);
-    set("toFollowClients",f);
-    render();
-  }
+function delClient(i){
+  if(!confirm("Delete this client?")) return;
+  const follow = get(KEY_FOLLOW);
+  follow.splice(i,1);
+  set(KEY_FOLLOW, follow);
+  render();
 }
 
 function render(){
-  const f=get("toFollowClients");
-  list.innerHTML=f.length?"" : "<p>No clients</p>";
-  f.forEach((c,i)=>{
-    list.innerHTML+=`
-    <div class="row">
-      <div>${c.company}</div>
-      <div>${c.name}</div>
-      <div>${c.phone||"-"}</div>
-      <div>${c.type}</div>
-      <div>${c.date}</div>
-      <div>
-        <button class="btn done" onclick="completed(${i})">Completed</button>
-        <button class="btn not" onclick="notCompleted(${i})">Not</button>
-        <button class="btn del" onclick="del(${i})">Delete</button>
+  const list = document.getElementById("list");
+  const data = get(KEY_FOLLOW);
+  list.innerHTML = "";
+
+  if(data.length === 0){
+    list.innerHTML = `<p class="empty">No clients</p>`;
+    return;
+  }
+
+  data.forEach((c,i)=>{
+    list.innerHTML += `
+      <div class="row">
+        <div>${c.company}</div>
+        <div>${c.name}</div>
+        <div>${c.phone || "-"}</div>
+        <div>${c.type}</div>
+        <div>${c.date}</div>
+        <div>
+          <button class="btn done" onclick="markCompleted(${i})">Completed</button>
+          <button class="btn not" onclick="markNot(${i})">Not</button>
+          <button class="btn del" onclick="delClient(${i})">Delete</button>
+        </div>
       </div>
-    </div>`;
+    `;
   });
 }
+
 render();
 </script>
+
 </body>
 </html>
