@@ -1,36 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <title>Not Completed Clients</title>
 <style>
-body{background:#0b111b;color:#e5eaf0;font-family:Poppins}
-.container{max-width:900px;margin:60px auto}
-.client{background:#1f2937;padding:15px;border-radius:10px;margin-bottom:10px}
-.remark{color:#f87171;font-weight:600}
+body{background:#0b111b;color:#fff;font-family:Poppins}
+.box{max-width:900px;margin:40px auto}
+.row{background:#1f2937;padding:12px;border-radius:10px;margin:10px 0}
+button{background:#ef4444;border:none;padding:6px 10px;border-radius:6px}
 </style>
 </head>
 <body>
-
-<div class="container">
+<div class="box">
 <h1 style="color:#ef4444">Not Completed Clients</h1>
 <div id="list"></div>
 </div>
 
 <script>
-const data=JSON.parse(localStorage.getItem("clients"))||[];
 const list=document.getElementById("list");
-const bad=data.filter(c=>c.status==="not-completed");
+let arr=JSON.parse(localStorage.getItem("notCompletedClients"))||[];
 
-list.innerHTML=bad.length?bad.map(c=>`
-<div class="client">
-<b>${c.company}</b> — ${c.name}<br>
-${c.type} | ${c.phone} | ${c.date}<br>
-<div class="remark">Remark: ${c.remark}</div>
-<button onclick='alert(JSON.stringify(${JSON.stringify(c)},null,2))'>View</button>
-</div>
-`).join(""):"No pending clients";
+if(arr.length===0){list.innerHTML="<p>No pending clients</p>";}
+
+arr.forEach((c,i)=>{
+  list.innerHTML+=`
+  <div class="row">
+    <b>${c.company}</b> | ${c.name} | ${c.phone||"-"} | ${c.type} | ${c.date}
+    <br><small>Remark: ${c.remark}</small>
+    <br><button onclick="del(${i})">Delete</button>
+  </div>`;
+});
+
+function del(i){
+  if(!confirm("Delete?"))return;
+  arr.splice(i,1);
+  localStorage.setItem("notCompletedClients",JSON.stringify(arr));
+  location.reload();
+}
 </script>
-
 </body>
 </html>
