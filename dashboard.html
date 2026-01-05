@@ -4,62 +4,158 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard | MG</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 30%, #101821, #070c12);
+      font-family: "Poppins", sans-serif;
+      color: #e5eaf0;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #00b4ff;
+    }
+
+    .btn-logout {
+      background: #00b4ff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* CENTER */
+    .dashboard-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 60px 20px;
+    }
+
+    .dashboard-box {
+      width: 100%;
+      max-width: 1200px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 50px;
+      box-shadow: 0 0 40px rgba(0,180,255,0.15);
+    }
+
+    .welcome {
+      text-align: center;
+      font-size: 2rem;
+      color: #00b4ff;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #9fb6d4;
+      margin-bottom: 40px;
+    }
+
+    /* ✅ HORIZONTAL GRID FIX */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .dashboard-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 28px;
+      text-decoration: none;
+      color: #e5eaf0;
+      transition: 0.3s ease;
+      text-align: center;
+    }
+
+    .dashboard-card h3 {
+      margin: 0 0 6px;
+      color: #00b4ff;
+      font-size: 1.3rem;
+    }
+
+    .dashboard-card p {
+      margin: 0;
+      color: #a1acba;
+      font-size: 0.95rem;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 25px rgba(0,180,255,0.35);
+      background: rgba(0,180,255,0.08);
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-box {
+        padding: 30px 20px;
+      }
+    }
+  </style>
 </head>
 
-<body class="dashboard-body">
+<body>
 
-  <!-- TOP BAR -->
+  <!-- HEADER -->
   <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div>
-      <button id="logoutBtn" class="btn-logout">Logout</button>
-    </div>
+    <div class="logo">MG</div>
+    <button class="btn-logout" onclick="logout()">Logout</button>
   </header>
 
-  <!-- CENTER -->
-  <main class="dashboard-center">
+  <!-- DASHBOARD -->
+  <div class="dashboard-wrapper">
     <div class="dashboard-box">
 
-      <h2 class="welcome">Welcome</h2>
-      <p class="subtitle">
+      <div class="welcome">Welcome</div>
+      <div class="subtitle">
         Manage staff, attendance, payments, jobs & inventory
-      </p>
+      </div>
 
-      <!-- DASHBOARD GRID -->
       <div class="dashboard-grid">
 
-        <!-- STAFF MANAGEMENT -->
         <a href="staff-management.html" class="dashboard-card">
           <h3>Staff Management</h3>
           <p>Staff list & attendance</p>
         </a>
 
-        <!-- JOBS -->
         <a href="jobs.html" class="dashboard-card">
           <h3>Jobs</h3>
           <p>Add & manage customer jobs</p>
         </a>
 
-        <!-- FOLLOW JOBS (NEW) -->
         <a href="follow-job.html" class="dashboard-card">
           <h3>Follow Jobs</h3>
           <p>Client follow-ups & tracking</p>
         </a>
 
-        <!-- JOB UPDATE -->
         <a href="job-update.html" class="dashboard-card">
           <h3>Job Update</h3>
           <p>Add, manage & track job details</p>
         </a>
 
-        <!-- EXPENSES -->
         <a href="expenses.html" class="dashboard-card">
           <h3>Expenses</h3>
           <p>Track business expenses</p>
         </a>
 
-        <!-- INVENTORY MANAGEMENT (FIXED) -->
         <a href="inventory-management.html" class="dashboard-card">
           <h3>Inventory Management</h3>
           <p>Stock & used inventory</p>
@@ -67,62 +163,16 @@
 
       </div>
 
-      <!-- OPTIONAL MIGRATION BUTTON -->
-      <div style="margin-top:18px;">
-        <button id="migrateBtn" class="migrate-btn" style="display:none">
-          Migrate Local Data → Firestore
-        </button>
-        <span id="migrateStatus" class="small"></span>
-      </div>
-
     </div>
-  </main>
+  </div>
 
-  <!-- FIREBASE AUTH -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-      authDomain: "mg-manager-3ab66.firebaseapp.com",
-      projectId: "mg-manager-3ab66",
-      storageBucket: "mg-manager-3ab66.firebasestorage.app",
-      messagingSenderId: "330667005987",
-      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-      measurementId: "G-05HW0KSN38"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const logoutBtn = document.getElementById("logoutBtn");
-    const migrateBtn = document.getElementById("migrateBtn");
-
-    // AUTH CHECK
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      const snap = await getDoc(doc(db, "users", user.uid));
-      const role = snap.exists() && snap.data().role ? snap.data().role : "staff";
-
-      if (role === "owner") {
-        migrateBtn.style.display = "inline-block";
-      }
-    });
-
-    // LOGOUT
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
+  <script>
+    function logout() {
       localStorage.clear();
       window.location.href = "login.html";
-    };
+    }
   </script>
 
 </body>
 </html>
+s
