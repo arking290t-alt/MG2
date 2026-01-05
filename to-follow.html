@@ -26,20 +26,22 @@ header{
   border-radius:10px;
   cursor:pointer;
 }
+
 .container{
-  max-width:1200px;
+  max-width:1100px;
   margin:40px auto;
   background:rgba(255,255,255,0.05);
   padding:30px;
   border-radius:20px;
 }
+
 h1{color:#00b4ff}
 
 .form{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:12px;
-  margin-bottom:15px;
+  margin-bottom:20px;
 }
 input{
   padding:12px;
@@ -48,38 +50,37 @@ input{
   border-radius:12px;
   color:#fff;
 }
-button.save{
+.save{
   grid-column:1/-1;
   padding:14px;
   background:#0ea5e9;
   border:none;
   border-radius:14px;
-  font-size:15px;
   cursor:pointer;
 }
 
 .row{
   display:grid;
-  grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 2fr;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;
   gap:10px;
   background:#1f2937;
   padding:12px;
   border-radius:14px;
-  margin-top:12px;
+  margin-top:10px;
   align-items:center;
 }
+
 .btn{
   padding:6px 10px;
   border:none;
   border-radius:8px;
   cursor:pointer;
-  color:#fff;
   font-size:13px;
 }
-.view{background:#3b82f6}
-.done{background:#22c55e}
-.not{background:#ef4444}
-.del{background:#6b7280}
+.view{background:#3b82f6;color:#fff}
+.done{background:#22c55e;color:#000}
+.not{background:#ef4444;color:#fff}
+.del{background:#6b7280;color:#fff}
 
 .empty{color:#9ca3af;margin-top:10px}
 
@@ -96,17 +97,18 @@ button.save{
   background:#111827;
   padding:25px;
   border-radius:16px;
-  width:400px;
+  width:360px;
 }
 .box h3{color:#0ea5e9}
 .box p{margin:6px 0;color:#d1d5db}
 .box textarea{
   width:100%;
-  padding:10px;
+  height:80px;
   background:#1f2937;
   color:#fff;
   border-radius:10px;
-  border:1px solid #374151;
+  padding:10px;
+  border:none;
 }
 .box button{
   margin-top:10px;
@@ -130,109 +132,118 @@ button.save{
   <h1>To Follow Clients</h1>
 
   <div class="form">
-    <input id="company" placeholder="Company Name">
-    <input id="name" placeholder="Client Name">
-    <input id="phone" placeholder="Phone (optional)">
-    <input id="type" placeholder="Job Type">
+    <input id="company" placeholder="Company Name *">
+    <input id="client" placeholder="Client Name *">
+    <input id="phone" placeholder="Phone">
+    <input id="job" placeholder="Job Type *">
     <input id="date" type="date">
-    <button class="save" onclick="saveClient()">Save Client</button>
+    <button class="save" onclick="addClient()">Save Client</button>
   </div>
 
   <div id="list"></div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- VIEW -->
 <div class="modal" id="viewModal">
   <div class="box">
     <h3>Client Details</h3>
-    <div id="viewContent"></div>
-    <button onclick="closeView()">Close</button>
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
   </div>
 </div>
 
-<!-- REMARK MODAL -->
+<!-- NOT COMPLETED -->
 <div class="modal" id="remarkModal">
   <div class="box">
-    <h3>Remark</h3>
-    <textarea id="remarkText" placeholder="Enter remark"></textarea>
-    <button style="background:#ef4444" onclick="confirmNot()">Confirm</button>
+    <h3>Not Completed</h3>
+    <textarea id="remark" placeholder="Enter remark..."></textarea>
+    <button onclick="saveNotCompleted()">Save</button>
   </div>
 </div>
 
 <script>
-const KEY="toFollowClients";
-let notIndex=null;
+const KEY="followClients";
+let selectedIndex=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-function saveClient(){
+function addClient(){
   const c=company.value.trim();
-  const n=name.value.trim();
-  const t=type.value.trim();
+  const n=client.value.trim();
+  const j=job.value.trim();
   const d=date.value;
 
-  if(!c||!n||!t||!d){
-    alert("Please fill required fields");
+  if(!c||!n||!j||!d){
+    alert("Fill required fields");
     return;
   }
 
   const data=get();
-  data.push({
-    company:c,
-    name:n,
-    phone:phone.value.trim(),
-    type:t,
-    date:d
-  });
+  data.push({company:c,name:n,phone:phone.value,job:j,date:d,status:"follow"});
   set(data);
 
-  company.value=name.value=phone.value=type.value=date.value="";
+  company.value=client.value=phone.value=job.value=date.value="";
   render();
 }
 
-function viewClient(c){
-  viewContent.innerHTML=`
-    <p><b>Company:</b> ${c.company}</p>
-    <p><b>Name:</b> ${c.name}</p>
-    <p><b>Phone:</b> ${c.phone||"-"}</p>
-    <p><b>Job:</b> ${c.type}</p>
-    <p><b>Date:</b> ${c.date}</p>
+function render(){
+  const box=list;
+  const data=get().filter(x=>x.status==="follow");
+  box.innerHTML=data.length?"":"<p class='empty'>No clients</p>";
+
+  data.forEach((x,i)=>{
+    box.innerHTML+=`
+      <div class="row">
+        <div>${x.company}</div>
+        <div>${x.name}</div>
+        <div>${x.phone||"-"}</div>
+        <div>${x.job}</div>
+        <div>${x.date}</div>
+        <div>
+          <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
+          <button class="btn done" onclick="markDone(${i})">Completed</button>
+          <button class="btn not" onclick="markNot(${i})">Not</button>
+          <button class="btn del" onclick="del(${i})">Delete</button>
+        </div>
+      </div>`;
+  });
+}
+
+function view(x){
+  viewData.innerHTML=`
+    <p><b>Company:</b> ${x.company}</p>
+    <p><b>Name:</b> ${x.name}</p>
+    <p><b>Phone:</b> ${x.phone||"-"}</p>
+    <p><b>Job:</b> ${x.job}</p>
+    <p><b>Date:</b> ${x.date}</p>
   `;
   viewModal.style.display="flex";
 }
-function closeView(){viewModal.style.display="none"}
 
-function completeClient(i){
+function markDone(i){
   const data=get();
-  const done=JSON.parse(localStorage.getItem("completedClients"))||[];
-  done.push(data[i]);
-  localStorage.setItem("completedClients",JSON.stringify(done));
-  data.splice(i,1);
+  data[i].status="completed";
   set(data);
   render();
 }
 
-function askNot(i){
-  notIndex=i;
+function markNot(i){
+  selectedIndex=i;
   remarkModal.style.display="flex";
 }
 
-function confirmNot(){
-  const remark=remarkText.value.trim();
-  if(!remark){alert("Enter remark");return;}
+function saveNotCompleted(){
   const data=get();
-  const bad=JSON.parse(localStorage.getItem("notCompletedClients"))||[];
-  bad.push({...data[notIndex],remark});
-  localStorage.setItem("notCompletedClients",JSON.stringify(bad));
-  data.splice(notIndex,1);
+  data[selectedIndex].status="not";
+  data[selectedIndex].remark=remark.value;
   set(data);
-  remarkText.value="";
-  remarkModal.style.display="none";
+  remark.value="";
+  closeModal();
   render();
 }
 
-function delClient(i){
+function del(i){
   if(!confirm("Delete client?"))return;
   const data=get();
   data.splice(i,1);
@@ -240,27 +251,11 @@ function delClient(i){
   render();
 }
 
-function render(){
-  const list=document.getElementById("list");
-  const data=get();
-  list.innerHTML=data.length?"":"<p class='empty'>No clients</p>";
-  data.forEach((c,i)=>{
-    list.innerHTML+=`
-      <div class="row">
-        <div>${c.company}</div>
-        <div>${c.name}</div>
-        <div>${c.phone||"-"}</div>
-        <div>${c.type}</div>
-        <div>${c.date}</div>
-        <div>
-          <button class="btn view" onclick='viewClient(${JSON.stringify(c)})'>View</button>
-          <button class="btn done" onclick="completeClient(${i})">Completed</button>
-          <button class="btn not" onclick="askNot(${i})">Not</button>
-          <button class="btn del" onclick="delClient(${i})">Delete</button>
-        </div>
-      </div>`;
-  });
+function closeModal(){
+  viewModal.style.display="none";
+  remarkModal.style.display="none";
 }
+
 render();
 </script>
 
