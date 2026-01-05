@@ -2,137 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Follow Client | MG</title>
+<title>Follow Clients | MG</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root{
-  --bg:#0b111b;
-  --panel:rgba(255,255,255,0.06);
-  --border:rgba(255,255,255,0.12);
-  --accent:#00b4ff;
-  --text:#e5eaf0;
-  --muted:#9fb0c5;
-}
-
-*{
-  box-sizing:border-box;
-  font-family:Poppins,sans-serif;
-}
-
 body{
   margin:0;
-  background:radial-gradient(circle at top,#101826,#070b11);
-  color:var(--text);
+  font-family:Poppins, sans-serif;
+  background:radial-gradient(circle at top,#0e141b,#070c12);
+  color:#e5eaf0;
 }
-
-/* ===== HEADER ===== */
 header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:16px 28px;
+  padding:16px 24px;
   background:rgba(255,255,255,0.04);
-  border-bottom:1px solid var(--border);
 }
-
-.logo{
-  font-size:1.6rem;
-  font-weight:700;
-  color:var(--accent);
-}
-
-.back-btn{
-  border:1px solid var(--accent);
-  background:transparent;
-  color:var(--accent);
-  padding:8px 16px;
+.logo{color:#00b4ff;font-size:1.6rem;font-weight:700}
+.back{
+  border:1px solid #00b4ff;
+  background:none;
+  color:#00b4ff;
+  padding:8px 14px;
   border-radius:8px;
   cursor:pointer;
 }
 
-.back-btn:hover{
-  background:var(--accent);
-  color:#000;
-}
-
-/* ===== CENTER WRAP ===== */
-.main{
-  min-height:calc(100vh - 70px);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:40px;
-}
-
-/* ===== DASHBOARD PANEL ===== */
-.panel{
-  width:100%;
-  max-width:1100px;
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:40px;
-  backdrop-filter:blur(18px);
-}
-
-/* ===== TITLE ===== */
-.panel h1{
-  margin:0;
-  text-align:center;
-  color:var(--accent);
-  font-size:2.2rem;
-}
-
-.panel p{
-  text-align:center;
-  margin-top:6px;
-  color:var(--muted);
-}
-
-/* ===== OPTIONS GRID ===== */
-.options{
-  margin-top:50px;
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:30px;
-}
-
-/* ===== OPTION CARD ===== */
-.card{
-  background:rgba(255,255,255,0.04);
-  border:1px solid var(--border);
+.container{
+  max-width:1000px;
+  margin:30px auto;
+  background:rgba(255,255,255,0.05);
+  padding:30px;
   border-radius:18px;
-  padding:40px 30px;
-  text-align:center;
+}
+
+h1{color:#00b4ff;margin-bottom:5px}
+.sub{color:#a1acba;margin-bottom:20px}
+
+.form{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+.form input{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.07);
+  color:white;
+}
+.form button{
+  grid-column:1/span 4;
+  background:#00b4ff;
+  color:black;
+  border:none;
+  padding:12px;
+  border-radius:10px;
+  font-weight:600;
   cursor:pointer;
-  transition:0.3s ease;
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  background:rgba(0,180,255,0.08);
-  box-shadow:0 0 28px rgba(0,180,255,0.25);
-}
+.section{margin-top:30px}
+.section h2{margin-bottom:10px}
 
-.card h2{
-  margin:0;
-  font-size:1.4rem;
-  color:var(--accent);
+.client{
+  background:rgba(255,255,255,0.06);
+  padding:14px;
+  border-radius:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
 }
+.client small{color:#a1acba}
 
-.card p{
-  margin-top:10px;
-  font-size:0.95rem;
-  color:var(--muted);
+.actions button{
+  margin-left:6px;
+  padding:6px 10px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  font-size:0.8rem;
 }
-
-/* ===== RESPONSIVE ===== */
-@media(max-width:900px){
-  .options{
-    grid-template-columns:1fr;
-  }
-}
+.view{background:#00b4ff;color:black}
+.done{background:#22c55e;color:black}
+.notdone{background:#ef4444;color:white}
 </style>
 </head>
 
@@ -140,36 +96,113 @@ header{
 
 <header>
   <div class="logo">MG</div>
-  <button class="back-btn" onclick="location.href='dashboard.html'">← Back</button>
+  <button class="back" onclick="history.back()">← Back</button>
 </header>
 
-<div class="main">
-  <div class="panel">
+<div class="container">
+  <h1>Follow Clients</h1>
+  <div class="sub">Add client and mark status later</div>
 
-    <h1>Follow Client</h1>
-    <p>Manage client follow-ups & completion status</p>
+  <!-- ADD CLIENT -->
+  <div class="form">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
+    <input id="phone" placeholder="Phone (optional)">
+    <input id="type" placeholder="Job Type">
+    <button onclick="saveClient()">Save Client</button>
+  </div>
 
-    <div class="options">
-
-      <div class="card" onclick="location.href='to-follow.html'">
-        <h2>To Follow</h2>
-        <p>Add new clients & manage follow-ups</p>
-      </div>
-
-      <div class="card" onclick="location.href='completed.html'">
-        <h2>Completed</h2>
-        <p>View all completed clients</p>
-      </div>
-
-      <div class="card" onclick="location.href='not-completed.html'">
-        <h2>Not Completed</h2>
-        <p>Clients pending or dropped</p>
-      </div>
-
-    </div>
-
+  <!-- TO FOLLOW -->
+  <div class="section">
+    <h2>To Follow</h2>
+    <div id="followList"></div>
   </div>
 </div>
+
+<script>
+const followList = document.getElementById("followList");
+
+function getData(){
+  return JSON.parse(localStorage.getItem("clients") || "[]");
+}
+function setData(d){
+  localStorage.setItem("clients", JSON.stringify(d));
+}
+
+function saveClient(){
+  const company = companyInput.value.trim();
+  const name = nameInput.value.trim();
+  const type = typeInput.value.trim();
+  const phone = phoneInput.value.trim();
+
+  if(!company || !name || !type){
+    alert("Enter required details");
+    return;
+  }
+
+  const client = {
+    id: Date.now(),
+    company, name, phone, type,
+    date: new Date().toLocaleDateString(),
+    status: "follow"
+  };
+
+  const data = getData();
+  data.push(client);
+  setData(data);
+
+  companyInput.value="";
+  nameInput.value="";
+  phoneInput.value="";
+  typeInput.value="";
+
+  render();
+}
+
+function render(){
+  const data = getData().filter(c=>c.status==="follow");
+  followList.innerHTML = data.length ? "" : "<small>No clients</small>";
+
+  data.forEach(c=>{
+    const div = document.createElement("div");
+    div.className="client";
+    div.innerHTML = `
+      <div>
+        <strong>${c.company}</strong><br>
+        <small>${c.name} | ${c.type} | ${c.phone || "—"} | ${c.date}</small>
+      </div>
+      <div class="actions">
+        <button class="view" onclick="viewClient(${c.id})">View</button>
+        <button class="done" onclick="mark(${c.id},'completed')">Completed</button>
+        <button class="notdone" onclick="mark(${c.id},'not')">Not</button>
+      </div>
+    `;
+    followList.appendChild(div);
+  });
+}
+
+function mark(id,status){
+  const data = getData();
+  const i = data.findIndex(c=>c.id===id);
+  data[i].status = status;
+  setData(data);
+  render();
+}
+
+function viewClient(id){
+  const c = getData().find(x=>x.id===id);
+  alert(
+    `Company: ${c.company}\nName: ${c.name}\nPhone: ${c.phone || "-"}\nType: ${c.type}\nDate: ${c.date}`
+  );
+}
+
+const companyInput = document.getElementById("company");
+const nameInput = document.getElementById("name");
+const phoneInput = document.getElementById("phone");
+const typeInput = document.getElementById("type");
+
+render();
+</script>
 
 </body>
 </html>
