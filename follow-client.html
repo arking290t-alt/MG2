@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Follow Jobs – Client</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family:Poppins,sans-serif;
+  background:radial-gradient(circle at 20% 30%, #101821, #070c12);
+  color:#e5eaf0;
+}
+
+/* HEADER */
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 28px;
+  background:rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.logo{color:#00b4ff;font-size:1.6rem;font-weight:700;}
+.btn-back{
+  border:1px solid #00b4ff;
+  color:#00b4ff;
+  padding:8px 16px;
+  border-radius:10px;
+  background:transparent;
+  cursor:pointer;
+}
+
+/* CONTAINER */
+.container{
+  max-width:1100px;
+  margin:40px auto;
+  background:rgba(255,255,255,0.05);
+  border-radius:20px;
+  padding:40px;
+  box-shadow:0 0 40px rgba(0,180,255,0.15);
+}
+
+h2{color:#00b4ff;margin-bottom:10px;}
+.section-title{margin-top:40px;font-size:1.3rem}
+
+/* FORM */
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;
+}
+input{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.08);
+  color:white;
+}
+button.primary{
+  margin-top:16px;
+  background:#00b4ff;
+  color:black;
+  padding:12px 20px;
+  border:none;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* LISTS */
+.list{margin-top:15px}
+.item{
+  background:rgba(255,255,255,0.07);
+  padding:14px 18px;
+  border-radius:12px;
+  margin-bottom:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.item small{color:#9fb6d4}
+
+/* BUTTONS */
+.actions button{
+  margin-left:6px;
+  padding:6px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.view{background:#00b4ff;color:black}
+.done{background:#22c55e;color:black}
+.notdone{background:#ef4444;color:white}
+</style>
+</head>
+
+<body>
+
+<header class="top-bar">
+  <div class="logo">MG</div>
+  <button class="btn-back" onclick="history.back()">← Back</button>
+</header>
+
+<div class="container">
+
+  <h2>Client</h2>
+  <p style="color:#9fb6d4">Add client first, then mark status</p>
+
+  <!-- ADD CLIENT -->
+  <div class="form-grid">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
+    <input id="phone" placeholder="Phone Number">
+    <input id="type" placeholder="Type">
+  </div>
+  <button class="primary" onclick="addClient()">Save Client</button>
+
+  <!-- ACTIVE CLIENTS -->
+  <h3 class="section-title">Clients</h3>
+  <div id="clients" class="list"></div>
+
+  <!-- COMPLETED -->
+  <h3 class="section-title" style="color:#22c55e">Completed</h3>
+  <div id="completed" class="list"></div>
+
+  <!-- NOT COMPLETED -->
+  <h3 class="section-title" style="color:#ef4444">Not Completed</h3>
+  <div id="notcompleted" class="list"></div>
+
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("followClients")) || {
+  clients:[], completed:[], notcompleted:[]
+};
+
+function save(){
+  localStorage.setItem("followClients", JSON.stringify(data));
+  render();
+}
+
+function addClient(){
+  const c = {
+    company: company.value,
+    name: name.value,
+    phone: phone.value,
+    type: type.value,
+    date: new Date().toLocaleDateString()
+  };
+  if(!c.name) return alert("Client name required");
+  data.clients.push(c);
+  company.value=name.value=phone.value=type.value="";
+  save();
+}
+
+function moveClient(from, to, index){
+  data[to].push(data[from][index]);
+  data[from].splice(index,1);
+  save();
+}
+
+function render(){
+  clients.innerHTML = data.clients.map((c,i)=>itemHTML(c,"clients",i)).join("") || "No clients";
+  completed.innerHTML = data.completed.map(c=>itemHTML(c)).join("") || "No completed";
+  notcompleted.innerHTML = data.notcompleted.map(c=>itemHTML(c)).join("") || "No pending";
+}
+
+function itemHTML(c, from, i){
+  return `
+  <div class="item">
+    <div>
+      <strong>${c.company}</strong><br>
+      <small>${c.name} | ${c.phone} | ${c.type} | ${c.date}</small>
+    </div>
+    ${from ? `
+    <div class="actions">
+      <button class="view" onclick='alert(JSON.stringify(${JSON.stringify(c)},null,2))'>View</button>
+      <button class="done" onclick="moveClient('${from}','completed',${i})">Completed</button>
+      <button class="notdone" onclick="moveClient('${from}','notcompleted',${i})">Not</button>
+    </div>` : ""}
+  </div>`;
+}
+
+render();
+</script>
+
+</body>
+</html>
