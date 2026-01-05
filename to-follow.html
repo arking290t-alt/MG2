@@ -2,215 +2,134 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>To Follow Clients | MG</title>
-
+<title>To Follow Clients</title>
 <style>
-body{
-  margin:0;
-  background:#0b111b;
-  font-family:Poppins,sans-serif;
-  color:#e5eaf0;
-}
-.top{
-  height:64px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 30px;
-  background:linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
-}
-.logo{color:#00b4ff;font-size:22px;font-weight:700}
-.back{
-  color:#00b4ff;
-  border:1px solid #00b4ff;
-  padding:6px 14px;
-  border-radius:8px;
-  text-decoration:none;
-}
-
-.container{
-  max-width:1200px;
-  margin:60px auto;
-  background:rgba(255,255,255,0.06);
-  padding:40px;
-  border-radius:24px;
-}
-
-h1{color:#00b4ff;margin-bottom:20px}
-
-.form{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:16px;
-}
-input{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.1);
-  color:white;
-  padding:12px;
-  border-radius:10px;
-}
-button{
-  grid-column:span 5;
-  background:#00b4ff;
-  border:none;
-  padding:14px;
-  border-radius:12px;
-  font-weight:600;
-  cursor:pointer;
-}
-
-.list{margin-top:30px}
-.row{
-  display:grid;
-  grid-template-columns:1.4fr 1.4fr 1fr 1fr 1fr 2.4fr;
-  gap:10px;
-  background:rgba(255,255,255,0.05);
-  padding:14px;
-  border-radius:12px;
-  margin-bottom:10px;
-  align-items:center;
-}
-.actions button{
-  margin-right:6px;
-  padding:6px 10px;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
-  font-size:13px;
-}
-.view{background:#3b82f6;color:white}
-.done{background:#22c55e;color:black}
-.notdone{background:#ef4444;color:white}
-.delete{background:#6b7280;color:white}
+body { background:#0b111b; color:#fff; font-family:Poppins,sans-serif; }
+.container { max-width:1100px; margin:40px auto; background:#111827; padding:25px; border-radius:16px; }
+h1 { color:#00b4ff; }
+input { padding:10px; border-radius:8px; border:none; background:#1f2937; color:#fff; width:100%; }
+.grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+button { padding:8px 14px; border:none; border-radius:6px; cursor:pointer; }
+.blue{background:#0ea5e9;color:#000;}
+.green{background:#22c55e;}
+.red{background:#ef4444;}
+.gray{background:#6b7280;}
+.row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:center;
+background:#1f2937;padding:10px;border-radius:10px;margin-top:10px;}
 </style>
 </head>
 
 <body>
+<div class="container">
+<h1>To Follow Clients</h1>
 
-<div class="top">
-  <div class="logo">MG</div>
-  <a class="back" href="client.html">← Back</a>
+<div class="grid">
+  <input id="company" placeholder="Company Name">
+  <input id="name" placeholder="Client Name">
+  <input id="phone" placeholder="Phone">
+  <input id="type" placeholder="Job Type">
+  <input id="date" placeholder="Date (DD/MM/YYYY)">
 </div>
 
-<div class="container">
-  <h1>To Follow Clients</h1>
+<br>
+<button class="blue" onclick="saveClient()">Save Client</button>
 
-  <div class="form">
-    <input id="company" placeholder="Company Name">
-    <input id="name" placeholder="Client Name">
-    <input id="phone" placeholder="Phone">
-    <input id="type" placeholder="Job Type">
-    <input id="date" placeholder="Date (DD/MM/YYYY)">
-    <button onclick="saveClient()">Save Client</button>
-  </div>
-
-  <div class="list" id="list"></div>
+<div id="list"></div>
 </div>
 
 <script>
-const KEY = "toFollowClients";
+function saveClient(){
+  const company = companyEl.value.trim();
+  const name = nameEl.value.trim();
+  const type = typeEl.value.trim();
+  const date = dateEl.value.trim();
 
-function load(){
-  const data = JSON.parse(localStorage.getItem(KEY) || "[]");
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-
-  if(!data.length){
-    list.innerHTML = "<p>No clients</p>";
+  if(!company || !name || !type || !date){
+    alert("Enter required details");
     return;
   }
 
-  data.forEach((c,i)=>{
+  const client = {
+    company,
+    name,
+    phone: phoneEl.value.trim(),
+    type,
+    date
+  };
+
+  const arr = JSON.parse(localStorage.getItem("toFollowClients")) || [];
+  arr.push(client);
+  localStorage.setItem("toFollowClients", JSON.stringify(arr));
+  clearForm();
+  render();
+}
+
+function markCompleted(i){
+  let f = JSON.parse(localStorage.getItem("toFollowClients"))||[];
+  let c = JSON.parse(localStorage.getItem("completedClients"))||[];
+  c.push(f[i]);
+  f.splice(i,1);
+  localStorage.setItem("toFollowClients",JSON.stringify(f));
+  localStorage.setItem("completedClients",JSON.stringify(c));
+  render();
+}
+
+function markNotCompleted(i){
+  const remark = prompt("Enter remark");
+  if(!remark) return;
+  let f = JSON.parse(localStorage.getItem("toFollowClients"))||[];
+  let n = JSON.parse(localStorage.getItem("notCompletedClients"))||[];
+  f[i].remark = remark;
+  n.push(f[i]);
+  f.splice(i,1);
+  localStorage.setItem("toFollowClients",JSON.stringify(f));
+  localStorage.setItem("notCompletedClients",JSON.stringify(n));
+  render();
+}
+
+function del(i){
+  let f = JSON.parse(localStorage.getItem("toFollowClients"))||[];
+  if(confirm("Delete client?")){
+    f.splice(i,1);
+    localStorage.setItem("toFollowClients",JSON.stringify(f));
+    render();
+  }
+}
+
+function render(){
+  const list = document.getElementById("list");
+  const f = JSON.parse(localStorage.getItem("toFollowClients"))||[];
+  list.innerHTML = "";
+  if(f.length===0){ list.innerHTML="<p>No clients</p>"; return; }
+
+  f.forEach((c,i)=>{
     list.innerHTML += `
       <div class="row">
         <div>${c.company}</div>
         <div>${c.name}</div>
-        <div>${c.phone || "-"}</div>
-        <div>${c.type || "-"}</div>
+        <div>${c.phone||"-"}</div>
+        <div>${c.type}</div>
         <div>${c.date}</div>
-        <div class="actions">
-          <button class="view" onclick="view(${i})">View</button>
-          <button class="done" onclick="complete(${i})">Completed</button>
-          <button class="notdone" onclick="notComplete(${i})">Not</button>
-          <button class="delete" onclick="removeClient(${i})">Delete</button>
+        <div>
+          <button class="green" onclick="markCompleted(${i})">Completed</button>
+          <button class="red" onclick="markNotCompleted(${i})">Not</button>
+          <button class="gray" onclick="del(${i})">Delete</button>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
-function saveClient(){
-  const company = companyEl.value.trim();
-  const name = nameEl.value.trim();
-  const phone = phoneEl.value.trim();
-  const type = typeEl.value.trim();
-  const date = dateEl.value.trim();
-
-  if(!company || !name || !date){
-    alert("Company, Client Name and Date are required");
-    return;
-  }
-
-  const data = JSON.parse(localStorage.getItem(KEY) || "[]");
-  data.push({company,name,phone,type,date});
-  localStorage.setItem(KEY, JSON.stringify(data));
-
-  companyEl.value = nameEl.value = phoneEl.value = typeEl.value = dateEl.value = "";
-  load();
+function clearForm(){
+  companyEl.value=nameEl.value=phoneEl.value=typeEl.value=dateEl.value="";
 }
 
-function view(i){
-  const c = JSON.parse(localStorage.getItem(KEY))[i];
-  alert(
-    `Company: ${c.company}
-Client: ${c.name}
-Phone: ${c.phone || "-"}
-Type: ${c.type || "-"}
-Date: ${c.date}
-${c.remark ? "Remark: "+c.remark : ""}`
-  );
-}
+const companyEl=document.getElementById("company");
+const nameEl=document.getElementById("name");
+const phoneEl=document.getElementById("phone");
+const typeEl=document.getElementById("type");
+const dateEl=document.getElementById("date");
 
-function complete(i){
-  move(i,"completedClients","completed.html");
-}
-
-function notComplete(i){
-  const remark = prompt("Enter remark");
-  if(!remark) return;
-  const data = JSON.parse(localStorage.getItem(KEY));
-  data[i].remark = remark;
-  move(i,"notCompletedClients","not-completed.html");
-}
-
-function removeClient(i){
-  if(!confirm("Delete this client permanently?")) return;
-  const data = JSON.parse(localStorage.getItem(KEY));
-  data.splice(i,1);
-  localStorage.setItem(KEY, JSON.stringify(data));
-  load();
-}
-
-function move(i,key,page){
-  const data = JSON.parse(localStorage.getItem(KEY));
-  const item = data.splice(i,1)[0];
-  localStorage.setItem(KEY, JSON.stringify(data));
-
-  const target = JSON.parse(localStorage.getItem(key)||"[]");
-  target.push(item);
-  localStorage.setItem(key, JSON.stringify(target));
-  load();
-}
-
-const companyEl = document.getElementById("company");
-const nameEl = document.getElementById("name");
-const phoneEl = document.getElementById("phone");
-const typeEl = document.getElementById("type");
-const dateEl = document.getElementById("date");
-
-load();
+render();
 </script>
-
 </body>
 </html>
