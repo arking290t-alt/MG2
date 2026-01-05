@@ -2,146 +2,199 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>To Follow Clients</title>
+<title>To Follow Clients | MG</title>
+
 <style>
 body{
+  margin:0;
   background:#0b111b;
   font-family:Poppins,sans-serif;
   color:#e5eaf0;
 }
+.top{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 30px;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
+}
+.logo{color:#00b4ff;font-size:22px;font-weight:700}
+.back{
+  color:#00b4ff;
+  border:1px solid #00b4ff;
+  padding:6px 14px;
+  border-radius:8px;
+  text-decoration:none;
+}
+
 .container{
-  max-width:1100px;
+  max-width:1200px;
   margin:60px auto;
   background:rgba(255,255,255,0.06);
-  padding:30px;
-  border-radius:20px;
+  padding:40px;
+  border-radius:24px;
 }
-h1{color:#00b4ff}
-input{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  background:#1b2430;
-  color:#fff;
-}
-.grid{
+
+h1{color:#00b4ff;margin-bottom:20px}
+
+.form{
   display:grid;
   grid-template-columns:repeat(5,1fr);
-  gap:15px;
+  gap:16px;
+}
+input{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.1);
+  color:white;
+  padding:12px;
+  border-radius:10px;
 }
 button{
-  padding:10px 16px;
-  border-radius:8px;
+  grid-column:span 5;
+  background:#00b4ff;
+  border:none;
+  padding:14px;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.list{margin-top:30px}
+.row{
+  display:grid;
+  grid-template-columns:1.5fr 1.5fr 1fr 1fr 1fr 2fr;
+  gap:10px;
+  background:rgba(255,255,255,0.05);
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:10px;
+  align-items:center;
+}
+.actions button{
+  margin-right:6px;
+  padding:6px 10px;
+  border-radius:6px;
   border:none;
   cursor:pointer;
-  font-weight:600;
 }
-.btn-save{background:#00b4ff;color:#000;margin-top:15px}
-.btn-view{background:#444;color:#fff}
-.btn-done{background:#22c55e;color:#000}
-.btn-not{background:#ef4444;color:#000}
-.client{
-  background:rgba(255,255,255,0.05);
-  padding:15px;
-  border-radius:12px;
-  margin-top:12px;
-}
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
+.view{background:#3b82f6;color:white}
+.done{background:#22c55e;color:black}
+.notdone{background:#ef4444;color:white}
 </style>
 </head>
+
 <body>
 
-<div class="container">
-<h1>To Follow Clients</h1>
-
-<div class="grid">
-<input id="company" placeholder="Company Name">
-<input id="name" placeholder="Client Name">
-<input id="phone" placeholder="Phone">
-<input id="type" placeholder="Job Type">
-<input id="date" type="date">
+<div class="top">
+  <div class="logo">MG</div>
+  <a class="back" href="client.html">← Back</a>
 </div>
 
-<button class="btn-save" onclick="saveClient()">Save Client</button>
+<div class="container">
+  <h1>To Follow Clients</h1>
 
-<div id="list"></div>
+  <!-- FORM (NO <form> TAG – IMPORTANT) -->
+  <div class="form">
+    <input id="company" placeholder="Company Name">
+    <input id="name" placeholder="Client Name">
+    <input id="phone" placeholder="Phone">
+    <input id="type" placeholder="Job Type">
+    <input id="date" placeholder="Date (DD/MM/YYYY)">
+    <button onclick="saveClient()">Save Client</button>
+  </div>
+
+  <div class="list" id="list"></div>
 </div>
 
 <script>
-const KEY="clients";
+const KEY = "toFollowClients";
 
-function getData(){
-  return JSON.parse(localStorage.getItem(KEY))||[];
-}
-function setData(d){
-  localStorage.setItem(KEY,JSON.stringify(d));
-}
+function load(){
+  const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+  const list = document.getElementById("list");
+  list.innerHTML = "";
 
-function saveClient(){
-  const company=companyInput.value.trim();
-  const name=nameInput.value.trim();
-  const date=dateInput.value;
-
-  if(!company||!name||!date){
-    alert("Enter required details");
+  if(!data.length){
+    list.innerHTML = "<p>No clients</p>";
     return;
   }
 
-  const data=getData();
-  data.push({
-    id:Date.now(),
-    company,
-    name,
-    phone:phone.value,
-    type:type.value,
-    date,
-    status:"follow",
-    remark:""
-  });
-  setData(data);
-  clearInputs();
-  render();
-}
-
-function clearInputs(){
-  document.querySelectorAll("input").forEach(i=>i.value="");
-}
-
-function mark(id,status){
-  const data=getData();
-  const c=data.find(x=>x.id===id);
-  if(status==="not-completed"){
-    const r=prompt("Enter remark");
-    if(!r) return;
-    c.remark=r;
-  }
-  c.status=status;
-  setData(data);
-  render();
-}
-
-function render(){
-  const box=document.getElementById("list");
-  const data=getData().filter(c=>c.status==="follow");
-  box.innerHTML=data.length?data.map(c=>`
-    <div class="client">
-      <b>${c.company}</b> — ${c.name}<br>
-      ${c.type} | ${c.phone} | ${c.date}
-      <div class="actions">
-        <button class="btn-view" onclick='alert(JSON.stringify(${JSON.stringify(c)},null,2))'>View</button>
-        <button class="btn-done" onclick="mark(${c.id},'completed')">Completed</button>
-        <button class="btn-not" onclick="mark(${c.id},'not-completed')">Not Completed</button>
+  data.forEach((c,i)=>{
+    list.innerHTML += `
+      <div class="row">
+        <div>${c.company}</div>
+        <div>${c.name}</div>
+        <div>${c.phone}</div>
+        <div>${c.type}</div>
+        <div>${c.date}</div>
+        <div class="actions">
+          <button class="view" onclick="view(${i})">View</button>
+          <button class="done" onclick="complete(${i})">Completed</button>
+          <button class="notdone" onclick="notComplete(${i})">Not</button>
+        </div>
       </div>
-    </div>
-  `).join(""):"<p>No clients</p>";
+    `;
+  });
 }
 
-render();
+function saveClient(){
+  const company = companyEl.value.trim();
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  const type = typeEl.value.trim();
+  const date = dateEl.value.trim();
+
+  if(!company || !name || !date){
+    alert("Company, Client Name and Date are required");
+    return;
+  }
+
+  const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+  data.push({company,name,phone,type,date});
+  localStorage.setItem(KEY, JSON.stringify(data));
+
+  companyEl.value = nameEl.value = phoneEl.value = typeEl.value = dateEl.value = "";
+  load();
+}
+
+function view(i){
+  const c = JSON.parse(localStorage.getItem(KEY))[i];
+  alert(
+    `Company: ${c.company}\nName: ${c.name}\nPhone: ${c.phone}\nType: ${c.type}\nDate: ${c.date}`
+  );
+}
+
+function complete(i){
+  move(i,"completedClients","completed.html");
+}
+
+function notComplete(i){
+  const remark = prompt("Enter remark");
+  if(!remark) return;
+  const data = JSON.parse(localStorage.getItem(KEY));
+  data[i].remark = remark;
+  move(i,"notCompletedClients","not-completed.html");
+}
+
+function move(i,key,page){
+  const data = JSON.parse(localStorage.getItem(KEY));
+  const item = data.splice(i,1)[0];
+  localStorage.setItem(KEY, JSON.stringify(data));
+
+  const target = JSON.parse(localStorage.getItem(key)||"[]");
+  target.push(item);
+  localStorage.setItem(key, JSON.stringify(target));
+  load();
+}
+
+const companyEl = document.getElementById("company");
+const nameEl = document.getElementById("name");
+const phoneEl = document.getElementById("phone");
+const typeEl = document.getElementById("type");
+const dateEl = document.getElementById("date");
+
+load();
 </script>
 
 </body>
