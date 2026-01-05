@@ -63,7 +63,7 @@ button{
 .list{margin-top:30px}
 .row{
   display:grid;
-  grid-template-columns:1.5fr 1.5fr 1fr 1fr 1fr 2fr;
+  grid-template-columns:1.4fr 1.4fr 1fr 1fr 1fr 2.4fr;
   gap:10px;
   background:rgba(255,255,255,0.05);
   padding:14px;
@@ -77,10 +77,12 @@ button{
   border-radius:6px;
   border:none;
   cursor:pointer;
+  font-size:13px;
 }
 .view{background:#3b82f6;color:white}
 .done{background:#22c55e;color:black}
 .notdone{background:#ef4444;color:white}
+.delete{background:#6b7280;color:white}
 </style>
 </head>
 
@@ -94,7 +96,6 @@ button{
 <div class="container">
   <h1>To Follow Clients</h1>
 
-  <!-- FORM (NO <form> TAG – IMPORTANT) -->
   <div class="form">
     <input id="company" placeholder="Company Name">
     <input id="name" placeholder="Client Name">
@@ -125,13 +126,14 @@ function load(){
       <div class="row">
         <div>${c.company}</div>
         <div>${c.name}</div>
-        <div>${c.phone}</div>
-        <div>${c.type}</div>
+        <div>${c.phone || "-"}</div>
+        <div>${c.type || "-"}</div>
         <div>${c.date}</div>
         <div class="actions">
           <button class="view" onclick="view(${i})">View</button>
           <button class="done" onclick="complete(${i})">Completed</button>
           <button class="notdone" onclick="notComplete(${i})">Not</button>
+          <button class="delete" onclick="removeClient(${i})">Delete</button>
         </div>
       </div>
     `;
@@ -161,7 +163,12 @@ function saveClient(){
 function view(i){
   const c = JSON.parse(localStorage.getItem(KEY))[i];
   alert(
-    `Company: ${c.company}\nName: ${c.name}\nPhone: ${c.phone}\nType: ${c.type}\nDate: ${c.date}`
+    `Company: ${c.company}
+Client: ${c.name}
+Phone: ${c.phone || "-"}
+Type: ${c.type || "-"}
+Date: ${c.date}
+${c.remark ? "Remark: "+c.remark : ""}`
   );
 }
 
@@ -175,6 +182,14 @@ function notComplete(i){
   const data = JSON.parse(localStorage.getItem(KEY));
   data[i].remark = remark;
   move(i,"notCompletedClients","not-completed.html");
+}
+
+function removeClient(i){
+  if(!confirm("Delete this client permanently?")) return;
+  const data = JSON.parse(localStorage.getItem(KEY));
+  data.splice(i,1);
+  localStorage.setItem(KEY, JSON.stringify(data));
+  load();
 }
 
 function move(i,key,page){
