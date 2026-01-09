@@ -37,15 +37,15 @@ header{padding:20px 40px;display:flex;justify-content:space-between}
 <div class="modal" id="finishModal">
   <div class="box">
     <h3>Finish Job</h3>
-    <input id="finishedBy" placeholder="Finished By">
-    <input id="finishedAmount" placeholder="Amount Received">
-    <button onclick="saveFinished()">Save</button>
+    <input id="finishBy" placeholder="Finished By">
+    <input id="finishAmt" placeholder="Amount Received">
+    <button onclick="saveFinish()">Save</button>
   </div>
 </div>
 
 <script>
 const KEY="followClients";
-let finishId=null;
+let currentFinish=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
@@ -57,38 +57,48 @@ function render(){
 
   data.forEach(x=>{
     box.innerHTML+=`
-      <div class="row">
-        <div>${x.company}</div>
-        <div>${x.name}</div>
-        <div>${x.phone||"-"}</div>
-        <div>${x.job}</div>
-        <div>${x.date}</div>
-        <div>
-          <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-          <button class="btn finish" onclick="markFinish(${x.id})">Finished</button>
-          <button class="btn del" onclick="del(${x.id})">Delete</button>
-        </div>
-      </div>`;
+    <div class="row">
+      <div>${x.company}</div>
+      <div>${x.name}</div>
+      <div>${x.phone||"-"}</div>
+      <div>${x.job}</div>
+      <div>${x.completedDate}</div>
+      <div>
+        <button class="btn view" onclick="view(${x.id})">View</button>
+        <button class="btn finish" onclick="openFinish(${x.id})">Finished</button>
+        <button class="btn del" onclick="remove(${x.id})">Delete</button>
+      </div>
+    </div>`;
   });
 }
 
-function markFinish(id){
-  finishId=id;
+function view(id){
+  const x=get().find(a=>a.id===id);
+  alert(
+`Company: ${x.company}
+Name: ${x.name}
+Phone: ${x.phone||"-"}
+Job: ${x.job}
+Completed By: ${x.completedBy}
+Amount Asked: ${x.completedAmount}`);
+}
+
+function openFinish(id){
+  currentFinish=id;
   finishModal.style.display="flex";
 }
 
-function saveFinished(){
-  const by=finishedBy.value.trim();
-  const amt=finishedAmount.value.trim();
-  if(!by||!amt){ alert("Enter all fields"); return; }
+function saveFinish(){
+  const by=finishBy.value.trim();
+  const amt=finishAmt.value.trim();
+  if(!by||!amt){alert("Fill all");return;}
 
   const all=get();
-  const item=all.find(x=>x.id===finishId);
-  if(!item) return;
+  const item=all.find(x=>x.id===currentFinish);
 
   item.status="finished";
   item.finishedBy=by;
-  item.receivedAmount=amt;
+  item.finishedAmount=amt;
   item.finishedDate=new Date().toISOString().split("T")[0];
 
   set(all);
@@ -96,17 +106,10 @@ function saveFinished(){
   render();
 }
 
-function del(id){
+function remove(id){
   if(!confirm("Delete completed job?"))return;
-  let all=get().filter(x=>x.id!==id);
-  set(all);
+  set(get().filter(x=>x.id!==id));
   render();
-}
-
-function view(x){
-  alert(
-    `Company: ${x.company}\nName: ${x.name}\nPhone: ${x.phone||"-"}\nJob: ${x.job}\nAmount: ${x.amount}`
-  );
 }
 
 render();
