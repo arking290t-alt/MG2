@@ -48,7 +48,6 @@
       border-radius:14px;
       box-shadow:0 8px 30px rgba(0,180,255,0.1);
       text-align:center;
-      position:relative;
     }
 
     h1{color:var(--accent);margin-bottom:10px;}
@@ -112,9 +111,7 @@
       color: var(--processing);
     }
 
-    .btn-small:hover{
-      opacity:0.8;
-    }
+    .btn-small:hover{opacity:0.8;}
 
     /* DELIVERY */
     .delivery-box{
@@ -149,7 +146,8 @@
   <header id="ownerHeader">
     <div class="logo">MG</div>
     <div>
-      <a href="jobs.html" class="btn">← Back</a>
+      <!-- ✅ BACK NOW GOES TO JOB UPDATE -->
+      <a href="job-update.html" class="btn">← Back</a>
       <button id="shareBtn" class="btn" style="margin-left:10px;">Share</button>
     </div>
   </header>
@@ -168,7 +166,6 @@
     </div>
   </div>
 
-  <!-- JS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
@@ -189,7 +186,7 @@ const db = getFirestore(app);
 const urlParams = new URLSearchParams(window.location.search);
 const sharedJobId = urlParams.get("job");
 const jobId = sharedJobId || localStorage.getItem("selectedJob");
-const isCustomer = sharedJobId ? true : false;
+const isCustomer = !!sharedJobId;
 
 const jobNameEl = document.getElementById("jobName");
 const jobTypeEl = document.getElementById("jobType");
@@ -201,6 +198,11 @@ if (isCustomer) ownerHeader.style.display = "none";
 
 // LOAD JOB
 async function loadJob() {
+  if (!jobId) {
+    categoryTimeline.innerHTML = "<p>No job selected.</p>";
+    return;
+  }
+
   const docRef = doc(db, "jobs", jobId);
   const snap = await getDoc(docRef);
 
@@ -210,32 +212,29 @@ async function loadJob() {
   }
 
   const job = snap.data();
-  jobNameEl.textContent = job.name;
-  jobTypeEl.textContent = job.type;
+  jobNameEl.textContent = job.name || "—";
+  jobTypeEl.textContent = job.type || "—";
 
-  // DELIVERY
+  /* DELIVERY */
   if (job.deliveryDate) {
     deliveryContent.innerHTML = `<p style="color:#fff;font-size:1rem;">${job.deliveryDate}</p>`;
+  } else if (!isCustomer) {
+    deliveryContent.innerHTML = `
+      <input type="date" id="deliveryInput">
+      <button class="saveDateBtn" id="saveDate">Save</button>
+    `;
+    document.getElementById("saveDate").onclick = async () => {
+      const d = document.getElementById("deliveryInput").value;
+      if (!d) return alert("Select a date");
+      await updateDoc(docRef, { deliveryDate: d });
+      loadJob();
+    };
   } else {
-    if (!isCustomer) {
-      deliveryContent.innerHTML = `
-        <input type="date" id="deliveryInput">
-        <button class="saveDateBtn" id="saveDate">Save</button>
-      `;
-      document.getElementById("saveDate").onclick = async () => {
-        const d = document.getElementById("deliveryInput").value;
-        if (!d) return alert("Select a date");
-        await updateDoc(docRef, { deliveryDate: d });
-        loadJob();
-      };
-    } else {
-      deliveryContent.innerHTML = "<p style='color:#aaa;'>No delivery date set</p>";
-    }
+    deliveryContent.innerHTML = "<p style='color:#aaa;'>No delivery date set</p>";
   }
 
-  // CATEGORIES
+  /* CATEGORIES */
   const categories = job.categories || [];
-
   categoryTimeline.innerHTML = "";
 
   categories.forEach((row, i) => {
@@ -244,7 +243,6 @@ async function loadJob() {
     const div = document.createElement("div");
     div.className = "stage";
 
-    // DOT COLOR
     let dotClass = "";
     if (row.status === "done") dotClass = "done";
     if (row.status === "processing") dotClass = "processing";
@@ -256,15 +254,12 @@ async function loadJob() {
         <small>Category</small>
 
         ${
-          isCustomer
-            ? ""
-            : `
+          isCustomer ? "" : `
           <div class="btn-row">
             <button class="btn-small" data-action="done">Done</button>
             <button class="btn-small processing" data-action="processing">Processing</button>
             <button class="btn-small" data-action="pending">Pending</button>
-          </div>
-        `
+          </div>`
         }
       </div>
     `;
@@ -275,12 +270,11 @@ async function loadJob() {
       div.querySelectorAll(".btn-small").forEach(btn => {
         btn.onclick = async () => {
           const action = btn.dataset.action;
-
           categories[i].status = action;
 
-          if (action === "done") dot.className = "dot done";
-          if (action === "processing") dot.className = "dot processing";
-          if (action === "pending") dot.className = "dot";
+          dot.className = "dot";
+          if (action === "done") dot.classList.add("done");
+          if (action === "processing") dot.classList.add("processing");
 
           await updateDoc(docRef, { categories });
         };
