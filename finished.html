@@ -1,55 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Finished Jobs</title>
-
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
 .logo{color:#facc15;font-size:22px;font-weight:700}
 .back{border:1px solid #facc15;background:transparent;color:#facc15;padding:8px 16px;border-radius:10px;cursor:pointer}
 
-.container{
-  max-width:1100px;margin:40px auto;
-  background:rgba(255,255,255,.05);
-  padding:30px;border-radius:20px
-}
+.container{max-width:1200px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
 h1{color:#facc15}
 
-.search{
-  width:100%;padding:12px;
-  border-radius:12px;border:1px solid #555;
-  background:#1f2937;color:#fff;
-  margin-bottom:20px
-}
-
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr 1fr auto;
-  gap:10px;background:#1f2937;
-  padding:12px;border-radius:14px;
-  margin-top:10px;align-items:center
-}
-
+.row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:14px;border-radius:14px;margin-top:12px;align-items:center}
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
 .del{background:#ef4444;color:#fff}
-.empty{color:#9ca3af;margin-top:10px}
+.empty{color:#9ca3af}
 
 /* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
-.box{
-  background:#111827;padding:25px 30px;border-radius:18px;
-  width:420px;text-align:left;
-  box-shadow:0 0 40px rgba(250,204,21,.3)
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.65);
+  display:none;
+  align-items:center;
+  justify-content:center;
 }
-.box h3{color:#facc15;text-align:center}
-.detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0}
-.box button{
-  margin-top:12px;width:100%;
-  padding:10px;border:none;
-  border-radius:10px;cursor:pointer
+.modal-box{
+  background:#111827;
+  width:420px;
+  padding:25px;
+  border-radius:18px;
 }
+.modal-box h3{color:#facc15}
+.modal-box p{margin:6px 0;color:#d1d5db}
+.actions{display:flex;margin-top:15px}
+.actions button{flex:1;padding:10px;border:none;border-radius:10px;cursor:pointer}
+.cancel{background:#374151;color:#fff}
 </style>
 </head>
 
@@ -62,38 +50,29 @@ h1{color:#facc15}
 
 <div class="container">
 <h1>Finished Jobs</h1>
-
-<input class="search" id="search" placeholder="Search by company, name, phone or job">
-
 <div id="list"></div>
 </div>
 
 <!-- VIEW MODAL -->
 <div class="modal" id="viewModal">
-  <div class="box">
-    <h3>Finished Job Details</h3>
-    <div id="viewData"></div>
-    <button onclick="closeModal()">Close</button>
+  <div class="modal-box">
+    <h3>Finished Job</h3>
+    <div id="viewBox"></div>
+    <div class="actions">
+      <button class="cancel" onclick="closeModal()">Close</button>
+    </div>
   </div>
 </div>
 
 <script>
-const KEY="followClients";
-let viewModal=document.getElementById("viewModal");
-let viewData=document.getElementById("viewData");
+const KEY="mg_follow_clients";
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-/* ------------ RENDER ------------ */
 function render(){
-  const box=document.getElementById("list");
-  const q=document.getElementById("search").value.toLowerCase();
-
-  const data=get().filter(x=>
-    x.status==="finished" &&
-    (x.company+x.name+x.phone+x.job).toLowerCase().includes(q)
-  );
+  const box=list;
+  const data=get().filter(x=>x.status==="finished");
 
   box.innerHTML=data.length?"":"<p class='empty'>No finished jobs</p>";
 
@@ -105,54 +84,53 @@ function render(){
       <div>${x.phone||"-"}</div>
       <div>${x.job}</div>
       <div>
-        <button class="btn view" onclick="openView('${x.id}')">View</button>
-        <button class="btn del" onclick="deleteJob('${x.id}')">Delete</button>
+        <button class="btn view" onclick="viewJob('${x.id}')">View</button>
+        <button class="btn del" onclick="removeJob('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
-/* ------------ VIEW ------------ */
-function openView(id){
+/* VIEW */
+function viewJob(id){
   const x=get().find(a=>a.id===id);
-  if(!x) return;
+  viewBox.innerHTML=`
+    <p><b>Company:</b> ${x.company}</p>
+    <p><b>Name:</b> ${x.name}</p>
+    <p><b>Phone:</b> ${x.phone}</p>
+    <p><b>Job:</b> ${x.job}</p>
 
-  viewData.innerHTML=`
-    <div class="detail"><b>Company:</b> ${x.company}</div>
-    <div class="detail"><b>Name:</b> ${x.name}</div>
-    <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
-    <div class="detail"><b>Job:</b> ${x.job}</div>
-    <div class="detail"><b>Date:</b> ${x.date}</div>
+    <hr>
 
-    <div class="detail"><b>Completed By:</b> ${x.completedBy||"-"}</div>
-    <div class="detail"><b>Completed Amount:</b> ₹${x.completedAmount||"-"}</div>
+    <p><b>Completed By:</b> ${x.completedBy}</p>
+    <p><b>Completed Amount:</b> ${x.completedAmount}</p>
 
-    <div class="detail"><b>Finished By:</b> ${x.finishedBy||"-"}</div>
-    <div class="detail"><b>Amount Received:</b> ₹${x.finishedAmount||"-"}</div>
-    <div class="detail"><b>Finished Date:</b> ${x.finishedDate||"-"}</div>
+    <hr>
+
+    <p><b>Finished By:</b> ${x.finishedBy}</p>
+    <p><b>Amount Received:</b> ${x.finishedAmount}</p>
+    <p><b>Finished Date:</b> ${x.finishedDate}</p>
   `;
-  viewModal.style.display="flex";
+  openModal("viewModal");
 }
 
-/* ------------ DELETE ------------ */
-function deleteJob(id){
-  if(!confirm("Delete this finished job?")) return;
-  let all=get();
-  all=all.filter(x=>x.id!==id);
-  set(all);
+/* DELETE */
+function removeJob(id){
+  if(!confirm("Delete finished job?"))return;
+  let data=get().filter(x=>x.id!==id);
+  set(data);
   render();
 }
 
-/* ------------ CLOSE ------------ */
-function closeModal(){
-  viewModal.style.display="none";
+/* MODAL */
+function openModal(id){
+  document.getElementById(id).style.display="flex";
 }
-
-/* ------------ SEARCH ------------ */
-document.getElementById("search").addEventListener("input",render);
+function closeModal(){
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+}
 
 render();
 </script>
-
 </body>
 </html>
