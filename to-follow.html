@@ -1,3 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>To Follow Clients</title>
+<style>
+body{margin:0;background:#0b111b;font-family:Poppins,Arial,sans-serif;color:#fff}
+header{padding:20px 40px;display:flex;justify-content:space-between;align-items:center}
+.logo{color:#00b4ff;font-size:22px;font-weight:700}
+.back{border:1px solid #00b4ff;background:transparent;color:#00b4ff;padding:8px 16px;border-radius:10px;cursor:pointer}
+.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,0.05);padding:30px;border-radius:20px}
+h1{color:#00b4ff}
+.form{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12px;color:#fff}
+.save{grid-column:1/-1;padding:14px;background:#0ea5e9;border:none;border-radius:14px;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px;align-items:center}
+.btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+.view{background:#3b82f6;color:#fff}
+.done{background:#22c55e;color:#000}
+.not{background:#ef4444;color:#fff}
+.del{background:#6b7280;color:#fff}
+.empty{color:#9ca3af;margin-top:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+.box{background:#111827;padding:25px;border-radius:16px;width:360px}
+.box h3{color:#0ea5e9}
+.box textarea{width:100%;height:80px;background:#1f2937;color:#fff;border-radius:10px;padding:10px;border:none}
+.box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo">MG</div>
+  <button class="back" onclick="history.back()">← Back</button>
+</header>
+
+<div class="container">
+  <h1>To Follow Clients</h1>
+
+  <div class="form">
+    <input id="company" placeholder="Company Name *">
+    <input id="client" placeholder="Client Name *">
+    <input id="phone" placeholder="Phone">
+    <input id="job" placeholder="Job Type *">
+    <input id="date" type="date">
+    <button class="save" onclick="addClient()">Save Client</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<!-- VIEW -->
+<div class="modal" id="viewModal">
+  <div class="box">
+    <h3>Client Details</h3>
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- NOT COMPLETED -->
+<div class="modal" id="remarkModal">
+  <div class="box">
+    <h3>Not Completed</h3>
+    <textarea id="remark" placeholder="Enter remark..."></textarea>
+    <button onclick="saveNotCompleted()">Save</button>
+  </div>
+</div>
+
 <script>
 const KEY="followClients";
 let selectedId=null;
@@ -11,21 +80,13 @@ function addClient(){
   const j=job.value.trim();
   const d=date.value;
 
-  if(!c||!n||!j||!d){
-    alert("Fill required fields");
-    return;
-  }
+  if(!c||!n||!j||!d){ alert("Fill required fields"); return; }
 
   const data=get();
-
   data.push({
-    id: Date.now(),          // ✅ UNIQUE ID
-    company:c,
-    name:n,
-    phone:phone.value,
-    job:j,
-    date:d,
-    status:"follow"
+    id:Date.now(),
+    company:c,name:n,phone:phone.value,
+    job:j,date:d,status:"follow"
   });
 
   set(data);
@@ -67,17 +128,13 @@ function view(x){
   viewModal.style.display="flex";
 }
 
-/* ---------- STATUS CHANGES ---------- */
-
 function markDone(id){
   const data=get();
   const item=data.find(x=>x.id===id);
   if(!item) return;
 
-  // ask questions
   const by=prompt("Completed by?");
   if(!by) return;
-
   const amt=prompt("Amount?");
   if(!amt) return;
 
@@ -102,7 +159,6 @@ function saveNotCompleted(){
 
   item.status="not";
   item.remark=remark.value;
-
   set(data);
   remark.value="";
   closeModal();
@@ -111,8 +167,7 @@ function saveNotCompleted(){
 
 function del(id){
   if(!confirm("Delete client?"))return;
-  let data=get();
-  data=data.filter(x=>x.id!==id);
+  let data=get().filter(x=>x.id!==id);
   set(data);
   render();
 }
@@ -124,3 +179,5 @@ function closeModal(){
 
 render();
 </script>
+</body>
+</html>
