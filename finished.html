@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Completed Jobs</title>
+<title>Finished Jobs</title>
 
 <style>
 body{
@@ -17,11 +17,11 @@ header{
   justify-content:space-between;
   align-items:center;
 }
-.logo{color:#22c55e;font-size:22px;font-weight:700}
+.logo{color:#facc15;font-size:22px;font-weight:700}
 .back{
-  border:1px solid #22c55e;
+  border:1px solid #facc15;
   background:transparent;
-  color:#22c55e;
+  color:#facc15;
   padding:8px 16px;
   border-radius:10px;
   cursor:pointer;
@@ -35,7 +35,21 @@ header{
   border-radius:20px;
 }
 
-h1{color:#22c55e}
+h1{color:#facc15}
+
+/* SEARCH */
+.search-box{
+  margin:15px 0 25px;
+}
+.search-box input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid #facc15;
+  background:#0b111b;
+  color:#fff;
+  font-size:14px;
+}
 
 /* ROW */
 .row{
@@ -57,7 +71,6 @@ h1{color:#22c55e}
   font-size:13px;
 }
 .view{background:#3b82f6;color:#fff}
-.finish{background:#facc15;color:#000}
 .del{background:#6b7280;color:#fff}
 
 .empty{color:#9ca3af;margin-top:15px}
@@ -73,38 +86,26 @@ h1{color:#22c55e}
 }
 .modal-box{
   background:#111827;
-  width:420px;
-  padding:25px;
+  width:460px;
+  padding:28px;
   border-radius:18px;
-  box-shadow:0 0 40px rgba(34,197,94,.25);
+  box-shadow:0 0 40px rgba(250,204,21,.25);
 }
-.modal-box h3{color:#22c55e}
+.modal-box h3{color:#facc15}
 .modal-box p{margin:6px 0;color:#d1d5db}
 
-.modal-box input{
-  width:100%;
-  padding:8px;
-  margin-top:8px;
-  border-radius:8px;
-  border:1px solid #22c55e;
-  background:#0b111b;
-  color:#fff;
-}
-
 .actions{
-  display:flex;
-  gap:10px;
-  margin-top:15px;
+  margin-top:18px;
+  text-align:right;
 }
 .actions button{
-  flex:1;
-  padding:10px;
+  padding:10px 18px;
   border:none;
   border-radius:10px;
   cursor:pointer;
+  background:#374151;
+  color:#fff;
 }
-.ok{background:#22c55e;color:#000}
-.cancel{background:#374151;color:#fff}
 </style>
 </head>
 
@@ -116,35 +117,22 @@ h1{color:#22c55e}
 </header>
 
 <div class="container">
-  <h1>Completed Jobs</h1>
+  <h1>Finished Jobs</h1>
+
+  <div class="search-box">
+    <input id="search" placeholder="Search by company, name, phone or job..." oninput="render()">
+  </div>
+
   <div id="list"></div>
 </div>
 
 <!-- VIEW MODAL -->
 <div class="modal" id="viewModal">
   <div class="modal-box">
-    <h3>Completed Job</h3>
+    <h3>Finished Job Details</h3>
     <div id="viewBox"></div>
     <div class="actions">
-      <button class="cancel" onclick="closeModal()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- FINISH MODAL -->
-<div class="modal" id="finishModal">
-  <div class="modal-box">
-    <h3>Finish Job</h3>
-
-    <label>Finished By</label>
-    <input id="finishBy" placeholder="Name">
-
-    <label>Amount Received</label>
-    <input id="finishAmount" placeholder="Amount">
-
-    <div class="actions">
-      <button class="ok" onclick="confirmFinish()">Finish</button>
-      <button class="cancel" onclick="closeModal()">Cancel</button>
+      <button onclick="closeModal()">Close</button>
     </div>
   </div>
 </div>
@@ -155,16 +143,25 @@ const KEY="mg_follow_clients";
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-let finishingId=null;
-
 /* ---------------- RENDER ---------------- */
 function render(){
+  const q=search.value.toLowerCase();
   const box=list;
-  const data=get().filter(x=>x.status==="completed");
+
+  let data=get().filter(x=>x.status==="finished");
+
+  if(q){
+    data=data.filter(x=>
+      (x.company||"").toLowerCase().includes(q) ||
+      (x.name||"").toLowerCase().includes(q) ||
+      (x.phone||"").toLowerCase().includes(q) ||
+      (x.job||"").toLowerCase().includes(q)
+    );
+  }
 
   box.innerHTML=data.length
     ? ""
-    : "<p class='empty'>No completed jobs</p>";
+    : "<p class='empty'>No finished jobs</p>";
 
   data.forEach(x=>{
     box.innerHTML+=`
@@ -175,7 +172,6 @@ function render(){
       <div>${x.job}</div>
       <div>
         <button class="btn view" onclick="viewJob('${x.id}')">View</button>
-        <button class="btn finish" onclick="openFinish('${x.id}')">Finished</button>
         <button class="btn del" onclick="removeJob('${x.id}')">Delete</button>
       </div>
     </div>`;
@@ -191,56 +187,33 @@ function viewJob(id){
     <p><b>Name:</b> ${x.name}</p>
     <p><b>Phone:</b> ${x.phone||"-"}</p>
     <p><b>Job:</b> ${x.job}</p>
-    <p><b>Completed Date:</b> ${x.completedDate}</p>
     <hr>
     <p><b>Completed By:</b> ${x.completedBy}</p>
     <p><b>Amount Asked:</b> ${x.completedAmount}</p>
+    <p><b>Completed Date:</b> ${x.completedDate}</p>
+    <hr>
+    <p><b>Finished By:</b> ${x.finishedBy}</p>
+    <p><b>Amount Received:</b> ${x.finishedAmount}</p>
+    <p><b>Finished Date:</b> ${x.finishedDate}</p>
   `;
 
-  openModal("viewModal");
-}
-
-/* ---------------- FINISH ---------------- */
-function openFinish(id){
-  finishingId=id;
-  finishBy.value="";
-  finishAmount.value="";
-  openModal("finishModal");
-}
-
-function confirmFinish(){
-  const by=finishBy.value.trim();
-  const amt=finishAmount.value.trim();
-
-  if(!by||!amt) return alert("Fill all fields");
-
-  let data=get();
-  const i=data.findIndex(x=>x.id===finishingId);
-
-  data[i].status="finished";
-  data[i].finishedBy=by;
-  data[i].finishedAmount=amt;
-  data[i].finishedDate=new Date().toISOString().slice(0,10);
-
-  set(data);
-  closeModal();
-  render();
+  openModal();
 }
 
 /* ---------------- DELETE ---------------- */
 function removeJob(id){
-  if(!confirm("Delete this job?")) return;
+  if(!confirm("Delete finished job?")) return;
   let data=get().filter(x=>x.id!==id);
   set(data);
   render();
 }
 
 /* ---------------- MODAL ---------------- */
-function openModal(id){
-  document.getElementById(id).style.display="flex";
+function openModal(){
+  viewModal.style.display="flex";
 }
 function closeModal(){
-  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+  viewModal.style.display="none";
 }
 
 render();
