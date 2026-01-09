@@ -19,11 +19,16 @@ h1{color:#22c55e}
 .empty{color:#9ca3af;margin-top:10px}
 
 /* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.box{background:#111827;padding:25px;border-radius:16px;width:360px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
+.box{
+  background:#111827;padding:25px 30px;border-radius:18px;
+  width:380px;text-align:center;
+  box-shadow:0 0 40px rgba(34,197,94,.25)
+}
 .box h3{color:#22c55e}
+.detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0;text-align:left}
 .box input{width:100%;padding:10px;background:#1f2937;border:none;border-radius:10px;color:#fff;margin-top:8px}
-.box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
+.box button{margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
 </style>
 </head>
 
@@ -39,6 +44,15 @@ h1{color:#22c55e}
 <div class="container">
 <h1>Completed Clients</h1>
 <div id="list"></div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal" id="viewModal">
+  <div class="box">
+    <h3>Completed Job</h3>
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
+  </div>
 </div>
 
 <!-- FINISH MODAL -->
@@ -72,27 +86,29 @@ function render(){
       <div>${x.job}</div>
       <div>${x.completedDate}</div>
       <div>
-        <button class="btn view" onclick='view("${x.id}")'>View</button>
-        <button class="btn finish" onclick='openFinish("${x.id}")'>Finish</button>
-        <button class="btn del" onclick='del("${x.id}")'>Delete</button>
+        <button class="btn view" onclick="openView('${x.id}')">View</button>
+        <button class="btn finish" onclick="openFinish('${x.id}')">Finish</button>
+        <button class="btn del" onclick="delClient('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
-function view(id){
+/* ---------- VIEW ---------- */
+function openView(id){
   const x=get().find(a=>a.id===id);
-  alert(
-`Company: ${x.company}
-Name: ${x.name}
-Phone: ${x.phone}
-Job: ${x.job}
-
-Completed By: ${x.completedBy}
-Amount: ${x.completedAmount}`
-  );
+  viewData.innerHTML=`
+    <div class="detail"><b>Company:</b> ${x.company}</div>
+    <div class="detail"><b>Name:</b> ${x.name}</div>
+    <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
+    <div class="detail"><b>Job:</b> ${x.job}</div>
+    <div class="detail"><b>Completed By:</b> ${x.completedBy}</div>
+    <div class="detail"><b>Amount:</b> ₹${x.completedAmount}</div>
+  `;
+  viewModal.style.display="flex";
 }
 
+/* ---------- FINISH ---------- */
 function openFinish(id){
   selectedId=id;
   finishedBy.value="";
@@ -118,7 +134,8 @@ function saveFinish(){
   render();
 }
 
-function del(id){
+/* ---------- DELETE ---------- */
+function delClient(id){
   if(!confirm("Delete?"))return;
   let all=get();
   all=all.filter(x=>x.id!==id);
@@ -127,6 +144,7 @@ function del(id){
 }
 
 function closeModal(){
+  viewModal.style.display="none";
   finishModal.style.display="none";
 }
 
