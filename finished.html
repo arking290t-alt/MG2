@@ -1,37 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <title>Finished Jobs</title>
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
-.logo{color:#facc15;font-size:22px;font-weight:700}
-.back{border:1px solid #facc15;background:transparent;color:#facc15;padding:8px 16px;border-radius:10px;cursor:pointer}
-.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,0.05);padding:30px;border-radius:20px}
-.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
-.btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
-.view{background:#3b82f6;color:#fff}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.box{background:#111827;padding:25px;border-radius:16px;width:400px}
+.logo{color:#00b4ff;font-size:22px;font-weight:700}
+.back{border:1px solid gold;background:transparent;color:gold;padding:8px 16px;border-radius:10px;cursor:pointer}
+
+.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
+h1{color:gold;margin-bottom:10px}
+
+/* SEARCH */
+.search-box{
+  margin:20px 0;
+  display:flex;
+  justify-content:center;
+}
+.search-box input{
+  width:60%;
+  padding:12px 16px;
+  border-radius:12px;
+  border:1px solid #facc15;
+  background:#111827;
+  color:#fff;
+  font-size:15px;
+}
+
+/* CARDS */
+.card{background:#111827;padding:20px;border-radius:14px;margin-top:12px}
+.card p{margin:4px 0}
+.empty{color:#9ca3af;text-align:center;margin-top:20px}
 </style>
 </head>
 
 <body>
 <header>
-  <div class="logo">Finished Jobs</div>
+  <div class="logo">MG</div>
   <button class="back" onclick="history.back()">← Back</button>
 </header>
 
 <div class="container">
-  <div id="list"></div>
-</div>
+  <h1>Finished Jobs</h1>
 
-<div class="modal" id="viewModal">
-  <div class="box">
-    <div id="viewData"></div>
-    <button onclick="closeModal()">Close</button>
+  <!-- SEARCH -->
+  <div class="search-box">
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Search by company, name, phone or job..."
+      oninput="render()"
+    >
   </div>
+
+  <div id="list"></div>
 </div>
 
 <script>
@@ -40,48 +62,45 @@ const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 
 function render(){
   const box=document.getElementById("list");
-  const data=get().filter(x=>x.status==="finished");
-  box.innerHTML=data.length?"":"<p>No finished jobs</p>";
+  const q=document.getElementById("searchInput").value.toLowerCase();
+
+  let data=get().filter(x=>x.status==="finished");
+
+  // 🔍 FILTER
+  if(q){
+    data=data.filter(x=>
+      (x.company||"").toLowerCase().includes(q) ||
+      (x.name||"").toLowerCase().includes(q) ||
+      (x.phone||"").toLowerCase().includes(q) ||
+      (x.job||"").toLowerCase().includes(q)
+    );
+  }
+
+  box.innerHTML=data.length?"":"<p class='empty'>No finished jobs</p>";
 
   data.forEach(x=>{
     box.innerHTML+=`
-    <div class="row">
-      <div>${x.company}</div>
-      <div>${x.name}</div>
-      <div>${x.phone||"-"}</div>
-      <div>${x.job}</div>
-      <div>${x.finishedDate}</div>
-      <div>
-        <button class="btn view" onclick="view(${x.id})">View</button>
-      </div>
+    <div class="card">
+      <p><b>Company:</b> ${x.company}</p>
+      <p><b>Name:</b> ${x.name}</p>
+      <p><b>Phone:</b> ${x.phone||"-"}</p>
+      <p><b>Job:</b> ${x.job}</p>
+
+      <hr style="border-color:#333;margin:8px 0">
+
+      <p><b>Completed By:</b> ${x.completedBy}</p>
+      <p><b>Completed Amount:</b> ${x.completedAmount}</p>
+
+      <p><b>Finished By:</b> ${x.finishedBy}</p>
+      <p><b>Amount Received:</b> ${x.receivedAmount}</p>
+
+      <p><b>Finished Date:</b> ${x.finishedDate}</p>
     </div>`;
   });
-}
-
-function view(id){
-  const x=get().find(a=>a.id===id);
-
-  viewData.innerHTML=`
-    <h3 style="color:#facc15">Finished Job</h3>
-    <p><b>Company:</b> ${x.company}</p>
-    <p><b>Name:</b> ${x.name}</p>
-    <p><b>Phone:</b> ${x.phone||"-"}</p>
-    <p><b>Job:</b> ${x.job}</p>
-    <p><b>Completed By:</b> ${x.completedBy}</p>
-    <p><b>Amount Asked:</b> ${x.completedAmount}</p>
-    <p><b>Finished By:</b> ${x.finishedBy}</p>
-    <p style="color:#22c55e"><b>Amount Received:</b> ${x.finishedAmount}</p>
-    <p><b>Completed Date:</b> ${x.completedDate}</p>
-    <p><b>Finished Date:</b> ${x.finishedDate}</p>
-  `;
-  viewModal.style.display="flex";
-}
-
-function closeModal(){
-  viewModal.style.display="none";
 }
 
 render();
 </script>
 </body>
 </html>
+v
