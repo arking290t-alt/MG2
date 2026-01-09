@@ -1,1 +1,354 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Update | MG</title>
+
+  <style>
+    :root {
+      --bg:#0b111b;
+      --card:rgba(255,255,255,0.05);
+      --accent:#00b4ff;
+      --text:#e2e8f0;
+      --panel:#0e1724;
+      --danger:#ef4444;
+      --done:#22c55e;
+    }
+    *{ box-sizing:border-box; font-family:'Poppins',sans-serif; }
+    body{ background:var(--bg); color:var(--text); margin:0; }
+    header{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:15px 25px; background:rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    .logo{ font-size:1.6rem; font-weight:700; color:var(--accent); }
+
+    .logout-btn{
+      background:#ef4444; padding:10px 16px; border:none;
+      color:white; border-radius:8px; cursor:pointer;
+      font-weight:600;
+    }
+
+    .container{
+      max-width:960px; margin:25px auto; background:var(--card);
+      padding:25px; border-radius:16px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.3);
+    }
+
+    h1{ text-align:center; color:var(--accent); }
+
+    input, button{
+      padding:10px 14px; border-radius:10px; border:none;
+      outline:none; font-size:0.9rem;
+    }
+    input{
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,0.07);
+      color:white;
+    }
+    button{
+      background:var(--accent); color:white; cursor:pointer;
+      font-weight:600;
+    }
+
+    .form-row{
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .checkbox-group{
+      display:flex; flex-wrap:wrap; gap:12px;
+      justify-content:center; margin:10px 0;
+    }
+
+    .checkbox-chip{
+      display:flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,0.06);
+      padding:10px 14px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      cursor:pointer;
+      user-select:none;
+      color:#d5eafe;
+    }
+    .checkbox-chip.active{
+      background:var(--accent);
+      color:black;
+      box-shadow:0 0 20px rgba(0,180,255,0.3);
+    }
+
+    .job-item{
+      background:rgba(255,255,255,0.04);
+      margin:10px 0; padding:14px;
+      border-radius:12px;
+      display:flex; justify-content:space-between; align-items:center;
+      border:1px solid rgba(255,255,255,0.05);
+    }
+
+    .job-left{ display:flex; flex-direction:column; gap:4px; }
+    .job-name{ font-size:1rem; color:var(--accent); font-weight:700; cursor:pointer; }
+    .job-type{ font-size:0.9rem; color:#9bbcd7; }
+
+    .job-meta{ font-size:0.85rem; text-align:right; color:#9bbcd7; }
+
+    .delete-btn{
+      background:var(--danger); padding:8px 10px;
+      border-radius:8px; border:none; cursor:pointer; color:white;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">MG</div>
+    <button class="logout-btn" id="logout">Logout</button>
+  </header>
+
+  <div class="container">
+
+    <h1>Job Update</h1>
+
+    <!-- JOB FORM -->
+    <div class="form-row">
+      <input id="jobName" type="text" placeholder="Job Name" />
+      <input id="jobType" type="text" placeholder="Job Type" />
+      <input id="jobDate" type="date" />
+    </div>
+
+    <h3 style="text-align:center;color:#8ab9ff;">Select Categories</h3>
+    <div id="categoryGrid" class="checkbox-group"></div>
+
+    <div style="text-align:center;margin:10px;">
+      <button id="addJob">Add Job</button>
+    </div>
+
+    <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0"/>
+
+    <h3 style="text-align:center;color:#8ab9ff;">Filter by Month</h3>
+    <div style="text-align:center;">
+      <input type="month" id="monthFilter" style="width:180px;text-align:center;">
+    </div>
+
+    <h2 style="text-align:center;margin-top:20px;">All Jobs</h2>
+    <div id="jobList"></div>
+
+    <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0"/>
+
+    <h3 style="text-align:center;color:#8ab9ff;">Add New Category</h3>
+    <div class="form-row">
+      <input id="newCategory" type="text" placeholder="New Category">
+      <button id="addCategory">Add</button>
+    </div>
+
+    <div id="categoryList"></div>
+
+  </div>
+
+  <!-- FIREBASE LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      deleteDoc, doc, orderBy, query
+    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.appspot.com",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let selectedCats = new Set();
+    let categories = [];
+    let allJobs = [];
+
+    const categoryGrid = document.getElementById("categoryGrid");
+    const categoryList = document.getElementById("categoryList");
+    const jobList = document.getElementById("jobList");
+
+    /* ---------------- LOAD CATEGORIES ---------------- */
+    async function loadCategories() {
+      const q = query(collection(db, "jobCategories"), orderBy("createdAt", "asc"));
+      const snap = await getDocs(q);
+
+      categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderCategoryGrid();
+      renderCategoryList();
+    }
+
+    function renderCategoryGrid() {
+      categoryGrid.innerHTML = categories.map(c => `
+        <div class="checkbox-chip" data-id="${c.id}">
+          ${c.name}
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".checkbox-chip").forEach(chip => {
+        chip.onclick = () => {
+          let id = chip.dataset.id;
+          if (selectedCats.has(id)) {
+            selectedCats.delete(id);
+            chip.classList.remove("active");
+          } else {
+            selectedCats.add(id);
+            chip.classList.add("active");
+          }
+        };
+      });
+    }
+
+    function renderCategoryList() {
+      categoryList.innerHTML = categories.map(c => `
+        <div class="job-item">
+          <span>${c.name}</span>
+          <button class="delete-btn" onclick="deleteCategory('${c.id}')">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    window.deleteCategory = async (id) => {
+      if (!confirm("Delete category?")) return;
+      await deleteDoc(doc(db, "jobCategories", id));
+      loadCategories();
+    };
+
+    /* ---------------- ADD CATEGORY ---------------- */
+    document.getElementById("addCategory").onclick = async () => {
+      let name = document.getElementById("newCategory").value.trim();
+      if (!name) return alert("Enter category");
+
+      await addDoc(collection(db, "jobCategories"), {
+        name,
+        createdAt: new Date().toISOString()
+      });
+
+      document.getElementById("newCategory").value = "";
+      loadCategories();
+    };
+
+    /* ---------------- ADD JOB ---------------- */
+    document.getElementById("addJob").onclick = async () => {
+      let name = document.getElementById("jobName").value.trim();
+      let type = document.getElementById("jobType").value.trim();
+      let date = document.getElementById("jobDate").value;
+
+      if (!name || !type || !date) return alert("Fill all fields");
+      if (selectedCats.size === 0) return alert("Select categories");
+
+      let selected = categories.filter(c => selectedCats.has(c.id));
+
+      // NEW FORMAT: add default "pending" status
+      selected = selected.map(c => ({ ...c, status: "pending" }));
+
+      await addDoc(collection(db, "jobs"), {
+        name,
+        type,
+        date,
+        categories: selected,
+        created: new Date().toISOString()
+      });
+
+      selectedCats.clear();
+      document.getElementById("jobName").value = "";
+      document.getElementById("jobType").value = "";
+      document.getElementById("jobDate").value = "";
+
+      loadCategories();
+      loadJobs();
+    };
+
+    /* ---------------- LOAD JOBS ---------------- */
+    async function loadJobs() {
+      const snap = await getDocs(collection(db, "jobs"));
+      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderJobs();
+    }
+
+    /* ---------------- RENDER JOBS (PROCESSING SORT + YELLOW DOT) ---------------- */
+    function renderJobs() {
+      let month = document.getElementById("monthFilter").value;
+
+      let jobsToShow = month
+        ? allJobs.filter(j => j.date.startsWith(month))
+        : allJobs;
+
+      // FIND PROCESSING CATEGORIES
+      jobsToShow = jobsToShow.map(job => {
+        let processing = [];
+
+        if (job.categories) {
+          job.categories.forEach(c => {
+            if (c.status === "processing") processing.push(c.name);
+          });
+        }
+
+        return { ...job, processing };
+      });
+
+      // SORT → processing jobs go first
+      jobsToShow.sort((a, b) => {
+        if (a.processing.length > 0 && b.processing.length === 0) return -1;
+        if (a.processing.length === 0 && b.processing.length > 0) return 1;
+        return a.date.localeCompare(b.date);
+      });
+
+      jobList.innerHTML = jobsToShow.map(j => `
+        <div class="job-item">
+          
+          <div class="job-left">
+            <div class="job-name" onclick="openJob('${j.id}')">${j.name}</div>
+            <div class="job-type">${j.type}</div>
+
+            ${j.processing.length > 0 ? `
+              <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+                <div style="width:10px;height:10px;background:yellow;border-radius:50%;"></div>
+                <span style="color:yellow;font-size:0.85rem;">
+                  Processing: ${j.processing.join(", ")}
+                </span>
+              </div>
+            ` : ""}
+          </div>
+
+          <div class="job-meta">
+            <div>${j.date}</div>
+            <div>${j.categories.map(c => c.name).join(", ")}</div>
+          </div>
+
+          <button class="delete-btn" onclick="deleteJob('${j.id}')">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    /* ---------------- DELETE JOB ---------------- */
+    window.deleteJob = async (id) => {
+      if (!confirm("Delete job?")) return;
+      await deleteDoc(doc(db, "jobs", id));
+      loadJobs();
+    };
+
+    window.openJob = (id) => {
+      localStorage.setItem("selectedJob", id);
+      window.location.href = "job-detail.html";
+    };
+
+    document.getElementById("monthFilter").onchange = renderJobs;
+
+    document.getElementById("logout").onclick = () => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    };
+
+    loadCategories();
+    loadJobs();
+  </script>
+
+</body>
+</html>
