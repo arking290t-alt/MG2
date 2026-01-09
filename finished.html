@@ -6,87 +6,74 @@
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
-.logo{color:#00b4ff;font-size:22px;font-weight:700}
+.logo{color:#facc15;font-size:22px;font-weight:700}
 .back{border:1px solid #facc15;background:transparent;color:#facc15;padding:8px 16px;border-radius:10px;cursor:pointer}
 .container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,0.05);padding:30px;border-radius:20px}
-h1{color:#facc15}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
 .del{background:#6b7280;color:#fff}
-.empty{color:#9ca3af;margin-top:10px}
-
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
 .box{background:#111827;padding:25px;border-radius:16px;width:380px}
-.box h3{color:#facc15}
-.box p{margin:6px 0;color:#d1d5db}
-.box .money{background:#1f2937;padding:10px;border-radius:10px;margin-top:10px;color:#22c55e}
-.box button{margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
 </style>
 </head>
 
 <body>
 <header>
- <div class="logo">MG</div>
- <button class="back" onclick="history.back()">← Back</button>
+  <div class="logo">Finished Jobs</div>
+  <button class="back" onclick="history.back()">← Back</button>
 </header>
 
 <div class="container">
-<h1>Finished Jobs</h1>
-<div id="list"></div>
+  <div id="list"></div>
 </div>
 
 <div class="modal" id="viewModal">
- <div class="box">
-  <h3>Finished Job</h3>
-  <div id="viewData"></div>
-  <button onclick="closeModal()">Close</button>
- </div>
+  <div class="box">
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
+  </div>
 </div>
 
 <script>
 const KEY="followClients";
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
-const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
 function render(){
- const data=get().filter(x=>x.status==="finished");
- list.innerHTML=data.length?"":"<p class='empty'>No finished jobs</p>";
- data.forEach(x=>{
-  list.innerHTML+=`
-   <div class="row">
-    <div>${x.company}</div>
-    <div>${x.name}</div>
-    <div>${x.phone||"-"}</div>
-    <div>${x.job}</div>
-    <div>${x.finishedDate||"-"}</div>
-    <div>
-     <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-     <button class="btn del" onclick="del('${x.id}')">Delete</button>
-    </div>
-   </div>`;
- });
-}
+  const box=document.getElementById("list");
+  const data=get().filter(x=>x.status==="finished");
+  box.innerHTML=data.length?"":"<p>No finished jobs</p>";
 
-function del(id){
- if(!confirm("Delete finished job?"))return;
- set(get().filter(x=>x.id!==id));
- render();
+  data.forEach(x=>{
+    box.innerHTML+=`
+      <div class="row">
+        <div>${x.company}</div>
+        <div>${x.name}</div>
+        <div>${x.phone||"-"}</div>
+        <div>${x.job}</div>
+        <div>${x.finishedDate||"-"}</div>
+        <div>
+          <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
+        </div>
+      </div>`;
+  });
 }
 
 function view(x){
- viewData.innerHTML=`
- <p><b>Company:</b> ${x.company}</p>
- <p><b>Name:</b> ${x.name}</p>
- <p><b>Phone:</b> ${x.phone||"-"}</p>
- <p><b>Job:</b> ${x.job}</p>
- <p><b>Completed Date:</b> ${x.date}</p>
- <p><b>Finished Date:</b> ${x.finishedDate}</p>
- <p><b>Finished By:</b> ${x.finishedBy}</p>
- <div class="money"><b>Amount Received:</b> ₹${x.amountReceived}</div>
- `;
- viewModal.style.display="flex";
+  viewData.innerHTML=`
+    <h3>Finished Job</h3>
+    <p><b>Company:</b> ${x.company}</p>
+    <p><b>Name:</b> ${x.name}</p>
+    <p><b>Phone:</b> ${x.phone||"-"}</p>
+    <p><b>Job:</b> ${x.job}</p>
+    <p><b>Completed Date:</b> ${x.completedDate}</p>
+    <p><b>Finished Date:</b> ${x.finishedDate}</p>
+    <p><b>Finished By:</b> ${x.finishedBy}</p>
+    <p style="color:#22c55e"><b>Amount Received:</b> ${x.receivedAmount}</p>
+  `;
+  viewModal.style.display="flex";
 }
+
 function closeModal(){ viewModal.style.display="none"; }
 
 render();
