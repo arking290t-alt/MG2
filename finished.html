@@ -12,9 +12,8 @@ header{padding:20px 40px;display:flex;justify-content:space-between}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
-.del{background:#6b7280;color:#fff}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.box{background:#111827;padding:25px;border-radius:16px;width:380px}
+.box{background:#111827;padding:25px;border-radius:16px;width:400px}
 </style>
 </head>
 
@@ -46,35 +45,41 @@ function render(){
 
   data.forEach(x=>{
     box.innerHTML+=`
-      <div class="row">
-        <div>${x.company}</div>
-        <div>${x.name}</div>
-        <div>${x.phone||"-"}</div>
-        <div>${x.job}</div>
-        <div>${x.finishedDate||"-"}</div>
-        <div>
-          <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-        </div>
-      </div>`;
+    <div class="row">
+      <div>${x.company}</div>
+      <div>${x.name}</div>
+      <div>${x.phone||"-"}</div>
+      <div>${x.job}</div>
+      <div>${x.finishedDate}</div>
+      <div>
+        <button class="btn view" onclick="view(${x.id})">View</button>
+      </div>
+    </div>`;
   });
 }
 
-function view(x){
+function view(id){
+  const x=get().find(a=>a.id===id);
+
   viewData.innerHTML=`
-    <h3>Finished Job</h3>
+    <h3 style="color:#facc15">Finished Job</h3>
     <p><b>Company:</b> ${x.company}</p>
     <p><b>Name:</b> ${x.name}</p>
     <p><b>Phone:</b> ${x.phone||"-"}</p>
     <p><b>Job:</b> ${x.job}</p>
+    <p><b>Completed By:</b> ${x.completedBy}</p>
+    <p><b>Amount Asked:</b> ${x.completedAmount}</p>
+    <p><b>Finished By:</b> ${x.finishedBy}</p>
+    <p style="color:#22c55e"><b>Amount Received:</b> ${x.finishedAmount}</p>
     <p><b>Completed Date:</b> ${x.completedDate}</p>
     <p><b>Finished Date:</b> ${x.finishedDate}</p>
-    <p><b>Finished By:</b> ${x.finishedBy}</p>
-    <p style="color:#22c55e"><b>Amount Received:</b> ${x.receivedAmount}</p>
   `;
   viewModal.style.display="flex";
 }
 
-function closeModal(){ viewModal.style.display="none"; }
+function closeModal(){
+  viewModal.style.display="none";
+}
 
 render();
 </script>
