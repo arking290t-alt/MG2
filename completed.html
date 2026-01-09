@@ -2,43 +2,54 @@
 <html>
 <head>
 <title>Completed Clients</title>
+
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
-.logo{color:#00b4ff;font-size:22px;font-weight:700}
+.logo{color:#22c55e;font-size:22px;font-weight:700}
 .back{border:1px solid #22c55e;background:transparent;color:#22c55e;padding:8px 16px;border-radius:10px;cursor:pointer}
 
 .container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
 h1{color:#22c55e}
 
-.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px;align-items:center}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;
+  gap:10px;background:#1f2937;padding:12px;border-radius:14px;
+  margin-top:10px;align-items:center
+}
+
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
-.finish{background:gold;color:#000}
+.finish{background:#facc15;color:#000}
 .del{background:#6b7280;color:#fff}
 .empty{color:#9ca3af;margin-top:10px}
 
-/* MODAL */
+/* MODALS */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
 .box{
   background:#111827;padding:25px 30px;border-radius:18px;
   width:380px;text-align:center;
-  box-shadow:0 0 40px rgba(34,197,94,.25)
+  box-shadow:0 0 40px rgba(34,197,94,.3)
 }
 .box h3{color:#22c55e}
 .detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0;text-align:left}
-.box input{width:100%;padding:10px;background:#1f2937;border:none;border-radius:10px;color:#fff;margin-top:8px}
-.box button{margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
+.box input{
+  width:100%;padding:10px;background:#1f2937;border:none;
+  border-radius:10px;color:#fff;margin-top:8px
+}
+.box button{
+  margin-top:12px;width:100%;padding:10px;
+  border:none;border-radius:10px;cursor:pointer
+}
 </style>
 </head>
 
 <body>
+
 <header>
   <div class="logo">MG</div>
-  <div>
-    <button class="back" onclick="history.back()">← Back</button>
-    <button class="back" onclick="location.href='finished.html'">Finished Jobs</button>
-  </div>
+  <button class="back" onclick="history.back()">← Back</button>
 </header>
 
 <div class="container">
@@ -46,22 +57,22 @@ h1{color:#22c55e}
 <div id="list"></div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- VIEW -->
 <div class="modal" id="viewModal">
   <div class="box">
-    <h3>Completed Job</h3>
+    <h3>Client Details</h3>
     <div id="viewData"></div>
-    <button onclick="closeModal()">Close</button>
+    <button onclick="closeAll()">Close</button>
   </div>
 </div>
 
-<!-- FINISH MODAL -->
+<!-- FINISH -->
 <div class="modal" id="finishModal">
   <div class="box">
     <h3>Finish Job</h3>
-    <input id="finishedBy" placeholder="Finished by">
-    <input id="receivedAmount" placeholder="Amount received">
-    <button onclick="saveFinish()">Save</button>
+    <input id="finishBy" placeholder="Finished by">
+    <input id="finishAmount" placeholder="Amount received">
+    <button onclick="saveFinished()">Save</button>
   </div>
 </div>
 
@@ -72,9 +83,11 @@ let selectedId=null;
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
+/* ---------------- RENDER ---------------- */
 function render(){
-  const box=list;
+  const box=document.getElementById("list");
   const data=get().filter(x=>x.status==="completed");
+
   box.innerHTML=data.length?"":"<p class='empty'>No completed clients</p>";
 
   data.forEach(x=>{
@@ -84,66 +97,71 @@ function render(){
       <div>${x.name}</div>
       <div>${x.phone||"-"}</div>
       <div>${x.job}</div>
-      <div>${x.completedDate}</div>
+      <div>₹${x.completedAmount||"-"}</div>
       <div>
         <button class="btn view" onclick="openView('${x.id}')">View</button>
-        <button class="btn finish" onclick="openFinish('${x.id}')">Finish</button>
-        <button class="btn del" onclick="delClient('${x.id}')">Delete</button>
+        <button class="btn finish" onclick="openFinish('${x.id}')">Finished</button>
+        <button class="btn del" onclick="deleteClient('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
-/* ---------- VIEW ---------- */
+/* ---------------- VIEW ---------------- */
 function openView(id){
   const x=get().find(a=>a.id===id);
+  if(!x) return;
+
   viewData.innerHTML=`
     <div class="detail"><b>Company:</b> ${x.company}</div>
     <div class="detail"><b>Name:</b> ${x.name}</div>
     <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
     <div class="detail"><b>Job:</b> ${x.job}</div>
-    <div class="detail"><b>Completed By:</b> ${x.completedBy}</div>
-    <div class="detail"><b>Amount:</b> ₹${x.completedAmount}</div>
+    <div class="detail"><b>Date:</b> ${x.date}</div>
+    <div class="detail"><b>Completed By:</b> ${x.completedBy||"-"}</div>
+    <div class="detail"><b>Completed Amount:</b> ₹${x.completedAmount||"-"}</div>
   `;
   viewModal.style.display="flex";
 }
 
-/* ---------- FINISH ---------- */
+/* ---------------- FINISH ---------------- */
 function openFinish(id){
   selectedId=id;
-  finishedBy.value="";
-  receivedAmount.value="";
+  finishBy.value="";
+  finishAmount.value="";
   finishModal.style.display="flex";
 }
 
-function saveFinish(){
-  const by=finishedBy.value.trim();
-  const amt=receivedAmount.value.trim();
-  if(!by||!amt){alert("Fill all");return;}
+function saveFinished(){
+  const by=finishBy.value.trim();
+  const amt=finishAmount.value.trim();
+  if(!by||!amt){alert("Fill all fields");return;}
 
   const all=get();
   const x=all.find(a=>a.id===selectedId);
+  if(!x) return;
 
   x.status="finished";
   x.finishedBy=by;
-  x.receivedAmount=amt;
+  x.finishedAmount=amt;
   x.finishedDate=new Date().toISOString().slice(0,10);
 
   set(all);
-  closeModal();
+  closeAll();
   render();
 }
 
-/* ---------- DELETE ---------- */
-function delClient(id){
-  if(!confirm("Delete?"))return;
+/* ---------------- DELETE ---------------- */
+function deleteClient(id){
+  if(!confirm("Delete this client?")) return;
   let all=get();
   all=all.filter(x=>x.id!==id);
   set(all);
   render();
 }
 
-function closeModal(){
+/* ---------------- CLOSE ---------------- */
+function closeAll(){
   viewModal.style.display="none";
   finishModal.style.display="none";
 }
