@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Follow Jobs | MG</title>
+<title>Jobs Management | MG</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 body{
@@ -11,7 +11,6 @@ body{
   font-family: 'Poppins', sans-serif;
   color:#e5eaf0;
 }
-
 .top{
   height:64px;
   display:flex;
@@ -20,11 +19,7 @@ body{
   padding:0 30px;
   background:linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
 }
-.logo{
-  color:#00b4ff;
-  font-size:22px;
-  font-weight:700;
-}
+.logo{ color:#00b4ff; font-size:22px; font-weight:700; }
 .back{
   color:#00b4ff;
   border:1px solid #00b4ff;
@@ -33,28 +28,15 @@ body{
   text-decoration:none;
   font-weight: 600;
 }
-
 .container{
   max-width:1100px;
   margin:80px auto;
   background:rgba(255,255,255,0.06);
   padding:60px 40px;
   border-radius:24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
-
-h1{
-  text-align:center;
-  color:#00b4ff;
-  margin-bottom:10px;
-  font-size: 2.5rem;
-}
-.tagline{
-  text-align:center;
-  opacity:.8;
-  margin-bottom:40px;
-}
-
+h1{ text-align:center; color:#00b4ff; margin-bottom:10px; font-size: 2.5rem; }
+p.tagline{ text-align:center; opacity:.8; margin-bottom:40px; }
 .cards{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
@@ -74,29 +56,25 @@ h1{
   background:rgba(255,255,255,0.08);
   border-color: #00b4ff;
 }
-
 .card h2{ margin:0 0 12px; font-size: 1.8rem; }
-.card p { margin: 0; opacity: 0.7; }
-
 .follow{color:#00b4ff}
 .done{color:#22c55e}
 .notdone{color:#ef4444}
+.card p { margin: 0; opacity: 0.7; }
 </style>
 </head>
-
 <body>
 
 <div class="top">
   <div class="logo">MG</div>
-  <a href="dashboard.html" class="back">← Back to Dashboard</a>
+  <a href="dashboard.html" class="back">← Back</a>
 </div>
 
 <div class="container">
-  <h1>Follow Jobs</h1>
+  <h1>Jobs</h1>
   <p class="tagline">Manage client follow-ups and status</p>
 
   <div class="cards">
-
     <div class="card" onclick="location.href='to-follow.html'">
       <h2 class="follow">To Follow</h2>
       <p>Add new clients and track follow-ups</p>
@@ -111,7 +89,6 @@ h1{
       <h2 class="notdone">Not Completed</h2>
       <p>Pending clients with remarks</p>
     </div>
-
   </div>
 </div>
 
