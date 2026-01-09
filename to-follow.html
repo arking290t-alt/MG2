@@ -1,123 +1,218 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <title>To Follow Clients</title>
+
 <style>
-body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
-header{padding:20px 40px;display:flex;justify-content:space-between}
+body{
+  margin:0;
+  background:#0b111b;
+  font-family:Poppins,Arial,sans-serif;
+  color:#fff;
+}
+header{
+  padding:20px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
 .logo{color:#00b4ff;font-size:22px;font-weight:700}
-.back{border:1px solid #00b4ff;background:transparent;color:#00b4ff;padding:8px 16px;border-radius:10px;cursor:pointer}
+.back{
+  border:1px solid #00b4ff;
+  background:transparent;
+  color:#00b4ff;
+  padding:8px 16px;
+  border-radius:10px;
+  cursor:pointer;
+}
 
-.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
-h1{color:#00b4ff}
+.container{
+  max-width:1200px;
+  margin:40px auto;
+  background:rgba(255,255,255,0.05);
+  padding:30px;
+  border-radius:20px;
+}
 
-.form{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12px;color:#fff}
-.save{grid-column:1/-1;padding:14px;background:#0ea5e9;border:none;border-radius:14px;cursor:pointer}
+h1{color:#00b4ff;margin-bottom:20px}
 
-.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px;align-items:center}
-.btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+/* FORM */
+.form{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
+  margin-bottom:25px;
+}
+input{
+  padding:12px;
+  background:#1f2937;
+  border:1px solid #374151;
+  border-radius:12px;
+  color:#fff;
+}
+.save{
+  grid-column:1/-1;
+  padding:14px;
+  background:#0ea5e9;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+/* ROWS */
+.row{
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr 1fr 1fr auto;
+  gap:10px;
+  background:#1f2937;
+  padding:14px;
+  border-radius:14px;
+  margin-top:12px;
+  align-items:center;
+}
+.btn{
+  padding:6px 10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+}
 .view{background:#3b82f6;color:#fff}
 .done{background:#22c55e;color:#000}
 .not{background:#ef4444;color:#fff}
 .del{background:#6b7280;color:#fff}
-.empty{color:#9ca3af;margin-top:10px}
 
-/* MODALS */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
-.box{
-  background:#111827;padding:25px 30px;border-radius:18px;
-  width:380px;text-align:center;
-  box-shadow:0 0 40px rgba(0,180,255,.25)
+.empty{color:#9ca3af;margin-top:15px}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.65);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
 }
-.box h3{color:#00b4ff}
-.detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0;text-align:left}
-.box input,.box textarea{
-  width:100%;padding:10px;background:#1f2937;border:none;
-  border-radius:10px;color:#fff;margin-top:8px
+.modal-box{
+  background:#111827;
+  width:420px;
+  padding:25px;
+  border-radius:18px;
+  box-shadow:0 0 40px rgba(0,180,255,.25);
 }
-.box button{
-  margin-top:12px;width:100%;padding:10px;
-  border:none;border-radius:10px;cursor:pointer
+.modal-box h3{color:#00b4ff;margin-top:0}
+.modal-box p{margin:6px 0;color:#d1d5db}
+.modal-box input{
+  width:100%;
+  margin-top:8px;
+  padding:10px;
+  background:#1f2937;
+  border:1px solid #374151;
+  border-radius:10px;
+  color:#fff;
 }
+.modal-actions{
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+}
+.modal-actions button{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+.ok{background:#22c55e;color:#000}
+.cancel{background:#374151;color:#fff}
 </style>
 </head>
 
 <body>
+
 <header>
   <div class="logo">MG</div>
   <button class="back" onclick="history.back()">← Back</button>
 </header>
 
 <div class="container">
-<h1>To Follow Clients</h1>
+  <h1>To Follow Clients</h1>
 
-<div class="form">
-  <input id="company" placeholder="Company *">
-  <input id="client" placeholder="Client *">
-  <input id="phone" placeholder="Phone">
-  <input id="job" placeholder="Job *">
-  <input id="date" type="date">
-  <button class="save" onclick="addClient()">Save Client</button>
+  <div class="form">
+    <input id="company" placeholder="Company *">
+    <input id="client" placeholder="Client *">
+    <input id="phone" placeholder="Phone">
+    <input id="job" placeholder="Job *">
+    <input id="date" type="date">
+    <button class="save" onclick="addClient()">Save Client</button>
+  </div>
+
+  <div id="list"></div>
 </div>
 
-<div id="list"></div>
-</div>
-
-<!-- VIEW -->
+<!-- VIEW MODAL -->
 <div class="modal" id="viewModal">
-  <div class="box">
+  <div class="modal-box">
     <h3>Client Details</h3>
-    <div id="viewData"></div>
-    <button onclick="closeAll()">Close</button>
+    <div id="viewContent"></div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal()">Close</button>
+    </div>
   </div>
 </div>
 
-<!-- COMPLETE -->
+<!-- COMPLETE MODAL -->
 <div class="modal" id="completeModal">
-  <div class="box">
+  <div class="modal-box">
     <h3>Mark Completed</h3>
     <input id="completedBy" placeholder="Completed by">
-    <input id="completedAmount" placeholder="Amount">
-    <button onclick="saveCompleted()">Save</button>
+    <input id="completedAmount" placeholder="Completed amount">
+    <div class="modal-actions">
+      <button class="ok" onclick="confirmCompleted()">Save</button>
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
-<!-- NOT -->
+<!-- NOT MODAL -->
 <div class="modal" id="notModal">
-  <div class="box">
+  <div class="modal-box">
     <h3>Not Completed</h3>
-    <textarea id="remark" placeholder="Reason..."></textarea>
-    <button onclick="saveNot()">Save</button>
+    <input id="notReason" placeholder="Reason">
+    <div class="modal-actions">
+      <button class="ok" onclick="confirmNot()">Save</button>
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
 <script>
-const KEY="followClients";
-let selectedId=null;
+const KEY="mg_follow_clients";
+let activeId=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 
 /* ---------------- ADD ---------------- */
 function addClient(){
-  if(!company.value||!client.value||!job.value||!date.value){
-    alert("Fill required fields");return;
-  }
+  const c=company.value.trim();
+  const n=client.value.trim();
+  const j=job.value.trim();
+  const d=date.value;
 
-  const all=get();
-  all.push({
-    id:uid(),
-    company:company.value,
-    name:client.value,
-    phone:phone.value,
-    job:job.value,
-    date:date.value,
-    status:"follow"
+  if(!c||!n||!j||!d) return alert("Fill required fields");
+
+  const data=get();
+  data.push({
+    id:Date.now().toString(),
+    company:c,name:n,phone:phone.value,
+    job:j,date:d,status:"follow"
   });
+  set(data);
 
-  set(all);
   company.value=client.value=phone.value=job.value=date.value="";
   render();
 }
@@ -138,91 +233,90 @@ function render(){
       <div>${x.job}</div>
       <div>${x.date}</div>
       <div>
-        <button class="btn view" onclick="openView('${x.id}')">View</button>
+        <button class="btn view" onclick="viewClient('${x.id}')">View</button>
         <button class="btn done" onclick="openComplete('${x.id}')">Completed</button>
         <button class="btn not" onclick="openNot('${x.id}')">Not</button>
-        <button class="btn del" onclick="deleteClient('${x.id}')">Delete</button>
+        <button class="btn del" onclick="removeClient('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
 /* ---------------- VIEW ---------------- */
-function openView(id){
+function viewClient(id){
   const x=get().find(a=>a.id===id);
-  if(!x) return;
-
-  viewData.innerHTML=`
-    <div class="detail"><b>Company:</b> ${x.company}</div>
-    <div class="detail"><b>Name:</b> ${x.name}</div>
-    <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
-    <div class="detail"><b>Job:</b> ${x.job}</div>
-    <div class="detail"><b>Date:</b> ${x.date}</div>
+  viewContent.innerHTML=`
+    <p><b>Company:</b> ${x.company}</p>
+    <p><b>Name:</b> ${x.name}</p>
+    <p><b>Phone:</b> ${x.phone||"-"}</p>
+    <p><b>Job:</b> ${x.job}</p>
+    <p><b>Date:</b> ${x.date}</p>
   `;
-  viewModal.style.display="flex";
+  openModal("viewModal");
 }
 
-/* ---------------- COMPLETE ---------------- */
+/* ---------------- COMPLETED ---------------- */
 function openComplete(id){
-  selectedId=id;
+  activeId=id;
   completedBy.value="";
   completedAmount.value="";
-  completeModal.style.display="flex";
+  openModal("completeModal");
 }
 
-function saveCompleted(){
+function confirmCompleted(){
   const by=completedBy.value.trim();
   const amt=completedAmount.value.trim();
-  if(!by||!amt){alert("Fill all");return;}
+  if(!by||!amt) return alert("Fill all fields");
 
-  const all=get();
-  const x=all.find(a=>a.id===selectedId);
-  if(!x) return;
+  const data=get();
+  const x=data.find(a=>a.id===activeId);
 
   x.status="completed";
   x.completedBy=by;
   x.completedAmount=amt;
   x.completedDate=new Date().toISOString().slice(0,10);
 
-  set(all);
-  closeAll();
+  set(data);
+  closeModal();
   render();
 }
 
 /* ---------------- NOT ---------------- */
 function openNot(id){
-  selectedId=id;
-  remark.value="";
-  notModal.style.display="flex";
+  activeId=id;
+  notReason.value="";
+  openModal("notModal");
 }
 
-function saveNot(){
-  const all=get();
-  const x=all.find(a=>a.id===selectedId);
-  if(!x) return;
+function confirmNot(){
+  const r=notReason.value.trim();
+  if(!r) return alert("Enter reason");
+
+  const data=get();
+  const x=data.find(a=>a.id===activeId);
 
   x.status="not";
-  x.remark=remark.value;
+  x.remark=r;
 
-  set(all);
-  closeAll();
+  set(data);
+  closeModal();
   render();
 }
 
 /* ---------------- DELETE ---------------- */
-function deleteClient(id){
-  if(!confirm("Delete this client?")) return;
-  let all=get();
-  all=all.filter(x=>x.id!==id);
-  set(all);
+function removeClient(id){
+  if(!confirm("Delete client?")) return;
+  let data=get().filter(x=>x.id!==id);
+  set(data);
   render();
 }
 
-/* ---------------- CLOSE ---------------- */
-function closeAll(){
-  viewModal.style.display="none";
-  completeModal.style.display="none";
-  notModal.style.display="none";
+/* ---------------- MODAL ---------------- */
+function openModal(id){
+  document.getElementById(id).style.display="flex";
+}
+function closeModal(){
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 
 render();
