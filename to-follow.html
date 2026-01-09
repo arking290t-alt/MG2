@@ -24,11 +24,25 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 .empty{color:#9ca3af;margin-top:10px}
 
 /* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.box{background:#111827;padding:25px;border-radius:16px;width:360px}
-.box h3{color:#0ea5e9}
-.box input,.box textarea{width:100%;padding:10px;background:#1f2937;border:none;border-radius:10px;color:#fff;margin-top:8px}
-.box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
+.box{
+  background:#111827;
+  padding:25px 30px;
+  border-radius:18px;
+  width:380px;
+  text-align:center;
+  box-shadow:0 0 40px rgba(0,180,255,.25)
+}
+.box h3{color:#00b4ff;margin-bottom:12px}
+.detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0;text-align:left}
+.box input,.box textarea{
+  width:100%;padding:10px;background:#1f2937;border:none;
+  border-radius:10px;color:#fff;margin-top:8px
+}
+.box button{
+  margin-top:12px;width:100%;padding:10px;
+  border:none;border-radius:10px;cursor:pointer
+}
 </style>
 </head>
 
@@ -53,7 +67,7 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 <div id="list"></div>
 </div>
 
-<!-- VIEW -->
+<!-- VIEW MODAL -->
 <div class="modal" id="viewModal">
   <div class="box">
     <h3>Client Details</h3>
@@ -62,7 +76,7 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
   </div>
 </div>
 
-<!-- COMPLETE -->
+<!-- COMPLETE MODAL -->
 <div class="modal" id="completeModal">
   <div class="box">
     <h3>Complete Job</h3>
@@ -72,7 +86,7 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
   </div>
 </div>
 
-<!-- NOT -->
+<!-- NOT MODAL -->
 <div class="modal" id="notModal">
   <div class="box">
     <h3>Not Completed</h3>
@@ -87,8 +101,7 @@ let selectedId=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
-
-function uid(){return Date.now()+""+Math.random().toString(16).slice(2)}
+const uid=()=>Date.now()+""+Math.random().toString(16).slice(2);
 
 function addClient(){
   if(!company.value||!client.value||!job.value||!date.value){
@@ -123,26 +136,29 @@ function render(){
       <div>${x.job}</div>
       <div>${x.date}</div>
       <div>
-        <button class="btn view" onclick='view("${x.id}")'>View</button>
-        <button class="btn done" onclick='openComplete("${x.id}")'>Completed</button>
-        <button class="btn not" onclick='openNot("${x.id}")'>Not</button>
-        <button class="btn del" onclick='del("${x.id}")'>Delete</button>
+        <button class="btn view" onclick="openView('${x.id}')">View</button>
+        <button class="btn done" onclick="openComplete('${x.id}')">Completed</button>
+        <button class="btn not" onclick="openNot('${x.id}')">Not</button>
+        <button class="btn del" onclick="delClient('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
-function view(id){
+/* ---------- VIEW ---------- */
+function openView(id){
   const x=get().find(a=>a.id===id);
   viewData.innerHTML=`
-  <p><b>Company:</b> ${x.company}</p>
-  <p><b>Name:</b> ${x.name}</p>
-  <p><b>Phone:</b> ${x.phone||"-"}</p>
-  <p><b>Job:</b> ${x.job}</p>
-  <p><b>Date:</b> ${x.date}</p>`;
+    <div class="detail"><b>Company:</b> ${x.company}</div>
+    <div class="detail"><b>Name:</b> ${x.name}</div>
+    <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
+    <div class="detail"><b>Job:</b> ${x.job}</div>
+    <div class="detail"><b>Date:</b> ${x.date}</div>
+  `;
   viewModal.style.display="flex";
 }
 
+/* ---------- COMPLETE ---------- */
 function openComplete(id){
   selectedId=id;
   completedBy.value="";
@@ -168,6 +184,7 @@ function saveCompleted(){
   render();
 }
 
+/* ---------- NOT ---------- */
 function openNot(id){
   selectedId=id;
   remark.value="";
@@ -184,7 +201,8 @@ function saveNot(){
   render();
 }
 
-function del(id){
+/* ---------- DELETE ---------- */
+function delClient(id){
   if(!confirm("Delete client?"))return;
   let all=get();
   all=all.filter(x=>x.id!==id);
