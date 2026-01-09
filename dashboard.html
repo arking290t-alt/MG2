@@ -4,170 +4,70 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard | MG</title>
-
-  <style>
-    body{
-      margin:0;
-      background:radial-gradient(circle at 20% 30%, #101821, #070c12);
-      font-family:Poppins, sans-serif;
-      color:#e5eaf0;
-    }
-
-    /* TOP BAR */
-    .top-bar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:16px 28px;
-      background:rgba(255,255,255,0.05);
-      border-bottom:1px solid rgba(255,255,255,0.08);
-    }
-    .logo{
-      font-size:1.8rem;
-      font-weight:700;
-      color:#00b4ff;
-    }
-    .btn-logout{
-      background:#00b4ff;
-      border:none;
-      padding:10px 18px;
-      border-radius:10px;
-      color:#000;
-      font-weight:600;
-      cursor:pointer;
-    }
-
-    /* CENTER */
-    .dashboard-wrapper{
-      display:flex;
-      justify-content:center;
-      padding:60px 20px;
-    }
-
-    .dashboard-box{
-      width:100%;
-      max-width:1200px;
-      background:rgba(255,255,255,0.05);
-      border-radius:20px;
-      padding:50px;
-      box-shadow:0 0 40px rgba(0,180,255,0.15);
-    }
-
-    .welcome{
-      text-align:center;
-      font-size:2rem;
-      color:#00b4ff;
-      margin-bottom:8px;
-    }
-    .subtitle{
-      text-align:center;
-      color:#9fb6d4;
-      margin-bottom:40px;
-    }
-
-    .dashboard-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:24px;
-    }
-
-    .dashboard-card{
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.1);
-      border-radius:16px;
-      padding:28px;
-      text-decoration:none;
-      color:#e5eaf0;
-      transition:.3s ease;
-      text-align:center;
-    }
-
-    .dashboard-card h3{
-      margin:0 0 6px;
-      color:#00b4ff;
-      font-size:1.3rem;
-    }
-    .dashboard-card p{
-      margin:0;
-      color:#a1acba;
-      font-size:.95rem;
-    }
-
-    .dashboard-card:hover{
-      transform:translateY(-6px);
-      box-shadow:0 0 25px rgba(0,180,255,0.35);
-      background:rgba(0,180,255,0.08);
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body>
+<body class="dashboard-body">
 
-<header class="top-bar">
-  <div class="logo">MG</div>
-  <button class="btn-logout" onclick="logout()">Logout</button>
-</header>
-
-<div class="dashboard-wrapper">
-  <div class="dashboard-box">
-
-    <div class="welcome">Welcome</div>
-    <div class="subtitle">
-      Manage staff, jobs, follow-ups & inventory
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <h1 class="logo">MG</h1>
+    <div>
+      <button class="btn-logout" onclick="logoutUser()">Logout</button>
     </div>
+  </header>
 
-    <div class="dashboard-grid">
+  <!-- CENTER -->
+  <main class="dashboard-center">
+    <div class="dashboard-box">
 
-      <!-- STAFF MANAGEMENT -->
-      <a href="staff-management.html" class="dashboard-card">
-        <h3>Staff Management</h3>
-        <p>Staff & attendance</p>
-      </a>
+      <h2 class="welcome">Dashboard</h2>
+      <p class="subtitle">Manage your system</p>
 
-      <a href="attendance.html" class="dashboard-card">
-        <h3>Attendance</h3>
-        <p>Mark & track attendance</p>
-      </a>
+      <div class="dashboard-grid" style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:20px;
+        justify-content:center;
+        margin-top:20px;
+      ">
 
-      <!-- FOLLOW JOBS (FIXED FLOW) -->
-      <a href="follow-jobs.html" class="dashboard-card">
-        <h3>Follow Jobs</h3>
-        <p>Track job follow-ups</p>
-      </a>
+        <!-- STAFF MANAGEMENT -->
+        <a href="staff-management.html" class="dashboard-card">
+          <h3>Staff Management</h3>
+          <p>Staff & Attendance</p>
+        </a>
 
-      <!-- INVENTORY MANAGEMENT -->
-      <a href="inventory-management.html" class="dashboard-card">
-        <h3>Inventory</h3>
-        <p>Main inventory stock</p>
-      </a>
+        <!-- INVENTORY MANAGEMENT -->
+        <a href="inventory-management.html" class="dashboard-card">
+          <h3>Inventory Management</h3>
+          <p>Inventory, Used Inventory & PDF</p>
+        </a>
 
-      <a href="used-inventory.html" class="dashboard-card">
-        <h3>Used Inventory</h3>
-        <p>Used material tracking</p>
-      </a>
+        <!-- FOLLOW JOBS -->
+        <a href="follow-jobs.html" class="dashboard-card">
+          <h3>Follow Jobs</h3>
+          <p>To Follow, Completed & Not Completed</p>
+        </a>
 
-      <a href="export-pdf.html" class="dashboard-card">
-        <h3>Export PDF</h3>
-        <p>Download inventory report</p>
-      </a>
+        <!-- JOB DETAIL -->
+        <a href="job-detail.html" class="dashboard-card">
+          <h3>Job Detail</h3>
+          <p>Track job status</p>
+        </a>
 
-      <!-- EXPENSES (if you use it) -->
-      <a href="expenses.html" class="dashboard-card">
-        <h3>Expenses</h3>
-        <p>Track business expenses</p>
-      </a>
+        <!-- EXPENSES -->
+        <a href="expenses.html" class="dashboard-card">
+          <h3>Expenses</h3>
+          <p>Track business expenses</p>
+        </a>
+
+      </div>
 
     </div>
+  </main>
 
-  </div>
-</div>
-
-<script>
-function logout(){
-  localStorage.clear();
-  location.href="login.html";
-}
-</script>
+  <script type="module" src="auth-protect.js"></script>
 
 </body>
 </html>
