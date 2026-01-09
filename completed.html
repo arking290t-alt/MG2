@@ -1,59 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <title>Completed Clients</title>
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
-.logo{color:#22c55e;font-size:22px;font-weight:700}
+.logo{color:#00b4ff;font-size:22px;font-weight:700}
 .back{border:1px solid #22c55e;background:transparent;color:#22c55e;padding:8px 16px;border-radius:10px;cursor:pointer}
-.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,0.05);padding:30px;border-radius:20px}
-.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
+
+.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
+h1{color:#22c55e}
+
+.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px;align-items:center}
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
-.finish{background:#facc15;color:#000}
+.finish{background:gold;color:#000}
 .del{background:#6b7280;color:#fff}
+.empty{color:#9ca3af;margin-top:10px}
+
+/* MODAL */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
 .box{background:#111827;padding:25px;border-radius:16px;width:360px}
-.box input{width:100%;padding:10px;border-radius:8px;background:#1f2937;color:#fff;border:none;margin-top:10px}
+.box h3{color:#22c55e}
+.box input{width:100%;padding:10px;background:#1f2937;border:none;border-radius:10px;color:#fff;margin-top:8px}
+.box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
 </style>
 </head>
 
 <body>
 <header>
-  <div class="logo">Completed Clients</div>
+  <div class="logo">MG</div>
   <div>
-    <button class="back" onclick="location.href='finished.html'">Finished Jobs</button>
     <button class="back" onclick="history.back()">← Back</button>
+    <button class="back" onclick="location.href='finished.html'">Finished Jobs</button>
   </div>
 </header>
 
 <div class="container">
-  <div id="list"></div>
+<h1>Completed Clients</h1>
+<div id="list"></div>
 </div>
 
 <!-- FINISH MODAL -->
 <div class="modal" id="finishModal">
   <div class="box">
     <h3>Finish Job</h3>
-    <input id="finishBy" placeholder="Finished By">
-    <input id="finishAmt" placeholder="Amount Received">
+    <input id="finishedBy" placeholder="Finished by">
+    <input id="receivedAmount" placeholder="Amount received">
     <button onclick="saveFinish()">Save</button>
   </div>
 </div>
 
 <script>
 const KEY="followClients";
-let currentFinish=null;
+let selectedId=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
 function render(){
-  const box=document.getElementById("list");
+  const box=list;
   const data=get().filter(x=>x.status==="completed");
-  box.innerHTML=data.length?"":"<p>No completed clients</p>";
+  box.innerHTML=data.length?"":"<p class='empty'>No completed clients</p>";
 
   data.forEach(x=>{
     box.innerHTML+=`
@@ -64,9 +72,9 @@ function render(){
       <div>${x.job}</div>
       <div>${x.completedDate}</div>
       <div>
-        <button class="btn view" onclick="view(${x.id})">View</button>
-        <button class="btn finish" onclick="openFinish(${x.id})">Finished</button>
-        <button class="btn del" onclick="remove(${x.id})">Delete</button>
+        <button class="btn view" onclick='view("${x.id}")'>View</button>
+        <button class="btn finish" onclick='openFinish("${x.id}")'>Finish</button>
+        <button class="btn del" onclick='del("${x.id}")'>Delete</button>
       </div>
     </div>`;
   });
@@ -77,39 +85,49 @@ function view(id){
   alert(
 `Company: ${x.company}
 Name: ${x.name}
-Phone: ${x.phone||"-"}
+Phone: ${x.phone}
 Job: ${x.job}
+
 Completed By: ${x.completedBy}
-Amount Asked: ${x.completedAmount}`);
+Amount: ${x.completedAmount}`
+  );
 }
 
 function openFinish(id){
-  currentFinish=id;
+  selectedId=id;
+  finishedBy.value="";
+  receivedAmount.value="";
   finishModal.style.display="flex";
 }
 
 function saveFinish(){
-  const by=finishBy.value.trim();
-  const amt=finishAmt.value.trim();
+  const by=finishedBy.value.trim();
+  const amt=receivedAmount.value.trim();
   if(!by||!amt){alert("Fill all");return;}
 
   const all=get();
-  const item=all.find(x=>x.id===currentFinish);
+  const x=all.find(a=>a.id===selectedId);
 
-  item.status="finished";
-  item.finishedBy=by;
-  item.finishedAmount=amt;
-  item.finishedDate=new Date().toISOString().split("T")[0];
+  x.status="finished";
+  x.finishedBy=by;
+  x.receivedAmount=amt;
+  x.finishedDate=new Date().toISOString().slice(0,10);
 
   set(all);
-  finishModal.style.display="none";
+  closeModal();
   render();
 }
 
-function remove(id){
-  if(!confirm("Delete completed job?"))return;
-  set(get().filter(x=>x.id!==id));
+function del(id){
+  if(!confirm("Delete?"))return;
+  let all=get();
+  all=all.filter(x=>x.id!==id);
+  set(all);
   render();
+}
+
+function closeModal(){
+  finishModal.style.display="none";
 }
 
 render();
