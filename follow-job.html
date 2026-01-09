@@ -76,6 +76,7 @@ header{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:30px;
+  justify-content:center;
 }
 
 .card{
@@ -116,26 +117,14 @@ header{
 
 <div class="main">
   <div class="title">Follow Jobs</div>
-  <div class="subtitle">Manage clients, jobs & follow-ups</div>
+  <div class="subtitle">Manage and track all jobs</div>
 
   <div class="grid">
 
-    <!-- CLIENT -->
+    <!-- ONLY OPTION NOW -->
     <div class="card" onclick="location.href='follow-client.html'">
-      <h3>Client</h3>
-      <p>Add & manage client follow-up details</p>
-    </div>
-
-    <!-- JOB -->
-    <div class="card" onclick="location.href='follow-job-create.html'">
-      <h3>Job</h3>
-      <p>Create and assign job to clients</p>
-    </div>
-
-    <!-- JOBS -->
-    <div class="card" onclick="location.href='follow-jobs-list.html'">
       <h3>Jobs</h3>
-      <p>View follow, completed & not completed jobs</p>
+      <p>Add & manage all job follow-ups</p>
     </div>
 
   </div>
