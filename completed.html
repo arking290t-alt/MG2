@@ -17,13 +17,7 @@ header{
   justify-content:space-between;
   align-items:center;
 }
-.logo{color:#00b4ff;font-size:22px;font-weight:700}
-
-.header-actions{
-  display:flex;
-  gap:10px;
-}
-
+.logo{color:#22c55e;font-size:22px;font-weight:700}
 .back{
   border:1px solid #22c55e;
   background:transparent;
@@ -33,13 +27,12 @@ header{
   cursor:pointer;
 }
 .finish-btn{
-  border:1px solid #0ea5e9;
-  background:#0ea5e9;
-  color:#000;
+  border:1px solid #00b4ff;
+  background:transparent;
+  color:#00b4ff;
   padding:8px 16px;
   border-radius:10px;
   cursor:pointer;
-  font-weight:600;
 }
 
 .container{
@@ -89,21 +82,21 @@ h1{color:#22c55e}
   background:#111827;
   padding:25px;
   border-radius:16px;
-  width:380px;
+  width:360px;
 }
-.box h3{color:#0ea5e9}
+.box h3{color:#22c55e}
 .box p{margin:6px 0;color:#d1d5db}
 .box input{
   width:100%;
-  padding:10px;
-  background:#1f2937;
-  border:none;
-  border-radius:10px;
-  color:#fff;
   margin-top:8px;
+  background:#1f2937;
+  color:#fff;
+  border-radius:10px;
+  padding:10px;
+  border:none;
 }
 .box button{
-  margin-top:12px;
+  margin-top:10px;
   width:100%;
   padding:10px;
   border:none;
@@ -117,9 +110,8 @@ h1{color:#22c55e}
 
 <header>
   <div class="logo">MG</div>
-  <div class="header-actions">
-    <!-- 🔥 FINISHED BUTTON ADDED HERE -->
-    <button class="finish-btn" onclick="openFinishedList()">Finished</button>
+  <div>
+    <button class="finish-btn" onclick="location.href='finished.html'">Finished Jobs</button>
     <button class="back" onclick="history.back()">← Back</button>
   </div>
 </header>
@@ -143,8 +135,8 @@ h1{color:#22c55e}
   <div class="box">
     <h3>Finish Job</h3>
     <input id="finishedBy" placeholder="Finished by">
-    <input id="amountReceived" placeholder="Amount received">
-    <button onclick="confirmFinish()">Finish</button>
+    <input id="finishedAmount" placeholder="Amount received">
+    <button onclick="saveFinished()">Save</button>
   </div>
 </div>
 
@@ -171,13 +163,14 @@ function render(){
         <div>${x.date}</div>
         <div>
           <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-          <button class="btn finish" onclick="openFinish(${i})">Finish</button>
+          <button class="btn finish" onclick="markFinish(${i})">Finished</button>
           <button class="btn del" onclick="del(${i})">Delete</button>
         </div>
       </div>`;
   });
 }
 
+/* VIEW */
 function view(x){
   viewData.innerHTML=`
     <p><b>Company:</b> ${x.company}</p>
@@ -185,22 +178,23 @@ function view(x){
     <p><b>Phone:</b> ${x.phone||"-"}</p>
     <p><b>Job:</b> ${x.job}</p>
     <p><b>Date:</b> ${x.date}</p>
-    ${x.finishedBy ? `<p><b>Finished by:</b> ${x.finishedBy}</p>` : ""}
-    ${x.amount ? `<p><b>Amount:</b> ${x.amount}</p>` : ""}
+    <p><b>Completed By:</b> ${x.completedBy||"-"}</p>
+    <p><b>Amount:</b> ${x.amount||"-"}</p>
   `;
   viewModal.style.display="flex";
 }
 
-/* -------- FINISH FLOW ---------- */
-function openFinish(i){
+/* FINISH FLOW */
+function markFinish(i){
   finishIndex=i;
   document.getElementById("finishModal").style.display="flex";
 }
 
-function confirmFinish(){
+function saveFinished(){
   const by=document.getElementById("finishedBy").value.trim();
-  const amt=document.getElementById("amountReceived").value.trim();
-  if(!by || !amt){
+  const amt=document.getElementById("finishedAmount").value.trim();
+
+  if(!by||!amt){
     alert("Enter finished by and amount");
     return;
   }
@@ -212,22 +206,18 @@ function confirmFinish(){
 
   all[pos].status="finished";
   all[pos].finishedBy=by;
-  all[pos].amount=amt;
+  all[pos].receivedAmount=amt;
 
   set(all);
 
   document.getElementById("finishedBy").value="";
-  document.getElementById("amountReceived").value="";
+  document.getElementById("finishedAmount").value="";
+
   closeModal();
   render();
 }
 
-/* -------- HEADER FINISHED BTN ---------- */
-function openFinishedList(){
-  window.location.href="finished.html";
-}
-
-/* -------- DELETE ---------- */
+/* DELETE */
 function del(index){
   if(!confirm("Delete completed client?")) return;
   const all=get();
@@ -239,6 +229,7 @@ function del(index){
   render();
 }
 
+/* CLOSE MODALS */
 function closeModal(){
   viewModal.style.display="none";
   finishModal.style.display="none";
