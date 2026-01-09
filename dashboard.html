@@ -1,73 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard | MG</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>Follow Jobs | MG</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0e141b;
+  --panel:rgba(255,255,255,0.05);
+  --accent:#00b4ff;
+  --text:#e5eaf0;
+  --success:#00ff88;
+  --error:#ff4b4b;
+}
+
+*{box-sizing:border-box;font-family:Poppins,sans-serif;}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#0e141b,#070b10);
+  color:var(--text);
+  min-height: 100vh;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 30px;
+  background:rgba(255,255,255,0.04);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+.logo{
+  font-size:1.6rem;
+  font-weight:700;
+  color:var(--accent);
+}
+
+.back-btn{
+  padding:8px 16px;
+  background:transparent;
+  border:1px solid var(--accent);
+  border-radius:8px;
+  color:var(--accent);
+  cursor:pointer;
+  font-weight:600;
+  transition: 0.3s;
+}
+
+.back-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* MAIN */
+.main{
+  max-width:900px;
+  margin:40px auto;
+  background:var(--panel);
+  border-radius:22px;
+  padding:40px;
+  box-shadow:0 0 40px rgba(0,180,255,0.15);
+}
+
+.title{
+  text-align:center;
+  font-size:2rem;
+  color:var(--accent);
+  margin-bottom: 10px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#9fb6d4;
+  margin-bottom:40px;
+}
+
+/* GRID - Updated to show multiple cards better */
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap:20px;
+}
+
+.card{
+  background:rgba(255,255,255,0.06);
+  border-radius:20px;
+  padding:40px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:.3s;
+  border:1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 0 25px rgba(0,180,255,0.25);
+  background:rgba(255,255,255,0.1);
+  border-color: var(--accent);
+}
+
+.card h3{
+  margin-bottom:10px;
+  color: var(--accent);
+  font-size:1.3rem;
+}
+
+/* Custom colors for different statuses */
+.card.completed h3 { color: var(--success); }
+.card.not-completed h3 { color: var(--error); }
+
+.card p{
+  color:#b6c8e2;
+  font-size:0.9rem;
+  margin: 0;
+}
+</style>
 </head>
 
-<body class="dashboard-body">
+<body>
 
-  <!-- TOP BAR -->
-  <header class="top-bar">
-    <h1 class="logo">MG</h1>
-    <div>
-      <button class="btn-logout" onclick="logoutUser()">Logout</button>
+<header>
+  <div class="logo">MG</div>
+  <button class="back-btn" onclick="location.href='dashboard.html'">← Back</button>
+</header>
+
+<div class="main">
+  <div class="title">Follow Jobs</div>
+  <div class="subtitle">Select a category to manage</div>
+
+  <div class="grid">
+
+    <div class="card" onclick="location.href='to-follow.html'">
+      <h3>To Follow</h3>
+      <p>View upcoming job tasks</p>
     </div>
-  </header>
 
-  <!-- CENTER -->
-  <main class="dashboard-center">
-    <div class="dashboard-box">
-
-      <h2 class="welcome">Dashboard</h2>
-      <p class="subtitle">Manage your system</p>
-
-      <div class="dashboard-grid" style="
-        display:flex;
-        flex-wrap:wrap;
-        gap:20px;
-        justify-content:center;
-        margin-top:20px;
-      ">
-
-        <!-- STAFF MANAGEMENT -->
-        <a href="staff-management.html" class="dashboard-card">
-          <h3>Staff Management</h3>
-          <p>Staff & Attendance</p>
-        </a>
-
-        <!-- INVENTORY MANAGEMENT -->
-        <a href="inventory-management.html" class="dashboard-card">
-          <h3>Inventory Management</h3>
-          <p>Inventory, Used Inventory & PDF</p>
-        </a>
-
-        <!-- FOLLOW JOBS -->
-        <a href="follow-jobs.html" class="dashboard-card">
-          <h3>Follow Jobs</h3>
-          <p>To Follow, Completed & Not Completed</p>
-        </a>
-
-        <!-- JOB DETAIL -->
-        <a href="job-detail.html" class="dashboard-card">
-          <h3>Job Detail</h3>
-          <p>Track job status</p>
-        </a>
-
-        <!-- EXPENSES -->
-        <a href="expenses.html" class="dashboard-card">
-          <h3>Expenses</h3>
-          <p>Track business expenses</p>
-        </a>
-
-      </div>
-
+    <div class="card completed" onclick="location.href='completed-jobs.html'">
+      <h3>Completed</h3>
+      <p>Review finished assignments</p>
     </div>
-  </main>
 
-  <script type="module" src="auth-protect.js"></script>
+    <div class="card not-completed" onclick="location.href='not-completed.html'">
+      <h3>Not Completed</h3>
+      <p>Pending or missed tasks</p>
+    </div>
+
+  </div>
+</div>
 
 </body>
 </html>
