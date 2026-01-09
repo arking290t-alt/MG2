@@ -13,12 +13,14 @@ h1{color:#22c55e}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
+.finish{background:#facc15;color:#000}
 .del{background:#6b7280;color:#fff}
 .empty{color:#9ca3af;margin-top:10px}
+
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
 .box{background:#111827;padding:25px;border-radius:16px;width:360px}
 .box h3{color:#22c55e}
-.box p{margin:6px 0;color:#d1d5db}
+.box input{width:100%;margin-top:8px;padding:10px;border-radius:8px;border:none;background:#1f2937;color:#fff}
 .box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
 </style>
 </head>
@@ -34,6 +36,17 @@ h1{color:#22c55e}
 <div id="list"></div>
 </div>
 
+<!-- FINISH MODAL -->
+<div class="modal" id="finishModal">
+ <div class="box">
+  <h3>Finish Job</h3>
+  <input id="fBy" placeholder="Finished By">
+  <input id="fAmt" type="number" placeholder="Amount Received">
+  <button onclick="saveFinish()">Save</button>
+ </div>
+</div>
+
+<!-- VIEW MODAL -->
 <div class="modal" id="viewModal">
  <div class="box">
   <h3>Client Details</h3>
@@ -44,6 +57,8 @@ h1{color:#22c55e}
 
 <script>
 const KEY="followClients";
+let finishId=null;
+
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
@@ -60,16 +75,42 @@ function render(){
     <div>${x.date}</div>
     <div>
      <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
+     <button class="btn finish" onclick="openFinish('${x.id}')">Finished</button>
      <button class="btn del" onclick="del('${x.id}')">Delete</button>
     </div>
    </div>`;
  });
 }
 
+function openFinish(id){
+ finishId=id;
+ finishModal.style.display="flex";
+}
+
+function saveFinish(){
+ const by=fBy.value.trim();
+ const amt=fAmt.value.trim();
+ if(!by||!amt){ alert("Fill all fields"); return; }
+
+ const data=get();
+ const item=data.find(x=>x.id===finishId);
+
+ item.status="finished";
+ item.finishedBy=by;
+ item.amountReceived=amt;
+ item.finishedDate=new Date().toISOString().slice(0,10);
+
+ set(data);
+
+ fBy.value=fAmt.value="";
+ finishModal.style.display="none";
+ render();
+}
+
 function del(id){
  if(!confirm("Delete completed client?"))return;
- let data=get().filter(x=>x.id!==id);
- set(data); render();
+ set(get().filter(x=>x.id!==id));
+ render();
 }
 
 function view(x){
