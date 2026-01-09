@@ -23,17 +23,14 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 .del{background:#6b7280;color:#fff}
 .empty{color:#9ca3af;margin-top:10px}
 
-/* MODAL */
+/* MODALS */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
 .box{
-  background:#111827;
-  padding:25px 30px;
-  border-radius:18px;
-  width:380px;
-  text-align:center;
+  background:#111827;padding:25px 30px;border-radius:18px;
+  width:380px;text-align:center;
   box-shadow:0 0 40px rgba(0,180,255,.25)
 }
-.box h3{color:#00b4ff;margin-bottom:12px}
+.box h3{color:#00b4ff}
 .detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0;text-align:left}
 .box input,.box textarea{
   width:100%;padding:10px;background:#1f2937;border:none;
@@ -67,26 +64,26 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 <div id="list"></div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- VIEW -->
 <div class="modal" id="viewModal">
   <div class="box">
     <h3>Client Details</h3>
     <div id="viewData"></div>
-    <button onclick="closeModal()">Close</button>
+    <button onclick="closeAll()">Close</button>
   </div>
 </div>
 
-<!-- COMPLETE MODAL -->
+<!-- COMPLETE -->
 <div class="modal" id="completeModal">
   <div class="box">
-    <h3>Complete Job</h3>
+    <h3>Mark Completed</h3>
     <input id="completedBy" placeholder="Completed by">
     <input id="completedAmount" placeholder="Amount">
     <button onclick="saveCompleted()">Save</button>
   </div>
 </div>
 
-<!-- NOT MODAL -->
+<!-- NOT -->
 <div class="modal" id="notModal">
   <div class="box">
     <h3>Not Completed</h3>
@@ -101,12 +98,14 @@ let selectedId=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
-const uid=()=>Date.now()+""+Math.random().toString(16).slice(2);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 
+/* ---------------- ADD ---------------- */
 function addClient(){
   if(!company.value||!client.value||!job.value||!date.value){
     alert("Fill required fields");return;
   }
+
   const all=get();
   all.push({
     id:uid(),
@@ -117,14 +116,17 @@ function addClient(){
     date:date.value,
     status:"follow"
   });
+
   set(all);
   company.value=client.value=phone.value=job.value=date.value="";
   render();
 }
 
+/* ---------------- RENDER ---------------- */
 function render(){
   const box=list;
   const data=get().filter(x=>x.status==="follow");
+
   box.innerHTML=data.length?"":"<p class='empty'>No clients</p>";
 
   data.forEach(x=>{
@@ -139,15 +141,17 @@ function render(){
         <button class="btn view" onclick="openView('${x.id}')">View</button>
         <button class="btn done" onclick="openComplete('${x.id}')">Completed</button>
         <button class="btn not" onclick="openNot('${x.id}')">Not</button>
-        <button class="btn del" onclick="delClient('${x.id}')">Delete</button>
+        <button class="btn del" onclick="deleteClient('${x.id}')">Delete</button>
       </div>
     </div>`;
   });
 }
 
-/* ---------- VIEW ---------- */
+/* ---------------- VIEW ---------------- */
 function openView(id){
   const x=get().find(a=>a.id===id);
+  if(!x) return;
+
   viewData.innerHTML=`
     <div class="detail"><b>Company:</b> ${x.company}</div>
     <div class="detail"><b>Name:</b> ${x.name}</div>
@@ -158,7 +162,7 @@ function openView(id){
   viewModal.style.display="flex";
 }
 
-/* ---------- COMPLETE ---------- */
+/* ---------------- COMPLETE ---------------- */
 function openComplete(id){
   selectedId=id;
   completedBy.value="";
@@ -173,6 +177,7 @@ function saveCompleted(){
 
   const all=get();
   const x=all.find(a=>a.id===selectedId);
+  if(!x) return;
 
   x.status="completed";
   x.completedBy=by;
@@ -180,11 +185,11 @@ function saveCompleted(){
   x.completedDate=new Date().toISOString().slice(0,10);
 
   set(all);
-  closeModal();
+  closeAll();
   render();
 }
 
-/* ---------- NOT ---------- */
+/* ---------------- NOT ---------------- */
 function openNot(id){
   selectedId=id;
   remark.value="";
@@ -194,23 +199,27 @@ function openNot(id){
 function saveNot(){
   const all=get();
   const x=all.find(a=>a.id===selectedId);
+  if(!x) return;
+
   x.status="not";
   x.remark=remark.value;
+
   set(all);
-  closeModal();
+  closeAll();
   render();
 }
 
-/* ---------- DELETE ---------- */
-function delClient(id){
-  if(!confirm("Delete client?"))return;
+/* ---------------- DELETE ---------------- */
+function deleteClient(id){
+  if(!confirm("Delete this client?")) return;
   let all=get();
   all=all.filter(x=>x.id!==id);
   set(all);
   render();
 }
 
-function closeModal(){
+/* ---------------- CLOSE ---------------- */
+function closeAll(){
   viewModal.style.display="none";
   completeModal.style.display="none";
   notModal.style.display="none";
