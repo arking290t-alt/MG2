@@ -22,7 +22,13 @@
       <h2 class="welcome">Dashboard</h2>
       <p class="subtitle">Manage your system</p>
 
-      <div class="dashboard-grid" style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center; margin-top:20px;">
+      <div class="dashboard-grid" style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:20px;
+        justify-content:center;
+        margin-top:20px;
+      ">
 
         <a href="staff-management.html" class="dashboard-card">
           <h3>Staff Management</h3>
@@ -45,9 +51,21 @@
         </a>
 
       </div>
+
     </div>
   </main>
 
   <script type="module" src="auth-protect.js"></script>
+
+  <script>
+    function logoutUser() {
+      // Clear session data
+      localStorage.clear();
+      sessionStorage.clear();
+      // Redirect to login page
+      window.location.href = 'index.html';
+    }
+  </script>
+
 </body>
 </html>
