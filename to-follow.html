@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>To Follow Clients</title>
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
@@ -17,21 +16,19 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 .save{grid-column:1/-1;padding:14px;background:#0ea5e9;border:none;border-radius:14px;cursor:pointer}
 
 .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px;align-items:center}
-
 .btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
 .done{background:#22c55e;color:#000}
 .not{background:#ef4444;color:#fff}
 .del{background:#6b7280;color:#fff}
-
 .empty{color:#9ca3af;margin-top:10px}
 
 /* MODAL */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
-.box{background:#111827;padding:25px;border-radius:16px;width:360px;text-align:center}
-.box h3{color:#00b4ff;margin-bottom:10px}
-.box input{width:100%;padding:10px;border-radius:8px;border:none;background:#1f2937;color:#fff;margin-bottom:10px}
-.box button{width:100%;padding:10px;border:none;border-radius:10px;background:#0ea5e9;color:#000;font-weight:600;cursor:pointer}
+.box{background:#111827;padding:25px;border-radius:16px;width:360px}
+.box h3{color:#0ea5e9}
+.box input,.box textarea{width:100%;padding:10px;background:#1f2937;border:none;border-radius:10px;color:#fff;margin-top:8px}
+.box button{margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer}
 </style>
 </head>
 
@@ -42,18 +39,18 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
 </header>
 
 <div class="container">
-  <h1>To Follow Clients</h1>
+<h1>To Follow Clients</h1>
 
-  <div class="form">
-    <input id="company" placeholder="Company *">
-    <input id="client" placeholder="Client *">
-    <input id="phone" placeholder="Phone">
-    <input id="job" placeholder="Job *">
-    <input id="date" type="date">
-    <button class="save" onclick="addClient()">Save Client</button>
-  </div>
+<div class="form">
+  <input id="company" placeholder="Company *">
+  <input id="client" placeholder="Client *">
+  <input id="phone" placeholder="Phone">
+  <input id="job" placeholder="Job *">
+  <input id="date" type="date">
+  <button class="save" onclick="addClient()">Save Client</button>
+</div>
 
-  <div id="list"></div>
+<div id="list"></div>
 </div>
 
 <!-- VIEW -->
@@ -65,21 +62,21 @@ input{padding:12px;background:#1f2937;border:1px solid #374151;border-radius:12p
   </div>
 </div>
 
-<!-- COMPLETE MODAL -->
+<!-- COMPLETE -->
 <div class="modal" id="completeModal">
   <div class="box">
-    <h3>Mark Completed</h3>
+    <h3>Complete Job</h3>
     <input id="completedBy" placeholder="Completed by">
     <input id="completedAmount" placeholder="Amount">
     <button onclick="saveCompleted()">Save</button>
   </div>
 </div>
 
-<!-- NOT MODAL -->
+<!-- NOT -->
 <div class="modal" id="notModal">
   <div class="box">
     <h3>Not Completed</h3>
-    <input id="notRemark" placeholder="Reason">
+    <textarea id="remark" placeholder="Reason..."></textarea>
     <button onclick="saveNot()">Save</button>
   </div>
 </div>
@@ -91,14 +88,14 @@ let selectedId=null;
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-function uid(){return Date.now()+Math.random()}
+function uid(){return Date.now()+""+Math.random().toString(16).slice(2)}
 
 function addClient(){
   if(!company.value||!client.value||!job.value||!date.value){
-    alert("Fill required fields"); return;
+    alert("Fill required fields");return;
   }
-  const data=get();
-  data.push({
+  const all=get();
+  all.push({
     id:uid(),
     company:company.value,
     name:client.value,
@@ -107,7 +104,7 @@ function addClient(){
     date:date.value,
     status:"follow"
   });
-  set(data);
+  set(all);
   company.value=client.value=phone.value=job.value=date.value="";
   render();
 }
@@ -126,22 +123,23 @@ function render(){
       <div>${x.job}</div>
       <div>${x.date}</div>
       <div>
-        <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-        <button class="btn done" onclick="openComplete('${x.id}')">Completed</button>
-        <button class="btn not" onclick="openNot('${x.id}')">Not</button>
-        <button class="btn del" onclick="del('${x.id}')">Delete</button>
+        <button class="btn view" onclick='view("${x.id}")'>View</button>
+        <button class="btn done" onclick='openComplete("${x.id}")'>Completed</button>
+        <button class="btn not" onclick='openNot("${x.id}")'>Not</button>
+        <button class="btn del" onclick='del("${x.id}")'>Delete</button>
       </div>
     </div>`;
   });
 }
 
-function view(x){
+function view(id){
+  const x=get().find(a=>a.id===id);
   viewData.innerHTML=`
-    <p><b>Company:</b> ${x.company}</p>
-    <p><b>Name:</b> ${x.name}</p>
-    <p><b>Phone:</b> ${x.phone||"-"}</p>
-    <p><b>Job:</b> ${x.job}</p>
-    <p><b>Date:</b> ${x.date}</p>`;
+  <p><b>Company:</b> ${x.company}</p>
+  <p><b>Name:</b> ${x.name}</p>
+  <p><b>Phone:</b> ${x.phone||"-"}</p>
+  <p><b>Job:</b> ${x.job}</p>
+  <p><b>Date:</b> ${x.date}</p>`;
   viewModal.style.display="flex";
 }
 
@@ -157,41 +155,41 @@ function saveCompleted(){
   const amt=completedAmount.value.trim();
   if(!by||!amt){alert("Fill all");return;}
 
-  const data=get();
-  const i=data.findIndex(x=>x.id==selectedId);
-  data[i].status="completed";
-  data[i].completedBy=by;
-  data[i].completedAmount=amt;
-  data[i].completedDate=new Date().toISOString().slice(0,10);
+  const all=get();
+  const x=all.find(a=>a.id===selectedId);
 
-  set(data);
+  x.status="completed";
+  x.completedBy=by;
+  x.completedAmount=amt;
+  x.completedDate=new Date().toISOString().slice(0,10);
+
+  set(all);
   closeModal();
   render();
 }
 
 function openNot(id){
   selectedId=id;
-  notRemark.value="";
+  remark.value="";
   notModal.style.display="flex";
 }
 
 function saveNot(){
-  const r=notRemark.value.trim();
-  if(!r){alert("Enter reason");return;}
-
-  const data=get();
-  const i=data.findIndex(x=>x.id==selectedId);
-  data[i].status="not";
-  data[i].remark=r;
-  set(data);
+  const all=get();
+  const x=all.find(a=>a.id===selectedId);
+  x.status="not";
+  x.remark=remark.value;
+  set(all);
   closeModal();
   render();
 }
 
 function del(id){
-  if(!confirm("Delete?"))return;
-  const data=get().filter(x=>x.id!=id);
-  set(data); render();
+  if(!confirm("Delete client?"))return;
+  let all=get();
+  all=all.filter(x=>x.id!==id);
+  set(all);
+  render();
 }
 
 function closeModal(){
