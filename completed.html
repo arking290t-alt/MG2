@@ -1,148 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Completed Clients</title>
-
 <style>
-body{
-  margin:0;
-  background:#0b111b;
-  font-family:Poppins,Arial,sans-serif;
-  color:#fff;
-}
-header{
-  padding:20px 40px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
+header{padding:20px 40px;display:flex;justify-content:space-between}
 .logo{color:#22c55e;font-size:22px;font-weight:700}
-.back{
-  border:1px solid #22c55e;
-  background:transparent;
-  color:#22c55e;
-  padding:8px 16px;
-  border-radius:10px;
-  cursor:pointer;
-}
-.finish-btn{
-  border:1px solid #00b4ff;
-  background:transparent;
-  color:#00b4ff;
-  padding:8px 16px;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-.container{
-  max-width:1100px;
-  margin:40px auto;
-  background:rgba(255,255,255,0.05);
-  padding:30px;
-  border-radius:20px;
-}
-
-h1{color:#22c55e}
-
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;
-  gap:10px;
-  background:#1f2937;
-  padding:12px;
-  border-radius:14px;
-  margin-top:10px;
-  align-items:center;
-}
-
-.btn{
-  padding:6px 10px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:13px;
-}
+.back{border:1px solid #22c55e;background:transparent;color:#22c55e;padding:8px 16px;border-radius:10px;cursor:pointer}
+.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,0.05);padding:30px;border-radius:20px}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:10px;background:#1f2937;padding:12px;border-radius:14px;margin-top:10px}
+.btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
 .view{background:#3b82f6;color:#fff}
-.finish{background:#0ea5e9;color:#000}
+.finish{background:#facc15;color:#000}
 .del{background:#6b7280;color:#fff}
-
-.empty{color:#9ca3af;margin-top:10px}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-.box{
-  background:#111827;
-  padding:25px;
-  border-radius:16px;
-  width:360px;
-}
-.box h3{color:#22c55e}
-.box p{margin:6px 0;color:#d1d5db}
-.box input{
-  width:100%;
-  margin-top:8px;
-  background:#1f2937;
-  color:#fff;
-  border-radius:10px;
-  padding:10px;
-  border:none;
-}
-.box button{
-  margin-top:10px;
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+.box{background:#111827;padding:25px;border-radius:16px;width:360px}
+.box input{width:100%;padding:10px;border-radius:8px;background:#1f2937;color:#fff;border:none;margin-top:10px}
 </style>
 </head>
 
 <body>
-
 <header>
-  <div class="logo">MG</div>
+  <div class="logo">Completed Clients</div>
   <div>
-    <button class="finish-btn" onclick="location.href='finished.html'">Finished Jobs</button>
+    <button class="back" onclick="location.href='finished.html'">Finished Jobs</button>
     <button class="back" onclick="history.back()">← Back</button>
   </div>
 </header>
 
 <div class="container">
-  <h1>Completed Clients</h1>
   <div id="list"></div>
-</div>
-
-<!-- VIEW MODAL -->
-<div class="modal" id="viewModal">
-  <div class="box">
-    <h3>Client Details</h3>
-    <div id="viewData"></div>
-    <button onclick="closeModal()">Close</button>
-  </div>
 </div>
 
 <!-- FINISH MODAL -->
 <div class="modal" id="finishModal">
   <div class="box">
     <h3>Finish Job</h3>
-    <input id="finishedBy" placeholder="Finished by">
-    <input id="finishedAmount" placeholder="Amount received">
+    <input id="finishedBy" placeholder="Finished By">
+    <input id="finishedAmount" placeholder="Amount Received">
     <button onclick="saveFinished()">Save</button>
   </div>
 </div>
 
 <script>
 const KEY="followClients";
-let finishIndex=null;
+let finishId=null;
 
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
@@ -150,10 +53,9 @@ const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 function render(){
   const box=document.getElementById("list");
   const data=get().filter(x=>x.status==="completed");
+  box.innerHTML=data.length?"":"<p>No completed clients</p>";
 
-  box.innerHTML=data.length?"":"<p class='empty'>No completed clients</p>";
-
-  data.forEach((x,i)=>{
+  data.forEach(x=>{
     box.innerHTML+=`
       <div class="row">
         <div>${x.company}</div>
@@ -163,80 +65,51 @@ function render(){
         <div>${x.date}</div>
         <div>
           <button class="btn view" onclick='view(${JSON.stringify(x)})'>View</button>
-          <button class="btn finish" onclick="markFinish(${i})">Finished</button>
-          <button class="btn del" onclick="del(${i})">Delete</button>
+          <button class="btn finish" onclick="markFinish(${x.id})">Finished</button>
+          <button class="btn del" onclick="del(${x.id})">Delete</button>
         </div>
       </div>`;
   });
 }
 
-/* VIEW */
-function view(x){
-  viewData.innerHTML=`
-    <p><b>Company:</b> ${x.company}</p>
-    <p><b>Name:</b> ${x.name}</p>
-    <p><b>Phone:</b> ${x.phone||"-"}</p>
-    <p><b>Job:</b> ${x.job}</p>
-    <p><b>Date:</b> ${x.date}</p>
-    <p><b>Completed By:</b> ${x.completedBy||"-"}</p>
-    <p><b>Amount:</b> ${x.amount||"-"}</p>
-  `;
-  viewModal.style.display="flex";
-}
-
-/* FINISH FLOW */
-function markFinish(i){
-  finishIndex=i;
-  document.getElementById("finishModal").style.display="flex";
+function markFinish(id){
+  finishId=id;
+  finishModal.style.display="flex";
 }
 
 function saveFinished(){
-  const by=document.getElementById("finishedBy").value.trim();
-  const amt=document.getElementById("finishedAmount").value.trim();
-
-  if(!by||!amt){
-    alert("Enter finished by and amount");
-    return;
-  }
+  const by=finishedBy.value.trim();
+  const amt=finishedAmount.value.trim();
+  if(!by||!amt){ alert("Enter all fields"); return; }
 
   const all=get();
-  const completed=all.filter(x=>x.status==="completed");
-  const item=completed[finishIndex];
-  const pos=all.indexOf(item);
+  const item=all.find(x=>x.id===finishId);
+  if(!item) return;
 
-  all[pos].status="finished";
-  all[pos].finishedBy=by;
-  all[pos].receivedAmount=amt;
+  item.status="finished";
+  item.finishedBy=by;
+  item.receivedAmount=amt;
+  item.finishedDate=new Date().toISOString().split("T")[0];
 
   set(all);
-
-  document.getElementById("finishedBy").value="";
-  document.getElementById("finishedAmount").value="";
-
-  closeModal();
-  render();
-}
-
-/* DELETE */
-function del(index){
-  if(!confirm("Delete completed client?")) return;
-  const all=get();
-  const completed=all.filter(x=>x.status==="completed");
-  const item=completed[index];
-  const pos=all.indexOf(item);
-  all.splice(pos,1);
-  set(all);
-  render();
-}
-
-/* CLOSE MODALS */
-function closeModal(){
-  viewModal.style.display="none";
   finishModal.style.display="none";
+  render();
+}
+
+function del(id){
+  if(!confirm("Delete completed job?"))return;
+  let all=get().filter(x=>x.id!==id);
+  set(all);
+  render();
+}
+
+function view(x){
+  alert(
+    `Company: ${x.company}\nName: ${x.name}\nPhone: ${x.phone||"-"}\nJob: ${x.job}\nAmount: ${x.amount}`
+  );
 }
 
 render();
 </script>
-
 </body>
 </html>
