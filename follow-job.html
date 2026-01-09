@@ -4,26 +4,25 @@
 <meta charset="UTF-8">
 <title>Follow Jobs | MG</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#0e141b;
   --panel:rgba(255,255,255,0.05);
   --accent:#00b4ff;
   --text:#e5eaf0;
+  --success:#00ff88;
+  --error:#ff4b4b;
 }
-
-*{box-sizing:border-box;font-family:Poppins,sans-serif;}
-
 body{
   margin:0;
   background:radial-gradient(circle at top,#0e141b,#070b10);
   color:var(--text);
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
-
-/* HEADER */
 header{
   display:flex;
   justify-content:space-between;
@@ -32,100 +31,68 @@ header{
   background:rgba(255,255,255,0.04);
   border-bottom:1px solid rgba(255,255,255,0.1);
 }
-
-.logo{
-  font-size:1.6rem;
-  font-weight:700;
-  color:var(--accent);
-}
-
-.back-btn{
+.logo{ font-size:1.6rem; font-weight:700; color:var(--accent); }
+.logout-btn{
   padding:8px 16px;
   background:transparent;
-  border:1px solid var(--accent);
+  border:1px solid var(--error);
   border-radius:8px;
-  color:var(--accent);
+  color:var(--error);
   cursor:pointer;
-  font-weight:600;
 }
-
-/* MAIN */
 .main{
-  max-width:800px;
-  margin:60px auto;
+  max-width:1000px;
+  margin:auto;
   background:var(--panel);
   border-radius:22px;
   padding:60px 40px;
-  box-shadow:0 0 40px rgba(0,180,255,0.15);
+  box-shadow:0 0 40px rgba(0,180,255,0.1);
 }
-
-.title{
-  text-align:center;
-  font-size:2rem;
-  color:var(--accent);
-}
-
-.subtitle{
-  text-align:center;
-  color:#9fb6d4;
-  margin-bottom:50px;
-}
-
-/* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:30px;
-}
-
+.title{ text-align:center; font-size:2.2rem; color:var(--accent); margin:0; }
+.subtitle{ text-align:center; color:#9fb6d4; margin-bottom:40px; }
+.grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:20px; }
 .card{
   background:rgba(255,255,255,0.06);
   border-radius:20px;
-  padding:50px;
+  padding:40px 20px;
   text-align:center;
   cursor:pointer;
   transition:.3s;
   border:1px solid rgba(255,255,255,0.08);
+  text-decoration: none;
 }
-
-.card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 0 25px rgba(0,180,255,0.35);
-  background:rgba(0,180,255,0.08);
-}
-
-.card h3{
-  margin-bottom:10px;
-  color:var(--accent);
-  font-size:1.5rem;
-}
-
-.card p{
-  color:#b6c8e2;
-  font-size:1rem;
-}
+.card:hover{ transform:translateY(-5px); background:rgba(255,255,255,0.1); border-color:var(--accent); }
+.card h3{ margin-bottom:10px; font-size:1.4rem; }
+.card.blue h3{ color: var(--accent); }
+.card.green h3{ color: var(--success); }
+.card.red h3{ color: var(--error); }
+.card p{ color:#b6c8e2; font-size:0.9rem; margin:0; }
 </style>
 </head>
-
 <body>
 
 <header>
   <div class="logo">MG</div>
-  <button class="back-btn" onclick="location.href='dashboard.html'">← Back</button>
+  <button class="logout-btn" onclick="location.href='index.html'">Logout</button>
 </header>
 
 <div class="main">
-  <div class="title">Follow Jobs</div>
-  <div class="subtitle">Manage all job follow-ups</div>
+  <h1 class="title">Main Dashboard</h1>
+  <p class="subtitle">Quick access to job management</p>
 
   <div class="grid">
-
-    <!-- ONLY JOBS OPTION -->
-    <div class="card" onclick="location.href='jobs-menu.html'">
-      <h3>Jobs</h3>
-      <p>To Follow, Completed & Not Completed</p>
-    </div>
-
+    <a href="to-follow.html" class="card blue">
+      <h3>Jobs To Follow</h3>
+      <p>Manage pending follow-ups and new tasks.</p>
+    </a>
+    <a href="completed.html" class="card green">
+      <h3>Completed Jobs</h3>
+      <p>View history of all successfully finished jobs.</p>
+    </a>
+    <a href="not-completed.html" class="card red">
+      <h3>Not Completed</h3>
+      <p>Track missed deadlines or canceled tasks.</p>
+    </a>
   </div>
 </div>
 
