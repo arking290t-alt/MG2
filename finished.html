@@ -2,105 +2,157 @@
 <html>
 <head>
 <title>Finished Jobs</title>
+
 <style>
 body{margin:0;background:#0b111b;font-family:Poppins;color:#fff}
 header{padding:20px 40px;display:flex;justify-content:space-between}
-.logo{color:#00b4ff;font-size:22px;font-weight:700}
-.back{border:1px solid gold;background:transparent;color:gold;padding:8px 16px;border-radius:10px;cursor:pointer}
+.logo{color:#facc15;font-size:22px;font-weight:700}
+.back{border:1px solid #facc15;background:transparent;color:#facc15;padding:8px 16px;border-radius:10px;cursor:pointer}
 
-.container{max-width:1100px;margin:40px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:20px}
-h1{color:gold;margin-bottom:10px}
-
-/* SEARCH */
-.search-box{
-  margin:20px 0;
-  display:flex;
-  justify-content:center;
+.container{
+  max-width:1100px;margin:40px auto;
+  background:rgba(255,255,255,.05);
+  padding:30px;border-radius:20px
 }
-.search-box input{
-  width:60%;
-  padding:12px 16px;
-  border-radius:12px;
-  border:1px solid #facc15;
-  background:#111827;
-  color:#fff;
-  font-size:15px;
+h1{color:#facc15}
+
+.search{
+  width:100%;padding:12px;
+  border-radius:12px;border:1px solid #555;
+  background:#1f2937;color:#fff;
+  margin-bottom:20px
 }
 
-/* CARDS */
-.card{background:#111827;padding:20px;border-radius:14px;margin-top:12px}
-.card p{margin:4px 0}
-.empty{color:#9ca3af;text-align:center;margin-top:20px}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr auto;
+  gap:10px;background:#1f2937;
+  padding:12px;border-radius:14px;
+  margin-top:10px;align-items:center
+}
+
+.btn{padding:6px 10px;border:none;border-radius:8px;cursor:pointer;font-size:13px}
+.view{background:#3b82f6;color:#fff}
+.del{background:#ef4444;color:#fff}
+.empty{color:#9ca3af;margin-top:10px}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
+.box{
+  background:#111827;padding:25px 30px;border-radius:18px;
+  width:420px;text-align:left;
+  box-shadow:0 0 40px rgba(250,204,21,.3)
+}
+.box h3{color:#facc15;text-align:center}
+.detail{background:#1f2937;padding:10px;border-radius:10px;margin:6px 0}
+.box button{
+  margin-top:12px;width:100%;
+  padding:10px;border:none;
+  border-radius:10px;cursor:pointer
+}
 </style>
 </head>
 
 <body>
+
 <header>
   <div class="logo">MG</div>
   <button class="back" onclick="history.back()">← Back</button>
 </header>
 
 <div class="container">
-  <h1>Finished Jobs</h1>
+<h1>Finished Jobs</h1>
 
-  <!-- SEARCH -->
-  <div class="search-box">
-    <input 
-      type="text" 
-      id="searchInput" 
-      placeholder="Search by company, name, phone or job..."
-      oninput="render()"
-    >
+<input class="search" id="search" placeholder="Search by company, name, phone or job">
+
+<div id="list"></div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal" id="viewModal">
+  <div class="box">
+    <h3>Finished Job Details</h3>
+    <div id="viewData"></div>
+    <button onclick="closeModal()">Close</button>
   </div>
-
-  <div id="list"></div>
 </div>
 
 <script>
 const KEY="followClients";
-const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
+let viewModal=document.getElementById("viewModal");
+let viewData=document.getElementById("viewData");
 
+const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
+const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
+
+/* ------------ RENDER ------------ */
 function render(){
   const box=document.getElementById("list");
-  const q=document.getElementById("searchInput").value.toLowerCase();
+  const q=document.getElementById("search").value.toLowerCase();
 
-  let data=get().filter(x=>x.status==="finished");
-
-  // 🔍 FILTER
-  if(q){
-    data=data.filter(x=>
-      (x.company||"").toLowerCase().includes(q) ||
-      (x.name||"").toLowerCase().includes(q) ||
-      (x.phone||"").toLowerCase().includes(q) ||
-      (x.job||"").toLowerCase().includes(q)
-    );
-  }
+  const data=get().filter(x=>
+    x.status==="finished" &&
+    (x.company+x.name+x.phone+x.job).toLowerCase().includes(q)
+  );
 
   box.innerHTML=data.length?"":"<p class='empty'>No finished jobs</p>";
 
   data.forEach(x=>{
     box.innerHTML+=`
-    <div class="card">
-      <p><b>Company:</b> ${x.company}</p>
-      <p><b>Name:</b> ${x.name}</p>
-      <p><b>Phone:</b> ${x.phone||"-"}</p>
-      <p><b>Job:</b> ${x.job}</p>
-
-      <hr style="border-color:#333;margin:8px 0">
-
-      <p><b>Completed By:</b> ${x.completedBy}</p>
-      <p><b>Completed Amount:</b> ${x.completedAmount}</p>
-
-      <p><b>Finished By:</b> ${x.finishedBy}</p>
-      <p><b>Amount Received:</b> ${x.receivedAmount}</p>
-
-      <p><b>Finished Date:</b> ${x.finishedDate}</p>
+    <div class="row">
+      <div>${x.company}</div>
+      <div>${x.name}</div>
+      <div>${x.phone||"-"}</div>
+      <div>${x.job}</div>
+      <div>
+        <button class="btn view" onclick="openView('${x.id}')">View</button>
+        <button class="btn del" onclick="deleteJob('${x.id}')">Delete</button>
+      </div>
     </div>`;
   });
 }
 
+/* ------------ VIEW ------------ */
+function openView(id){
+  const x=get().find(a=>a.id===id);
+  if(!x) return;
+
+  viewData.innerHTML=`
+    <div class="detail"><b>Company:</b> ${x.company}</div>
+    <div class="detail"><b>Name:</b> ${x.name}</div>
+    <div class="detail"><b>Phone:</b> ${x.phone||"-"}</div>
+    <div class="detail"><b>Job:</b> ${x.job}</div>
+    <div class="detail"><b>Date:</b> ${x.date}</div>
+
+    <div class="detail"><b>Completed By:</b> ${x.completedBy||"-"}</div>
+    <div class="detail"><b>Completed Amount:</b> ₹${x.completedAmount||"-"}</div>
+
+    <div class="detail"><b>Finished By:</b> ${x.finishedBy||"-"}</div>
+    <div class="detail"><b>Amount Received:</b> ₹${x.finishedAmount||"-"}</div>
+    <div class="detail"><b>Finished Date:</b> ${x.finishedDate||"-"}</div>
+  `;
+  viewModal.style.display="flex";
+}
+
+/* ------------ DELETE ------------ */
+function deleteJob(id){
+  if(!confirm("Delete this finished job?")) return;
+  let all=get();
+  all=all.filter(x=>x.id!==id);
+  set(all);
+  render();
+}
+
+/* ------------ CLOSE ------------ */
+function closeModal(){
+  viewModal.style.display="none";
+}
+
+/* ------------ SEARCH ------------ */
+document.getElementById("search").addEventListener("input",render);
+
 render();
 </script>
+
 </body>
 </html>
-v
