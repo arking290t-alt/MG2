@@ -61,7 +61,7 @@ button{background:#00b4ff;color:white;font-weight:600;cursor:pointer;}
   <input id="jobDate" type="date" />
 </div>
 
-<h3 style="text-align:center;color:#8ab9ff;">Select Categories</h3>
+<h3 style="text-align:center;color:#8ab9ff;">Select Categories (order = click order)</h3>
 <div id="categoryGrid" class="checkbox-group"></div>
 
 <div style="text-align:center;margin:10px;">
@@ -87,13 +87,11 @@ button{background:#00b4ff;color:white;font-weight:600;cursor:pointer;}
   <button id="addCategory">Add</button>
 </div>
 
-<div id="categoryList"></div>
-
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
@@ -104,58 +102,101 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let categories=[], allJobs=[], selectedCats=new Set();
-let showFinishedMode=false;
+/* 🔥 CATEGORY SYSTEM (EMPTY BY DEFAULT) */
+let categories = [];              // all categories
+let selectedCats = [];           // ORDERED list by click
+let allJobs = [];
+let showFinishedMode = false;
 
-const categoryGrid=document.getElementById("categoryGrid");
-const jobList=document.getElementById("jobList");
-const listTitle=document.getElementById("listTitle");
+const categoryGrid = document.getElementById("categoryGrid");
+const jobList = document.getElementById("jobList");
+const listTitle = document.getElementById("listTitle");
 
-/* LOAD CATEGORIES */
+/* ---------------- LOAD CATEGORIES (NO DEFAULT ONES) ---------------- */
 async function loadCategories(){
-  const snap=await getDocs(query(collection(db,"jobCategories"),orderBy("createdAt")));
-  categories=snap.docs.map(d=>({id:d.id,...d.data()}));
-  categoryGrid.innerHTML=categories.map(c=>`<div class="checkbox-chip" data-id="${c.id}">${c.name}</div>`).join("");
-  document.querySelectorAll(".checkbox-chip").forEach(ch=>{
-    ch.onclick=()=>{
-      let id=ch.dataset.id;
-      if(selectedCats.has(id)){selectedCats.delete(id);ch.classList.remove("active");}
-      else{selectedCats.add(id);ch.classList.add("active");}
+  const snap = await getDocs(collection(db,"jobCategories"));
+  categories = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderCategoryGrid();
+}
+
+function renderCategoryGrid(){
+  categoryGrid.innerHTML = categories.map(c=>`
+    <div class="checkbox-chip" data-id="${c.id}">${c.name}</div>
+  `).join("");
+
+  document.querySelectorAll(".checkbox-chip").forEach(chip=>{
+    chip.onclick = ()=>{
+      let id = chip.dataset.id;
+
+      // if already selected → remove
+      if(selectedCats.includes(id)){
+        selectedCats = selectedCats.filter(x=>x!==id);
+        chip.classList.remove("active");
+      } 
+      // else → add in ORDER
+      else{
+        selectedCats.push(id);
+        chip.classList.add("active");
+      }
     };
   });
 }
 
-/* ADD JOB */
-document.getElementById("addJob").onclick=async()=>{
-  let name=jobName.value.trim();
-  let type=jobType.value.trim();   // OPTIONAL NOW
-  let date=jobDate.value;
+/* ---------------- ADD CATEGORY (FIXED) ---------------- */
+document.getElementById("addCategory").onclick = async ()=>{
+  let name = newCategory.value.trim();
+  if(!name) return alert("Enter category name");
 
-  if(!name||!date) return alert("Job name and date required");
-  if(selectedCats.size===0) return alert("Select categories");
+  await addDoc(collection(db,"jobCategories"),{
+    name,
+    created: new Date().toISOString()
+  });
 
-  let selected=categories.filter(c=>selectedCats.has(c.id)).map(c=>({...c,status:"pending"}));
+  newCategory.value="";
+  loadCategories();
+};
+
+/* ---------------- ADD JOB ---------------- */
+document.getElementById("addJob").onclick = async ()=>{
+  let name = jobName.value.trim();
+  let type = jobType.value.trim();
+  let date = jobDate.value;
+
+  if(!name || !date) return alert("Job name and date required");
+  if(selectedCats.length===0) return alert("Select categories");
+
+  // 🔥 ORDER PRESERVED HERE
+  let orderedCategories = selectedCats.map(id=>{
+    let c = categories.find(x=>x.id===id);
+    return { name:c.name, status:"pending" };
+  });
 
   await addDoc(collection(db,"jobs"),{
-    name,type,date,
-    categories:selected,
+    name,
+    type,
+    date,
+    categories: orderedCategories,
     finished:false,
     created:new Date().toISOString()
   });
 
-  selectedCats.clear();
-  jobName.value="";jobType.value="";jobDate.value="";
+  // reset
+  selectedCats=[];
+  jobName.value="";
+  jobType.value="";
+  jobDate.value="";
+  renderCategoryGrid();
   loadJobs();
 };
 
-/* LOAD JOBS */
+/* ---------------- LOAD JOBS ---------------- */
 async function loadJobs(){
   const snap=await getDocs(collection(db,"jobs"));
   allJobs=snap.docs.map(d=>({id:d.id,...d.data()}));
   renderJobs();
 }
 
-/* RENDER */
+/* ---------------- RENDER JOBS ---------------- */
 function renderJobs(){
   let month=monthFilter.value;
   let date=dateFilter.value;
@@ -176,39 +217,41 @@ function renderJobs(){
 
       <div class="job-meta">
         <div>${j.date}</div>
-        <div>${j.categories.map(c=>c.name).join(", ")}</div>
+        <div>${j.categories.map(c=>c.name).join(" → ")}</div>
       </div>
 
       <div>
-        ${j.finished?`<button class="btn-small btn-view" onclick="openJob('${j.id}')">View</button>`:
-        `<button class="btn-small btn-finish" onclick="finishJob('${j.id}')">Finished</button>`}
+        ${j.finished
+          ? `<button class="btn-small btn-view" onclick="openJob('${j.id}')">View</button>`
+          : `<button class="btn-small btn-finish" onclick="finishJob('${j.id}')">Finished</button>`
+        }
         <button class="btn-small btn-delete" onclick="deleteJob('${j.id}')">Delete</button>
       </div>
     </div>
   `).join("");
 }
 
-/* FINISH JOB */
-window.finishJob=async(id)=>{
+/* ---------------- FINISH JOB ---------------- */
+window.finishJob = async (id)=>{
   if(!confirm("Mark this job as FINISHED?")) return;
   await updateDoc(doc(db,"jobs",id),{finished:true});
   loadJobs();
 };
 
-/* DELETE */
-window.deleteJob=async(id)=>{
+/* ---------------- DELETE JOB ---------------- */
+window.deleteJob = async (id)=>{
   if(!confirm("Delete job?")) return;
   await deleteDoc(doc(db,"jobs",id));
   loadJobs();
 };
 
-window.openJob=(id)=>{
+window.openJob = (id)=>{
   localStorage.setItem("selectedJob",id);
   location.href="job-detail.html";
 };
 
-/* TOGGLE FINISHED */
-document.getElementById("showFinished").onclick=()=>{
+/* ---------------- TOGGLE FINISHED ---------------- */
+showFinished.onclick=()=>{
   showFinishedMode=!showFinishedMode;
   renderJobs();
 };
@@ -216,7 +259,7 @@ document.getElementById("showFinished").onclick=()=>{
 monthFilter.onchange=renderJobs;
 dateFilter.onchange=renderJobs;
 
-document.getElementById("logout").onclick=()=>{
+logout.onclick=()=>{
   localStorage.clear();
   location.href="login.html";
 };
