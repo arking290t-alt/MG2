@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>To Follow Clients</title>
+<title>To Follow Clients | MG</title>
 
 <style>
 body{
@@ -169,7 +169,7 @@ input{
   <div class="modal-box">
     <h3>Mark Completed</h3>
     <input id="completedBy" placeholder="Completed by">
-    <input id="completedAmount" placeholder="Completed amount">
+    <input id="completedAmount" type="number" placeholder="Completed amount (₹)">
     <div class="modal-actions">
       <button class="ok" onclick="confirmCompleted()">Save</button>
       <button class="cancel" onclick="closeModal()">Cancel</button>
@@ -196,7 +196,7 @@ let activeId=null;
 const get=()=>JSON.parse(localStorage.getItem(KEY))||[];
 const set=v=>localStorage.setItem(KEY,JSON.stringify(v));
 
-/* ---------------- ADD ---------------- */
+/* ---------------- ADD CLIENT ---------------- */
 function addClient(){
   const c=company.value.trim();
   const n=client.value.trim();
@@ -206,11 +206,27 @@ function addClient(){
   if(!c||!n||!j||!d) return alert("Fill required fields");
 
   const data=get();
+
+  // 🔒 DUPLICATE PREVENTION
+  const exists = data.find(x =>
+    x.company === c &&
+    x.name === n &&
+    x.job === j &&
+    x.date === d &&
+    x.status === "follow"
+  );
+  if (exists) return alert("This client is already in follow list.");
+
   data.push({
     id:Date.now().toString(),
-    company:c,name:n,phone:phone.value,
-    job:j,date:d,status:"follow"
+    company:c,
+    name:n,
+    phone:phone.value.trim(),
+    job:j,
+    date:d,
+    status:"follow"
   });
+
   set(data);
 
   company.value=client.value=phone.value=job.value=date.value="";
@@ -220,9 +236,12 @@ function addClient(){
 /* ---------------- RENDER ---------------- */
 function render(){
   const box=list;
-  const data=get().filter(x=>x.status==="follow");
 
-  box.innerHTML=data.length?"":"<p class='empty'>No clients</p>";
+  let data = get()
+    .filter(x=>x.status==="follow")
+    .sort((a,b)=> b.date.localeCompare(a.date)); // newest first
+
+  box.innerHTML = data.length ? "" : "<p class='empty'>No clients</p>";
 
   data.forEach(x=>{
     box.innerHTML+=`
@@ -265,8 +284,9 @@ function openComplete(id){
 
 function confirmCompleted(){
   const by=completedBy.value.trim();
-  const amt=completedAmount.value.trim();
-  if(!by||!amt) return alert("Fill all fields");
+  const amt=Number(completedAmount.value);
+
+  if(!by || !amt || amt<=0) return alert("Enter valid details");
 
   const data=get();
   const x=data.find(a=>a.id===activeId);
@@ -281,7 +301,7 @@ function confirmCompleted(){
   render();
 }
 
-/* ---------------- NOT ---------------- */
+/* ---------------- NOT COMPLETED ---------------- */
 function openNot(id){
   activeId=id;
   notReason.value="";
