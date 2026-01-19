@@ -41,22 +41,20 @@ header{
 }
 
 .container{
-  max-width:700px;
+  max-width:750px;
   margin:40px auto;
   background:var(--card);
   padding:30px;
   border-radius:14px;
   box-shadow:0 8px 30px rgba(0,180,255,0.1);
-  text-align:center;
 }
 
-h1{color:var(--accent);}
+h1{text-align:center;color:var(--accent);}
 
 .timeline{
   margin-top:30px;
   position:relative;
   padding-left:40px;
-  text-align:left;
 }
 .timeline::before{
   content:"";
@@ -68,8 +66,8 @@ h1{color:var(--accent);}
 
 .stage{
   display:flex;
-  align-items:center;
-  margin-bottom:20px;
+  align-items:flex-start;
+  margin-bottom:25px;
 }
 
 .dot{
@@ -78,6 +76,7 @@ h1{color:var(--accent);}
   border-radius:50%;
   background:var(--accent);
   margin-right:14px;
+  margin-top:4px;
 }
 .dot.done{background:var(--done);}
 .dot.processing{background:var(--processing);}
@@ -96,6 +95,32 @@ h1{color:var(--accent);}
   color:var(--accent);
 }
 .btn-small.processing{border-color:var(--processing);color:var(--processing);}
+
+/* NOTE BOX */
+.note-box{
+  margin-top:10px;
+}
+.note-box textarea{
+  width:100%;
+  min-height:60px;
+  padding:8px;
+  background:var(--panel);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px;
+  color:white;
+  resize:vertical;
+  font-size:0.9rem;
+}
+.save-note{
+  margin-top:6px;
+  padding:6px 12px;
+  border-radius:6px;
+  background:#22c55e;
+  border:none;
+  color:black;
+  font-size:0.8rem;
+  cursor:pointer;
+}
 
 .delivery-box{
   margin-top:40px;
@@ -125,7 +150,7 @@ h1{color:var(--accent);}
 
 <header>
   <div class="logo">MG</div>
-  <a href="dashboard.html" class="btn">← Back</a>
+  <a href="jobs.html" class="btn">← Back</a>
 </header>
 
 <div class="container">
@@ -177,7 +202,7 @@ async function loadJob(){
 
   const job = snap.data();
   jobNameEl.textContent = job.name;
-  jobTypeEl.textContent = job.type;
+  jobTypeEl.textContent = job.type || "";
 
   // DELIVERY
   if(job.deliveryDate){
@@ -208,16 +233,24 @@ async function loadJob(){
 
     div.innerHTML=`
       <div class="dot ${cls}"></div>
-      <div class="stage-content">
+      <div class="stage-content" style="width:100%">
         <span>${c.name}</span>
+
         <div class="btn-row">
           <button class="btn-small" data-s="done">Done</button>
           <button class="btn-small processing" data-s="processing">Processing</button>
           <button class="btn-small" data-s="pending">Pending</button>
         </div>
+
+        <!-- NOTE BOX -->
+        <div class="note-box">
+          <textarea placeholder="Type notes / instructions here...">${c.note || ""}</textarea>
+          <button class="save-note">Save Note</button>
+        </div>
       </div>
     `;
 
+    // STATUS BUTTONS
     div.querySelectorAll(".btn-small").forEach(b=>{
       b.onclick=async()=>{
         const s=b.dataset.s;
@@ -226,6 +259,16 @@ async function loadJob(){
         loadJob();
       };
     });
+
+    // SAVE NOTE
+    const saveBtn = div.querySelector(".save-note");
+    const textarea = div.querySelector("textarea");
+
+    saveBtn.onclick = async ()=>{
+      categories[i].note = textarea.value.trim();
+      await updateDoc(ref,{categories});
+      alert("Note saved");
+    };
 
     categoryTimeline.appendChild(div);
   });
