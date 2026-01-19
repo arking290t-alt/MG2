@@ -71,7 +71,7 @@ h1{color:#facc15}
   font-size:13px;
 }
 .view{background:#3b82f6;color:#fff}
-.del{background:#ef4444;color:#fff}
+.del{background:#6b7280;color:#fff}
 
 .empty{color:#9ca3af;margin-top:15px}
 
@@ -137,36 +137,37 @@ h1{color:#facc15}
   </div>
 </div>
 
+<!-- 🔥 FIREBASE -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { 
   getFirestore, collection, getDocs, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
   authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
+  projectId: "mg-manager-3ab66.firebaseapp.com".replace(".firebaseapp.com",""),
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let finished = [];
+let allFinished = [];
 
-/* ---------------- LOAD ---------------- */
-async function load(){
-  const snap = await getDocs(collection(db, "finishedClients"));
-  finished = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+/* ---------------- LOAD FROM FIRESTORE ---------------- */
+async function loadFinished(){
+  const snap = await getDocs(collection(db, "finishedJobs"));
+  allFinished = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   render();
 }
 
 /* ---------------- RENDER ---------------- */
-function render(){
-  const q = search.value.toLowerCase();
-  const box = list;
+window.render = function(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const box = document.getElementById("list");
 
-  let data = finished;
+  let data = allFinished;
 
   if(q){
     data = data.filter(x =>
@@ -198,7 +199,7 @@ function render(){
 
 /* ---------------- VIEW ---------------- */
 window.viewJob = function(id){
-  const x = finished.find(a=>a.id===id);
+  const x = allFinished.find(a=>a.id===id);
 
   viewBox.innerHTML = `
     <p><b>Company:</b> ${x.company}</p>
@@ -206,9 +207,13 @@ window.viewJob = function(id){
     <p><b>Phone:</b> ${x.phone||"-"}</p>
     <p><b>Job:</b> ${x.job}</p>
     <hr>
-    <p><b>Finished By:</b> ${x.finishedBy||"-"}</p>
-    <p><b>Amount Received:</b> ${x.finishedAmount||"-"}</p>
-    <p><b>Finished Date:</b> ${x.finishedDate||"-"}</p>
+    <p><b>Completed By:</b> ${x.completedBy}</p>
+    <p><b>Amount Asked:</b> ${x.completedAmount}</p>
+    <p><b>Completed Date:</b> ${x.completedDate}</p>
+    <hr>
+    <p><b>Finished By:</b> ${x.finishedBy}</p>
+    <p><b>Amount Received:</b> ${x.finishedAmount}</p>
+    <p><b>Finished Date:</b> ${x.finishedDate}</p>
   `;
 
   viewModal.style.display="flex";
@@ -217,17 +222,17 @@ window.viewJob = function(id){
 /* ---------------- DELETE ---------------- */
 window.removeJob = async function(id){
   if(!confirm("Delete finished job permanently?")) return;
-  await deleteDoc(doc(db, "finishedClients", id));
-  load();
+
+  await deleteDoc(doc(db, "finishedJobs", id));
+  loadFinished();
 }
 
 /* ---------------- MODAL ---------------- */
 function closeModal(){
   viewModal.style.display="none";
 }
-window.closeModal = closeModal;
 
-load();
+loadFinished();
 </script>
 
 </body>
