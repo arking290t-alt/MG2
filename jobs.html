@@ -37,6 +37,25 @@ button{background:#00b4ff;color:white;font-weight:600;cursor:pointer;}
 .btn-delete{background:#ef4444;}
 .btn-finish{background:#22c55e;}
 .btn-view{background:#3b82f6;}
+
+/* CATEGORY LIST */
+.cat-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:rgba(255,255,255,0.06);
+  padding:10px 14px;
+  border-radius:10px;
+  margin-top:8px;
+}
+.cat-item button{
+  background:#ef4444;
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -87,6 +106,10 @@ button{background:#00b4ff;color:white;font-weight:600;cursor:pointer;}
   <button id="addCategory">Add</button>
 </div>
 
+<!-- 🔥 CATEGORY MANAGEMENT LIST -->
+<h3 style="text-align:center;color:#facc15;margin-top:25px;">Manage Categories</h3>
+<div id="categoryList"></div>
+
 </div>
 
 <script type="module">
@@ -102,54 +125,73 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* 🔥 CATEGORY SYSTEM (EMPTY BY DEFAULT) */
-let categories = [];              // all categories
-let selectedCats = [];           // ORDERED list by click
-let allJobs = [];
-let showFinishedMode = false;
+/* 🔥 DATA */
+let categories=[];
+let selectedCats=[];
+let allJobs=[];
+let showFinishedMode=false;
 
-const categoryGrid = document.getElementById("categoryGrid");
-const jobList = document.getElementById("jobList");
-const listTitle = document.getElementById("listTitle");
+const categoryGrid=document.getElementById("categoryGrid");
+const categoryList=document.getElementById("categoryList");
+const jobList=document.getElementById("jobList");
+const listTitle=document.getElementById("listTitle");
 
-/* ---------------- LOAD CATEGORIES (NO DEFAULT ONES) ---------------- */
+/* ---------------- LOAD CATEGORIES ---------------- */
 async function loadCategories(){
-  const snap = await getDocs(collection(db,"jobCategories"));
-  categories = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const snap=await getDocs(collection(db,"jobCategories"));
+  categories=snap.docs.map(d=>({id:d.id,...d.data()}));
   renderCategoryGrid();
+  renderCategoryList();
 }
 
+/* ---------------- RENDER CATEGORY GRID ---------------- */
 function renderCategoryGrid(){
-  categoryGrid.innerHTML = categories.map(c=>`
+  categoryGrid.innerHTML=categories.map(c=>`
     <div class="checkbox-chip" data-id="${c.id}">${c.name}</div>
   `).join("");
 
-  document.querySelectorAll(".checkbox-chip").forEach(chip=>{
-    chip.onclick = ()=>{
-      let id = chip.dataset.id;
+  document.querySelectorAll(".checkbox-chip").forEach(ch=>{
+    ch.onclick=()=>{
+      let id=ch.dataset.id;
 
-      // if already selected → remove
       if(selectedCats.includes(id)){
-        selectedCats = selectedCats.filter(x=>x!==id);
-        chip.classList.remove("active");
-      } 
-      // else → add in ORDER
-      else{
-        selectedCats.push(id);
-        chip.classList.add("active");
+        selectedCats=selectedCats.filter(x=>x!==id);
+        ch.classList.remove("active");
+      } else {
+        selectedCats.push(id);      // ORDER PRESERVED
+        ch.classList.add("active");
       }
     };
   });
 }
 
-/* ---------------- ADD CATEGORY (FIXED) ---------------- */
-document.getElementById("addCategory").onclick = async ()=>{
-  let name = newCategory.value.trim();
+/* ---------------- CATEGORY LIST WITH DELETE ---------------- */
+function renderCategoryList(){
+  categoryList.innerHTML = categories.length
+    ? categories.map(c=>`
+        <div class="cat-item">
+          <span>${c.name}</span>
+          <button onclick="deleteCategory('${c.id}')">Delete</button>
+        </div>
+      `).join("")
+    : "<p style='text-align:center;color:#999;'>No categories yet</p>";
+}
+
+window.deleteCategory = async (id)=>{
+  if(!confirm("Delete this category?")) return;
+  await deleteDoc(doc(db,"jobCategories",id));
+  selectedCats = selectedCats.filter(x=>x!==id);
+  loadCategories();
+};
+
+/* ---------------- ADD CATEGORY ---------------- */
+addCategory.onclick = async ()=>{
+  let name=newCategory.value.trim();
   if(!name) return alert("Enter category name");
 
   await addDoc(collection(db,"jobCategories"),{
     name,
-    created: new Date().toISOString()
+    created:new Date().toISOString()
   });
 
   newCategory.value="";
@@ -157,34 +199,28 @@ document.getElementById("addCategory").onclick = async ()=>{
 };
 
 /* ---------------- ADD JOB ---------------- */
-document.getElementById("addJob").onclick = async ()=>{
-  let name = jobName.value.trim();
-  let type = jobType.value.trim();
-  let date = jobDate.value;
+addJob.onclick = async ()=>{
+  let name=jobName.value.trim();
+  let type=jobType.value.trim();
+  let date=jobDate.value;
 
-  if(!name || !date) return alert("Job name and date required");
+  if(!name||!date) return alert("Job name and date required");
   if(selectedCats.length===0) return alert("Select categories");
 
-  // 🔥 ORDER PRESERVED HERE
-  let orderedCategories = selectedCats.map(id=>{
-    let c = categories.find(x=>x.id===id);
+  let ordered = selectedCats.map(id=>{
+    let c=categories.find(x=>x.id===id);
     return { name:c.name, status:"pending" };
   });
 
   await addDoc(collection(db,"jobs"),{
-    name,
-    type,
-    date,
-    categories: orderedCategories,
+    name,type,date,
+    categories:ordered,
     finished:false,
     created:new Date().toISOString()
   });
 
-  // reset
   selectedCats=[];
-  jobName.value="";
-  jobType.value="";
-  jobDate.value="";
+  jobName.value="";jobType.value="";jobDate.value="";
   renderCategoryGrid();
   loadJobs();
 };
@@ -232,20 +268,20 @@ function renderJobs(){
 }
 
 /* ---------------- FINISH JOB ---------------- */
-window.finishJob = async (id)=>{
-  if(!confirm("Mark this job as FINISHED?")) return;
+window.finishJob=async(id)=>{
+  if(!confirm("Mark job as finished?")) return;
   await updateDoc(doc(db,"jobs",id),{finished:true});
   loadJobs();
 };
 
 /* ---------------- DELETE JOB ---------------- */
-window.deleteJob = async (id)=>{
+window.deleteJob=async(id)=>{
   if(!confirm("Delete job?")) return;
   await deleteDoc(doc(db,"jobs",id));
   loadJobs();
 };
 
-window.openJob = (id)=>{
+window.openJob=(id)=>{
   localStorage.setItem("selectedJob",id);
   location.href="job-detail.html";
 };
