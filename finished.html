@@ -37,20 +37,6 @@ header{
 
 h1{color:#facc15}
 
-/* SEARCH */
-.search-box{
-  margin:15px 0 25px;
-}
-.search-box input{
-  width:100%;
-  padding:12px 14px;
-  border-radius:12px;
-  border:1px solid #facc15;
-  background:#0b111b;
-  color:#fff;
-  font-size:14px;
-}
-
 /* ROW */
 .row{
   display:grid;
@@ -71,7 +57,7 @@ h1{color:#facc15}
   font-size:13px;
 }
 .view{background:#3b82f6;color:#fff}
-.del{background:#6b7280;color:#fff}
+.del{background:#ef4444;color:#fff}
 
 .empty{color:#9ca3af;margin-top:15px}
 
@@ -96,16 +82,17 @@ h1{color:#facc15}
 
 .actions{
   margin-top:18px;
-  text-align:right;
+  display:flex;
+  justify-content:space-between;
 }
 .actions button{
   padding:10px 18px;
   border:none;
   border-radius:10px;
   cursor:pointer;
-  background:#374151;
-  color:#fff;
 }
+.close-btn{background:#374151;color:#fff}
+.delete-btn{background:#ef4444;color:#fff}
 </style>
 </head>
 
@@ -118,11 +105,6 @@ h1{color:#facc15}
 
 <div class="container">
   <h1>Finished Jobs</h1>
-
-  <div class="search-box">
-    <input id="search" placeholder="Search by company, name, phone or job..." oninput="render()">
-  </div>
-
   <div id="list"></div>
 </div>
 
@@ -131,107 +113,107 @@ h1{color:#facc15}
   <div class="modal-box">
     <h3>Finished Job Details</h3>
     <div id="viewBox"></div>
+
     <div class="actions">
-      <button onclick="closeModal()">Close</button>
+      <button class="close-btn" onclick="closeModal()">Close</button>
+      <button class="delete-btn" onclick="deleteJob()">Delete</button>
     </div>
   </div>
 </div>
 
-<!-- 🔥 FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { 
-  getFirestore, collection, getDocs, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+/* 🔥 FIREBASE SETUP */
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
   authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66.firebaseapp.com".replace(".firebaseapp.com",""),
+  projectId: "mg-manager-3ab66",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let allFinished = [];
+let currentViewId = null;
 
-/* ---------------- LOAD FROM FIRESTORE ---------------- */
+/* ---------------- LOAD FINISHED JOBS ---------------- */
 async function loadFinished(){
-  const snap = await getDocs(collection(db, "finishedJobs"));
+  const snap = await getDocs(collection(db,"finishedJobs"));
   allFinished = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   render();
 }
 
 /* ---------------- RENDER ---------------- */
-window.render = function(){
-  const q = document.getElementById("search").value.toLowerCase();
+function render(){
   const box = document.getElementById("list");
 
-  let data = allFinished;
-
-  if(q){
-    data = data.filter(x =>
-      (x.company||"").toLowerCase().includes(q) ||
-      (x.name||"").toLowerCase().includes(q) ||
-      (x.phone||"").toLowerCase().includes(q) ||
-      (x.job||"").toLowerCase().includes(q)
-    );
-  }
-
-  box.innerHTML = data.length
+  box.innerHTML = allFinished.length
     ? ""
     : "<p class='empty'>No finished jobs</p>";
 
-  data.forEach(x=>{
+  allFinished.forEach(x=>{
     box.innerHTML += `
-    <div class="row">
-      <div>${x.company}</div>
-      <div>${x.name}</div>
-      <div>${x.phone||"-"}</div>
-      <div>${x.job}</div>
-      <div>
-        <button class="btn view" onclick="viewJob('${x.id}')">View</button>
-        <button class="btn del" onclick="removeJob('${x.id}')">Delete</button>
+      <div class="row">
+        <div>${x.company}</div>
+        <div>${x.name}</div>
+        <div>${x.phone || "-"}</div>
+        <div>${x.job}</div>
+        <div>
+          <button class="btn view" onclick="viewJob('${x.id}')">View</button>
+        </div>
       </div>
-    </div>`;
+    `;
   });
 }
 
 /* ---------------- VIEW ---------------- */
 window.viewJob = function(id){
-  const x = allFinished.find(a=>a.id===id);
+  const x = allFinished.find(a => a.id === id);
+  currentViewId = id;
 
-  viewBox.innerHTML = `
+  document.getElementById("viewBox").innerHTML = `
     <p><b>Company:</b> ${x.company}</p>
     <p><b>Name:</b> ${x.name}</p>
-    <p><b>Phone:</b> ${x.phone||"-"}</p>
+    <p><b>Phone:</b> ${x.phone || "-"}</p>
     <p><b>Job:</b> ${x.job}</p>
+
     <hr>
+
     <p><b>Completed By:</b> ${x.completedBy}</p>
     <p><b>Amount Asked:</b> ${x.completedAmount}</p>
     <p><b>Completed Date:</b> ${x.completedDate}</p>
+
     <hr>
+
     <p><b>Finished By:</b> ${x.finishedBy}</p>
     <p><b>Amount Received:</b> ${x.finishedAmount}</p>
     <p><b>Finished Date:</b> ${x.finishedDate}</p>
   `;
 
-  viewModal.style.display="flex";
+  document.getElementById("viewModal").style.display = "flex";
 }
 
-/* ---------------- DELETE ---------------- */
-window.removeJob = async function(id){
-  if(!confirm("Delete finished job permanently?")) return;
+/* ---------------- CLOSE MODAL ---------------- */
+window.closeModal = function(){
+  document.getElementById("viewModal").style.display = "none";
+  currentViewId = null;
+}
 
-  await deleteDoc(doc(db, "finishedJobs", id));
+/* ---------------- DELETE FROM FIRESTORE ---------------- */
+window.deleteJob = async function(){
+  if(!currentViewId) return;
+
+  if(!confirm("Delete this finished job permanently?")) return;
+
+  await deleteDoc(doc(db,"finishedJobs", currentViewId));
+
+  closeModal();
   loadFinished();
 }
 
-/* ---------------- MODAL ---------------- */
-function closeModal(){
-  viewModal.style.display="none";
-}
-
+/* INIT */
 loadFinished();
 </script>
 
