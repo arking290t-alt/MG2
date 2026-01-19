@@ -127,8 +127,6 @@ h1{color:#22c55e}
 
 <header>
   <div class="logo">MG</div>
-
-  <!-- 🔥 THIS IS THE PART YOU WANTED -->
   <div class="header-actions">
     <button class="btn-top" onclick="history.back()">← Back</button>
     <button class="btn-finished" onclick="goFinished()">Finished Jobs</button>
@@ -167,7 +165,21 @@ h1{color:#22c55e}
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+/* 🔥 FIREBASE SETUP */
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* 🔑 LOCAL STORAGE */
 const KEY="mg_follow_clients";
 let currentFinishId=null;
 
@@ -198,7 +210,7 @@ function render(){
 }
 
 /* ---------------- VIEW ---------------- */
-function viewJob(id){
+window.viewJob = function(id){
   const x=get().find(a=>a.id===id);
 
   viewBox.innerHTML=`
@@ -212,18 +224,18 @@ function viewJob(id){
     <p><b>Completed Date:</b> ${x.completedDate}</p>
   `;
 
-  openModal();
+  viewModal.style.display="flex";
 }
 
-/* ---------------- FINISH ---------------- */
-function openFinish(id){
+/* ---------------- FINISH (🔥 SAVE TO FIRESTORE) ---------------- */
+window.openFinish = function(id){
   currentFinishId=id;
   finBy.value="";
   finAmt.value="";
   finishModal.style.display="flex";
 }
 
-function saveFinish(){
+window.saveFinish = async function(){
   const by=finBy.value.trim();
   const amt=finAmt.value.trim();
 
@@ -234,19 +246,29 @@ function saveFinish(){
 
   const data=get();
   const i=data.findIndex(x=>x.id===currentFinishId);
+  const job=data[i];
 
-  data[i].status="finished";
-  data[i].finishedBy=by;
-  data[i].finishedAmount=amt;
-  data[i].finishedDate=new Date().toISOString().split("T")[0];
+  const finishedJob = {
+    ...job,
+    status:"finished",
+    finishedBy: by,
+    finishedAmount: amt,
+    finishedDate: new Date().toISOString().split("T")[0],
+  };
 
+  /* 🔥 SAVE INTO FIRESTORE */
+  await addDoc(collection(db,"finishedJobs"), finishedJob);
+
+  /* 🔥 REMOVE FROM LOCAL COMPLETED */
+  data.splice(i,1);
   set(data);
+
   closeFinish();
   render();
 }
 
 /* ---------------- DELETE ---------------- */
-function removeJob(id){
+window.removeJob = function(id){
   if(!confirm("Delete completed job?")) return;
   let data=get().filter(x=>x.id!==id);
   set(data);
@@ -254,13 +276,11 @@ function removeJob(id){
 }
 
 /* ---------------- MODALS ---------------- */
-function openModal(){ viewModal.style.display="flex"; }
-function closeModal(){ viewModal.style.display="none"; }
-
-function closeFinish(){ finishModal.style.display="none"; }
+window.closeModal = function(){ viewModal.style.display="none"; }
+window.closeFinish = function(){ finishModal.style.display="none"; }
 
 /* ---------------- NAV ---------------- */
-function goFinished(){
+window.goFinished = function(){
   window.location.href="finished.html";
 }
 
