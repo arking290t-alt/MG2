@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daybook | MG</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family: Arial; }
+    .container { max-width: 1000px; margin: 30px auto; }
+    input, select { padding:8px; margin:5px 0; width:100%; }
+    button { padding:6px 10px; margin:5px 0; cursor:pointer; }
+    table { width:100%; border-collapse: collapse; margin-top:15px; }
+    table, th, td { border:1px solid #ddd; }
+    th, td { padding:8px; text-align:center; }
+    .section { background:white; padding:20px; margin-bottom:25px; border-radius:8px; }
+    .danger { background:red; color:white; border:none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>Daybook</h2>
+
+<!-- ACCOUNTS -->
+<div class="section">
+<h3>Accounts</h3>
+
+<input type="text" id="accountName" placeholder="Account Name">
+<input type="number" id="openingBalance" placeholder="Opening Balance">
+<button onclick="createAccount()">Create Account</button>
+
+<div id="accountsList"></div>
+</div>
+
+<!-- ADD ENTRY -->
+<div class="section">
+<h3>Add Entry</h3>
+
+<input type="text" id="entryName" placeholder="Name">
+<input type="text" id="purpose" placeholder="Purpose">
+<input type="number" id="amount" placeholder="Amount">
+<input type="date" id="date">
+
+<select id="accountSelect"></select>
+
+<select id="category">
+  <option value="General">General</option>
+  <option value="Expense">Expense</option>
+  <option value="Income">Income</option>
+</select>
+
+<select id="type">
+  <option value="Dr">Debit (Dr)</option>
+  <option value="Cr">Credit (Cr)</option>
+</select>
+
+<button onclick="addEntry()">Add Entry</button>
+</div>
+
+<!-- VIEW SECTION -->
+<div class="section">
+<h3>View Entries</h3>
+
+<button onclick="viewActive()">Active Entries</button>
+<button onclick="viewDeleted()">Deleted Entries</button>
+
+<input type="date" id="filterDate">
+<button onclick="filterByDate()">Filter Date</button>
+
+<div id="tableContainer"></div>
+<div id="tally"></div>
+</div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const PASSWORD = "BNPRATHAM@8056079200";
+
+/* LOAD ACCOUNTS */
+async function loadAccounts(){
+  const snapshot = await getDocs(collection(db,"accounts"));
+  accountSelect.innerHTML="";
+  let html="";
+  snapshot.forEach(docSnap=>{
+    const data=docSnap.data();
+    accountSelect.innerHTML+=`<option value="${docSnap.id}">${data.name}</option>`;
+    html+=`
+      <p>${data.name} - ₹${data.balance}
+      <button onclick="editBalance('${docSnap.id}',${data.balance})">Edit</button></p>
+    `;
+  });
+  accountsList.innerHTML=html;
+}
+
+window.createAccount = async function(){
+  const name=accountName.value;
+  const balance=Number(openingBalance.value);
+  if(!name) return alert("Enter account name");
+
+  await addDoc(collection(db,"accounts"),{ name, balance });
+  alert("Account Created");
+  loadAccounts();
+};
+
+window.editBalance = async function(id,current){
+  const pass=prompt("Enter Password");
+  if(pass!==PASSWORD) return alert("Wrong Password");
+
+  const newBalance=prompt("Enter New Balance",current);
+  await updateDoc(doc(db,"accounts",id),{ balance:Number(newBalance) });
+  alert("Updated");
+  loadAccounts();
+};
+
+/* ADD ENTRY */
+window.addEntry = async function(){
+  const name=document.getElementById("entryName").value;
+  const purpose=document.getElementById("purpose").value;
+  const amount=Number(document.getElementById("amount").value);
+  const date=document.getElementById("date").value;
+  const accountId=document.getElementById("accountSelect").value;
+  const category=document.getElementById("category").value;
+  const type=document.getElementById("type").value;
+
+  if(!name||!amount||!date) return alert("Fill required fields");
+
+  await addDoc(collection(db,"daybook"),{
+    name,purpose,amount,date,accountId,category,type,deleted:false
+  });
+
+  const accRef=doc(db,"accounts",accountId);
+  const accSnap=await getDocs(query(collection(db,"accounts"),where("__name__","==",accountId)));
+  let acc;
+  accSnap.forEach(d=>acc=d.data());
+
+  let newBalance=acc.balance;
+  if(type==="Dr") newBalance-=amount;
+  else newBalance+=amount;
+
+  await updateDoc(accRef,{balance:newBalance});
+
+  alert("Entry Added");
+  loadAccounts();
+};
+
+/* VIEW ACTIVE */
+window.viewActive=async function(){
+  const q=query(collection(db,"daybook"),where("deleted","==",false));
+  const snapshot=await getDocs(q);
+  render(snapshot,false);
+};
+
+/* VIEW DELETED */
+window.viewDeleted=async function(){
+  const q=query(collection(db,"daybook"),where("deleted","==",true));
+  const snapshot=await getDocs(q);
+  render(snapshot,true);
+};
+
+/* FILTER */
+window.filterByDate=async function(){
+  const d=filterDate.value;
+  const q=query(collection(db,"daybook"),where("date","==",d));
+  const snapshot=await getDocs(q);
+  render(snapshot,false);
+};
+
+/* DELETE ENTRY */
+window.deleteEntry=async function(id){
+  await updateDoc(doc(db,"daybook",id),{deleted:true});
+  alert("Entry Deleted");
+  viewActive();
+};
+
+/* RENDER TABLE */
+function render(snapshot,isDeleted){
+  let html=`<table>
+  <tr>
+  <th>Name</th>
+  <th>Purpose</th>
+  <th>Amount</th>
+  <th>Date</th>
+  <th>Type</th>
+  <th>Category</th>
+  ${!isDeleted?"<th>Action</th>":""}
+  </tr>`;
+
+  let totalDr=0,totalCr=0;
+
+  snapshot.forEach(docSnap=>{
+    const d=docSnap.data();
+    if(d.type==="Dr") totalDr+=d.amount;
+    else totalCr+=d.amount;
+
+    html+=`<tr>
+    <td>${d.name}</td>
+    <td>${d.purpose}</td>
+    <td>${d.amount}</td>
+    <td>${d.date}</td>
+    <td>${d.type}</td>
+    <td>${d.category}</td>
+    ${!isDeleted?`<td><button class="danger" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`:""}
+    </tr>`;
+  });
+
+  html+="</table>";
+  tableContainer.innerHTML=html;
+  tally.innerHTML=`<h4>Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr} | Balance: ₹${totalCr-totalDr}</h4>`;
+}
+
+loadAccounts();
+
+</script>
+</body>
+</html>
