@@ -6,158 +6,123 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f4f6f9;
-      margin: 0;
-      padding: 0;
+      background:#f4f6f9;
+      margin:0;
+      padding:0;
     }
 
-    .wrapper {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    .container {
+      max-width:1200px;
+      margin:40px auto;
+      padding:20px;
     }
 
     .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom:25px;
     }
 
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 15px;
-    }
+    h2,h3 { margin-top:0; }
 
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+    input,select {
+      width:100%;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
     }
 
     button {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      margin-right: 5px;
+      padding:8px 14px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      margin-right:5px;
     }
 
-    .primary { background: #007bff; color: white; }
-    .success { background: #28a745; color: white; }
-    .danger { background: #dc3545; color: white; }
-    .secondary { background: #6c757d; color: white; }
+    .primary{background:#007bff;color:white;}
+    .success{background:#28a745;color:white;}
+    .danger{background:#dc3545;color:white;}
+    .secondary{background:#6c757d;color:white;}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 14px;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:15px;
     }
 
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      text-align: center;
+    th,td{
+      padding:8px;
+      border-bottom:1px solid #eee;
+      text-align:center;
     }
 
-    th {
-      background: #f1f3f6;
-    }
+    th{background:#f1f3f6;}
 
-    .full-width {
-      grid-column: span 2;
-    }
-
-    .tally-box {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 10px;
-      font-weight: 500;
-    }
-
-    @media(max-width:900px){
-      .grid {
-        grid-template-columns: 1fr;
-      }
+    .summary-box{
+      background:#f8f9fa;
+      padding:12px;
+      border-radius:8px;
+      margin-top:10px;
+      font-weight:500;
     }
   </style>
 </head>
 
 <body>
 
-<div class="wrapper">
+<div class="container">
 
-  <h2>Daybook Management</h2>
+<h2>Daybook</h2>
 
-  <div class="grid">
+<!-- ACCOUNTS -->
+<div class="card">
+<h3>Accounts</h3>
 
-    <!-- ACCOUNT CARD -->
-    <div class="card">
-      <h3>Accounts</h3>
+<input type="text" id="accountName" placeholder="Account Name">
+<input type="number" id="openingBalance" placeholder="Opening Balance">
+<button class="primary" onclick="createAccount()">Add Account</button>
 
-      <input type="text" id="accountName" placeholder="Account Name">
-      <input type="number" id="openingBalance" placeholder="Opening Balance">
-      <button class="primary" onclick="createAccount()">Create Account</button>
+<div id="accountsList"></div>
+</div>
 
-      <div id="accountsList" style="margin-top:15px;"></div>
-    </div>
+<!-- ADD ENTRY -->
+<div class="card">
+<h3>Add Entry</h3>
 
-    <!-- ADD ENTRY CARD -->
-    <div class="card">
-      <h3>Add Entry</h3>
+<input type="text" id="entryName" placeholder="Name">
+<input type="text" id="purpose" placeholder="Purpose">
+<input type="number" id="amount" placeholder="Amount">
+<input type="date" id="date">
 
-      <input type="text" id="entryName" placeholder="Name">
-      <input type="text" id="purpose" placeholder="Purpose">
-      <input type="number" id="amount" placeholder="Amount">
-      <input type="date" id="date">
+<select id="accountSelect"></select>
 
-      <select id="accountSelect"></select>
+<select id="type">
+  <option value="Dr">Debit (Dr)</option>
+  <option value="Cr">Credit (Cr)</option>
+</select>
 
-      <select id="category">
-        <option value="General">General</option>
-        <option value="Expense">Expense</option>
-        <option value="Income">Income</option>
-      </select>
+<button class="success" onclick="addEntry()">Add Entry</button>
+</div>
 
-      <select id="type">
-        <option value="Dr">Debit (Dr)</option>
-        <option value="Cr">Credit (Cr)</option>
-      </select>
+<!-- TODAY VIEW -->
+<div class="card">
+<h3>Today Daybook</h3>
 
-      <button class="success" onclick="addEntry()">Add Entry</button>
-    </div>
+<button class="secondary" onclick="viewDeleted()">Deleted</button>
 
-    <!-- VIEW CARD -->
-    <div class="card full-width">
-      <h3>Entries</h3>
+<input type="date" id="filterDate" style="max-width:200px;">
+<button class="primary" onclick="filterAllByDate()">Filter Date</button>
+<button class="secondary" onclick="viewAllEntries()">All Entries</button>
 
-      <button class="secondary" onclick="viewActive()">Active</button>
-      <button class="secondary" onclick="viewDeleted()">Deleted</button>
+<div id="openingSummary" class="summary-box"></div>
+<div id="tableContainer"></div>
+<div id="closingSummary" class="summary-box"></div>
+</div>
 
-      <input type="date" id="filterDate" style="max-width:200px;">
-      <button class="primary" onclick="filterByDate()">Filter</button>
-
-      <div id="tableContainer"></div>
-      <div id="tally" class="tally-box"></div>
-    </div>
-
-  </div>
 </div>
 
 <script type="module">
@@ -178,98 +143,114 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const PASSWORD = "BNPRATHAM@8056079200";
 
-/* ALL YOUR PREVIOUS FIREBASE LOGIC REMAINS SAME */
-/* (Functions unchanged — only UI changed) */
-
+/* LOAD ACCOUNTS */
 async function loadAccounts(){
   const snapshot = await getDocs(collection(db,"accounts"));
   accountSelect.innerHTML="";
-  let html="";
+  accountsList.innerHTML="";
   snapshot.forEach(docSnap=>{
     const data=docSnap.data();
     accountSelect.innerHTML+=`<option value="${docSnap.id}">${data.name}</option>`;
-    html+=`
-      <div style="margin-bottom:6px;">
-        ${data.name} - ₹${data.balance}
+    accountsList.innerHTML+=`
+      <div style="display:flex;justify-content:space-between;padding:8px;background:#f8f9fa;margin-bottom:6px;border-radius:6px;">
+        <div>${data.name} - ₹${data.balance}</div>
         <button class="secondary" onclick="editBalance('${docSnap.id}',${data.balance})">Edit</button>
-      </div>
-    `;
+      </div>`;
   });
-  accountsList.innerHTML=html;
 }
 
+/* CREATE ACCOUNT */
 window.createAccount = async function(){
-  const name=accountName.value;
-  const balance=Number(openingBalance.value);
+  const name=accountName.value.trim();
+  const balance=Number(openingBalance.value)||0;
   if(!name) return alert("Enter account name");
-  await addDoc(collection(db,"accounts"),{ name, balance });
+
+  await addDoc(collection(db,"accounts"),{name,balance});
   accountName.value="";
   openingBalance.value="";
   loadAccounts();
+  calculateToday();
 };
 
+/* EDIT BALANCE */
 window.editBalance = async function(id,current){
   const pass=prompt("Enter Password");
   if(pass!==PASSWORD) return alert("Wrong Password");
-  const newBalance=prompt("Enter New Balance",current);
-  await updateDoc(doc(db,"accounts",id),{ balance:Number(newBalance) });
+
+  const newBalance=prompt("New Balance",current);
+  await updateDoc(doc(db,"accounts",id),{balance:Number(newBalance)});
   loadAccounts();
+  calculateToday();
 };
 
+/* ADD ENTRY */
 window.addEntry = async function(){
   const name=document.getElementById("entryName").value;
   const purpose=document.getElementById("purpose").value;
   const amount=Number(document.getElementById("amount").value);
   const date=document.getElementById("date").value;
   const accountId=document.getElementById("accountSelect").value;
-  const category=document.getElementById("category").value;
   const type=document.getElementById("type").value;
 
-  if(!name||!amount||!date) return alert("Fill required fields");
+  if(!name||!amount||!date) return alert("Fill fields");
 
   await addDoc(collection(db,"daybook"),{
-    name,purpose,amount,date,accountId,category,type,deleted:false
+    name,purpose,amount,date,accountId,type,deleted:false
   });
 
-  alert("Entry Added");
-  viewActive();
+  const accRef=doc(db,"accounts",accountId);
+  const accSnap=await getDocs(query(collection(db,"accounts"),where("__name__","==",accountId)));
+  let acc;
+  accSnap.forEach(d=>acc=d.data());
+
+  let newBalance=acc.balance;
+  if(type==="Dr") newBalance-=amount;
+  else newBalance+=amount;
+
+  await updateDoc(accRef,{balance:newBalance});
+
+  calculateToday();
+  loadAccounts();
 };
 
-window.viewActive=async function(){
-  const q=query(collection(db,"daybook"),where("deleted","==",false));
+/* DELETE ENTRY */
+window.deleteEntry = async function(id){
+  await updateDoc(doc(db,"daybook",id),{deleted:true});
+  calculateToday();
+};
+
+/* TODAY VIEW */
+async function calculateToday(){
+  const today=new Date().toISOString().split("T")[0];
+
+  const q=query(collection(db,"daybook"),where("date","==",today),where("deleted","==",false));
   const snapshot=await getDocs(q);
-  render(snapshot,false);
-};
 
-window.viewDeleted=async function(){
+  render(snapshot,today);
+}
+
+window.viewDeleted = async function(){
   const q=query(collection(db,"daybook"),where("deleted","==",true));
   const snapshot=await getDocs(q);
-  render(snapshot,true);
+  render(snapshot,"Deleted");
 };
 
-window.filterByDate=async function(){
+window.viewAllEntries = async function(){
+  const snapshot=await getDocs(collection(db,"daybook"));
+  render(snapshot,"All Entries");
+};
+
+window.filterAllByDate = async function(){
   const d=filterDate.value;
   const q=query(collection(db,"daybook"),where("date","==",d));
   const snapshot=await getDocs(q);
-  render(snapshot,false);
+  render(snapshot,d);
 };
 
-window.deleteEntry=async function(id){
-  await updateDoc(doc(db,"daybook",id),{deleted:true});
-  viewActive();
-};
-
-function render(snapshot,isDeleted){
+/* RENDER */
+async function render(snapshot,title){
   let html=`<table>
-  <tr>
-  <th>Name</th>
-  <th>Purpose</th>
-  <th>Amount</th>
-  <th>Date</th>
-  <th>Type</th>
-  <th>Category</th>
-  ${!isDeleted?"<th>Action</th>":""}
-  </tr>`;
+  <tr><th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th><th>Type</th><th>Action</th></tr>`;
 
   let totalDr=0,totalCr=0;
 
@@ -278,24 +259,33 @@ function render(snapshot,isDeleted){
     if(d.type==="Dr") totalDr+=d.amount;
     else totalCr+=d.amount;
 
-    html+=`<tr>
+    html+=`
+    <tr>
     <td>${d.name}</td>
     <td>${d.purpose}</td>
     <td>${d.amount}</td>
     <td>${d.date}</td>
     <td>${d.type}</td>
-    <td>${d.category}</td>
-    ${!isDeleted?`<td><button class="danger" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`:""}
+    <td>${!d.deleted?`<button class="danger" onclick="deleteEntry('${docSnap.id}')">Delete</button>`:"-"}</td>
     </tr>`;
   });
 
   html+="</table>";
   tableContainer.innerHTML=html;
-  tally.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr} | Balance: ₹${totalCr-totalDr}`;
+
+  /* Calculate opening total from accounts */
+  const accSnap=await getDocs(collection(db,"accounts"));
+  let totalBalance=0;
+  accSnap.forEach(d=> totalBalance+=d.data().balance );
+
+  openingSummary.innerHTML=`Opening Balance (All Accounts): ₹${totalBalance}`;
+  closingSummary.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr} | Closing Balance: ₹${totalBalance}`;
 }
 
 loadAccounts();
+calculateToday();
 
 </script>
+
 </body>
 </html>
