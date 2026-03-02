@@ -50,6 +50,12 @@
           <p>Track business expenses</p>
         </a>
 
+        <!-- ✅ ONLY ADDITION -->
+        <a href="daybook.html" class="dashboard-card">
+          <h3>Daybook</h3>
+          <p>Daily Debit & Credit Records</p>
+        </a>
+
       </div>
 
     </div>
@@ -59,10 +65,8 @@
 
   <script>
     function logoutUser() {
-      // Clear session data
       localStorage.clear();
       sessionStorage.clear();
-      // Redirect to login page
       window.location.href = 'index.html';
     }
   </script>
