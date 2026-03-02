@@ -31,8 +31,6 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
-    h2, h3 { margin-bottom: 15px; }
-
     input, select {
       padding: 10px;
       border: 1px solid #ccc;
@@ -56,14 +54,6 @@
     .red { background:#dc3545; color:#fff; }
     .grey { background:#6c757d; color:#fff; }
 
-    .summary {
-      background:#f4f6f9;
-      padding:12px;
-      border-radius:8px;
-      margin-bottom:10px;
-      font-weight:600;
-    }
-
     table {
       width:100%;
       border-collapse: collapse;
@@ -83,6 +73,14 @@
       border-bottom:1px solid #eee;
       text-align:center;
       font-size:14px;
+    }
+
+    .summary {
+      background:#f4f6f9;
+      padding:12px;
+      border-radius:8px;
+      margin:10px 0;
+      font-weight:600;
     }
 
     @media(max-width:1000px){
@@ -133,13 +131,14 @@
 
 </div>
 
-<!-- DAYBOOK VIEW -->
+<!-- VIEW -->
 <div class="card">
 
   <h3>Daybook View</h3>
 
   <button class="btn grey" onclick="viewToday()">Today</button>
   <button class="btn grey" onclick="viewAll()">All Entries</button>
+  <button class="btn red" onclick="viewDeleted()">Deleted</button>
 
   <input type="date" id="filterDate" style="max-width:200px; display:inline-block;">
   <button class="btn blue" onclick="filterByDate()">Filter Date</button>
@@ -174,12 +173,8 @@ async function loadAccounts(){
 
   snapshot.forEach(docSnap=>{
     const data=docSnap.data();
-
     accountSelect.innerHTML+=`<option value="${docSnap.id}">${data.name}</option>`;
-
-    accountsList.innerHTML+=`
-      <div>${data.name} - ₹${data.balance}</div>
-    `;
+    accountsList.innerHTML+=`<div>${data.name} - ₹${data.balance}</div>`;
   });
 }
 
@@ -193,7 +188,6 @@ window.createAccount = async function(){
   accountName.value="";
   openingBalance.value="";
   loadAccounts();
-  viewToday();
 };
 
 /* ADD ENTRY */
@@ -208,57 +202,58 @@ window.addEntry = async function(){
   if(!name||!amount||!date) return alert("Fill fields");
 
   await addDoc(collection(db,"daybook"),{
-    name,purpose,amount,date,accountId,type
+    name,purpose,amount,date,accountId,type,deleted:false
   });
 
-  // update account balance immediately
-  const accRef=doc(db,"accounts",accountId);
-  const accSnap=await getDocs(query(collection(db,"accounts"),where("__name__","==",accountId)));
-  let acc;
-  accSnap.forEach(d=>acc=d.data());
-
-  let newBalance=acc.balance;
-  if(type==="Dr") newBalance-=amount;
-  else newBalance+=amount;
-
-  await updateDoc(accRef,{balance:newBalance});
-
   viewToday();
-  loadAccounts();
 };
 
-/* VIEW TODAY */
+/* DELETE ENTRY */
+window.deleteEntry = async function(id){
+  await updateDoc(doc(db,"daybook",id),{deleted:true});
+  viewToday();
+};
+
+/* VIEW FUNCTIONS */
+
 window.viewToday = async function(){
   const today=new Date().toISOString().split("T")[0];
-  const q=query(collection(db,"daybook"),where("date","==",today));
+  const q=query(collection(db,"daybook"),where("date","==",today),where("deleted","==",false));
   const snapshot=await getDocs(q);
-  render(snapshot);
+  render(snapshot,false);
 };
 
-/* VIEW ALL */
 window.viewAll = async function(){
-  const snapshot=await getDocs(collection(db,"daybook"));
-  render(snapshot);
+  const q=query(collection(db,"daybook"),where("deleted","==",false));
+  const snapshot=await getDocs(q);
+  render(snapshot,false);
 };
 
-/* FILTER */
+window.viewDeleted = async function(){
+  const q=query(collection(db,"daybook"),where("deleted","==",true));
+  const snapshot=await getDocs(q);
+  render(snapshot,true);
+};
+
 window.filterByDate = async function(){
   const d=filterDate.value;
   const q=query(collection(db,"daybook"),where("date","==",d));
   const snapshot=await getDocs(q);
-  render(snapshot);
+  render(snapshot,false);
 };
 
 /* RENDER */
-async function render(snapshot){
+
+async function render(snapshot,isDeleted){
 
   let html=`<table>
-  <tr><th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th><th>Type</th></tr>`;
+  <tr><th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th><th>Type</th>${!isDeleted?"<th>Action</th>":""}</tr>`;
 
   let totalDr=0,totalCr=0;
 
   snapshot.forEach(docSnap=>{
     const d=docSnap.data();
+
     if(d.type==="Dr") totalDr+=d.amount;
     else totalCr+=d.amount;
 
@@ -269,23 +264,14 @@ async function render(snapshot){
     <td>${d.amount}</td>
     <td>${d.date}</td>
     <td>${d.type}</td>
+    ${!isDeleted?`<td><button class="btn red" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`:""}
     </tr>`;
   });
 
   html+="</table>";
   tableContainer.innerHTML=html;
 
-  // show account balances
-  const accSnap=await getDocs(collection(db,"accounts"));
-  let totalBalance=0;
-  let accountDetails="";
-  accSnap.forEach(d=>{
-    totalBalance+=d.data().balance;
-    accountDetails+=`${d.data().name}: ₹${d.data().balance} | `;
-  });
-
-  openingSummary.innerHTML=`Opening Balance (Accounts): ${accountDetails}`;
-  closingSummary.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr} | Total Balance: ₹${totalBalance}`;
+  closingSummary.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr}`;
 }
 
 loadAccounts();
