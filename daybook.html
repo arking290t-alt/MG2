@@ -8,18 +8,13 @@
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background: #eef2f7;
-      color: #222; /* FIXED TEXT VISIBILITY */
+      color: #111;
     }
 
     .container {
       max-width: 1400px;
       margin: 40px auto;
       padding: 20px;
-    }
-
-    h2, h3 {
-      color: #111;
-      margin-bottom: 15px;
     }
 
     .top-grid {
@@ -36,6 +31,8 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
+    h2, h3 { margin-bottom: 15px; }
+
     input, select {
       padding: 10px;
       border: 1px solid #ccc;
@@ -43,8 +40,6 @@
       font-size: 14px;
       width: 100%;
       margin-bottom: 10px;
-      color: #111; /* FIXED */
-      background: #fff;
     }
 
     .btn {
@@ -67,7 +62,6 @@
       border-radius:8px;
       margin-bottom:10px;
       font-weight:600;
-      color:#000; /* FIXED */
     }
 
     table {
@@ -89,15 +83,6 @@
       border-bottom:1px solid #eee;
       text-align:center;
       font-size:14px;
-      color:#111; /* FIXED */
-    }
-
-    tr:hover {
-      background:#f9f9f9;
-    }
-
-    .bottom-section {
-      margin-top: 30px;
     }
 
     @media(max-width:1000px){
@@ -105,7 +90,6 @@
         grid-template-columns: 1fr;
       }
     }
-
   </style>
 </head>
 
@@ -113,7 +97,7 @@
 
 <div class="container">
 
-<h2>Daybook Management</h2>
+<h2>Daybook</h2>
 
 <div class="top-grid">
 
@@ -125,7 +109,7 @@
     <input type="number" id="openingBalance" placeholder="Opening Balance">
     <button class="btn blue" onclick="createAccount()">Add Account</button>
 
-    <div id="accountsList" style="margin-top:15px;"></div>
+    <div id="accountsList"></div>
   </div>
 
   <!-- ADD ENTRY -->
@@ -149,30 +133,163 @@
 
 </div>
 
-<!-- TODAY VIEW -->
-<div class="card bottom-section">
+<!-- DAYBOOK VIEW -->
+<div class="card">
 
-  <h3>Today Daybook</h3>
+  <h3>Daybook View</h3>
 
-  <button class="btn grey" onclick="viewDeleted()">Deleted</button>
-  <input type="date" id="filterDate" style="max-width:200px; display:inline-block;">
-  <button class="btn blue" onclick="filterByDate()">Filter Date</button>
+  <button class="btn grey" onclick="viewToday()">Today</button>
   <button class="btn grey" onclick="viewAll()">All Entries</button>
 
+  <input type="date" id="filterDate" style="max-width:200px; display:inline-block;">
+  <button class="btn blue" onclick="filterByDate()">Filter Date</button>
+
   <div id="openingSummary" class="summary"></div>
-
   <div id="tableContainer"></div>
-
   <div id="closingSummary" class="summary"></div>
 
 </div>
 
 </div>
 
-<script>
-/* Your Firebase JS logic stays same here */
-/* I only fixed the UI and readability */
-/* Keep your existing Firebase script below this */
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* LOAD ACCOUNTS */
+async function loadAccounts(){
+  const snapshot = await getDocs(collection(db,"accounts"));
+  accountSelect.innerHTML="";
+  accountsList.innerHTML="";
+
+  snapshot.forEach(docSnap=>{
+    const data=docSnap.data();
+
+    accountSelect.innerHTML+=`<option value="${docSnap.id}">${data.name}</option>`;
+
+    accountsList.innerHTML+=`
+      <div>${data.name} - ₹${data.balance}</div>
+    `;
+  });
+}
+
+/* CREATE ACCOUNT */
+window.createAccount = async function(){
+  const name=accountName.value.trim();
+  const balance=Number(openingBalance.value)||0;
+  if(!name) return alert("Enter account name");
+
+  await addDoc(collection(db,"accounts"),{name,balance});
+  accountName.value="";
+  openingBalance.value="";
+  loadAccounts();
+  viewToday();
+};
+
+/* ADD ENTRY */
+window.addEntry = async function(){
+  const name=entryName.value;
+  const purpose=purpose.value;
+  const amount=Number(amount.value);
+  const date=date.value;
+  const accountId=accountSelect.value;
+  const type=type.value;
+
+  if(!name||!amount||!date) return alert("Fill fields");
+
+  await addDoc(collection(db,"daybook"),{
+    name,purpose,amount,date,accountId,type
+  });
+
+  // update account balance immediately
+  const accRef=doc(db,"accounts",accountId);
+  const accSnap=await getDocs(query(collection(db,"accounts"),where("__name__","==",accountId)));
+  let acc;
+  accSnap.forEach(d=>acc=d.data());
+
+  let newBalance=acc.balance;
+  if(type==="Dr") newBalance-=amount;
+  else newBalance+=amount;
+
+  await updateDoc(accRef,{balance:newBalance});
+
+  viewToday();
+  loadAccounts();
+};
+
+/* VIEW TODAY */
+window.viewToday = async function(){
+  const today=new Date().toISOString().split("T")[0];
+  const q=query(collection(db,"daybook"),where("date","==",today));
+  const snapshot=await getDocs(q);
+  render(snapshot);
+};
+
+/* VIEW ALL */
+window.viewAll = async function(){
+  const snapshot=await getDocs(collection(db,"daybook"));
+  render(snapshot);
+};
+
+/* FILTER */
+window.filterByDate = async function(){
+  const d=filterDate.value;
+  const q=query(collection(db,"daybook"),where("date","==",d));
+  const snapshot=await getDocs(q);
+  render(snapshot);
+};
+
+/* RENDER */
+async function render(snapshot){
+
+  let html=`<table>
+  <tr><th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th><th>Type</th></tr>`;
+
+  let totalDr=0,totalCr=0;
+
+  snapshot.forEach(docSnap=>{
+    const d=docSnap.data();
+    if(d.type==="Dr") totalDr+=d.amount;
+    else totalCr+=d.amount;
+
+    html+=`
+    <tr>
+    <td>${d.name}</td>
+    <td>${d.purpose}</td>
+    <td>${d.amount}</td>
+    <td>${d.date}</td>
+    <td>${d.type}</td>
+    </tr>`;
+  });
+
+  html+="</table>";
+  tableContainer.innerHTML=html;
+
+  // show account balances
+  const accSnap=await getDocs(collection(db,"accounts"));
+  let totalBalance=0;
+  let accountDetails="";
+  accSnap.forEach(d=>{
+    totalBalance+=d.data().balance;
+    accountDetails+=`${d.data().name}: ₹${d.data().balance} | `;
+  });
+
+  openingSummary.innerHTML=`Opening Balance (Accounts): ${accountDetails}`;
+  closingSummary.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr} | Total Balance: ₹${totalBalance}`;
+}
+
+loadAccounts();
+viewToday();
 
 </script>
 
