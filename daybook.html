@@ -73,6 +73,13 @@
       text-align:center;
     }
 
+    .account-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+    }
+
     @media(max-width:1000px){
       .row { flex-direction: column; }
     }
@@ -85,7 +92,7 @@
 
 <h2>Daybook</h2>
 
-<!-- TOP HORIZONTAL SECTION -->
+<!-- HORIZONTAL SECTION -->
 <div class="row">
 
   <!-- ACCOUNTS -->
@@ -144,9 +151,11 @@ import {
   addDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   doc,
   query,
-  where
+  where,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -155,30 +164,40 @@ const firebaseConfig = {
   projectId: "mg-manager-3ab66"
 };
 
+const PASSWORD = "BNPRATHAM@8056079200";
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* LOAD ACCOUNTS */
 async function loadAccounts(){
   const snapshot = await getDocs(collection(db,"accounts"));
+
   accountSelect.innerHTML="";
   accountsList.innerHTML="";
 
   snapshot.forEach(d=>{
     const data=d.data();
 
-    accountSelect.innerHTML+=
+    accountSelect.innerHTML +=
       `<option value="${d.id}">${data.name}</option>`;
 
-    accountsList.innerHTML+=
-      `<div>${data.name} - ₹${data.balance}</div>`;
+    accountsList.innerHTML += `
+      <div class="account-row">
+        <div>${data.name} - ₹${data.balance}</div>
+        <div>
+          <button class="grey" onclick="editAccount('${d.id}')">Edit</button>
+          <button class="red" onclick="deleteAccount('${d.id}')">Delete</button>
+        </div>
+      </div>
+    `;
   });
 }
 
 /* CREATE ACCOUNT */
-window.createAccount=async function(){
-  const name=accountName.value.trim();
-  const balance=Number(openingBalance.value)||0;
+window.createAccount = async function(){
+  const name = accountName.value.trim();
+  const balance = Number(openingBalance.value) || 0;
 
   if(!name){
     alert("Enter account name");
@@ -195,16 +214,52 @@ window.createAccount=async function(){
   loadAccounts();
 };
 
-/* ADD ENTRY */
-window.addEntry=async function(){
-  const name=entryName.value.trim();
-  const purpose=purpose.value.trim();
-  const amount=Number(amount.value);
-  const date=date.value;
-  const accountId=accountSelect.value;
-  const type=type.value;
+/* EDIT ACCOUNT */
+window.editAccount = async function(id){
+  const pass = prompt("Enter Password");
+  if(pass !== PASSWORD){
+    alert("Wrong Password");
+    return;
+  }
 
-  if(!name||!purpose||!amount||!date||!accountId){
+  const ref = doc(db,"accounts",id);
+  const snap = await getDoc(ref);
+  const data = snap.data();
+
+  const newBalance = prompt("New Balance", data.balance);
+  if(newBalance === null) return;
+
+  await updateDoc(ref,{
+    balance: Number(newBalance)
+  });
+
+  loadAccounts();
+};
+
+/* DELETE ACCOUNT */
+window.deleteAccount = async function(id){
+  const pass = prompt("Enter Password");
+  if(pass !== PASSWORD){
+    alert("Wrong Password");
+    return;
+  }
+
+  if(!confirm("Delete this account?")) return;
+
+  await deleteDoc(doc(db,"accounts",id));
+  loadAccounts();
+};
+
+/* ADD ENTRY */
+window.addEntry = async function(){
+  const name = entryName.value.trim();
+  const purpose = purpose.value.trim();
+  const amount = Number(amount.value);
+  const date = date.value;
+  const accountId = accountSelect.value;
+  const type = type.value;
+
+  if(!name || !purpose || !amount || !date || !accountId){
     alert("Fill all fields");
     return;
   }
@@ -222,11 +277,12 @@ window.addEntry=async function(){
   entryName.value="";
   purpose.value="";
   amount.value="";
+
   viewToday();
 };
 
 /* DELETE ENTRY */
-window.deleteEntry=async function(id){
+window.deleteEntry = async function(id){
   await updateDoc(doc(db,"daybook",id),{
     deleted:true
   });
@@ -234,42 +290,42 @@ window.deleteEntry=async function(id){
 };
 
 /* VIEW TODAY */
-window.viewToday=async function(){
-  const today=new Date().toISOString().split("T")[0];
+window.viewToday = async function(){
+  const today = new Date().toISOString().split("T")[0];
 
-  const q=query(
+  const q = query(
     collection(db,"daybook"),
     where("date","==",today),
     where("deleted","==",false)
   );
 
-  const snapshot=await getDocs(q);
+  const snapshot = await getDocs(q);
   render(snapshot,false);
 };
 
 /* VIEW ALL */
-window.viewAll=async function(){
-  const q=query(
+window.viewAll = async function(){
+  const q = query(
     collection(db,"daybook"),
     where("deleted","==",false)
   );
 
-  const snapshot=await getDocs(q);
+  const snapshot = await getDocs(q);
   render(snapshot,false);
 };
 
 /* VIEW DELETED */
-window.viewDeleted=async function(){
-  const q=query(
+window.viewDeleted = async function(){
+  const q = query(
     collection(db,"daybook"),
     where("deleted","==",true)
   );
 
-  const snapshot=await getDocs(q);
+  const snapshot = await getDocs(q);
   render(snapshot,true);
 };
 
-/* RENDER */
+/* RENDER TABLE */
 function render(snapshot,isDeleted){
 
   let html=`<table>
