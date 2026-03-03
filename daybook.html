@@ -16,8 +16,6 @@
       padding: 20px;
     }
 
-    h2 { margin-top: 0; }
-
     .row {
       display: flex;
       gap: 25px;
@@ -40,7 +38,7 @@
       border: 1px solid #ccc;
     }
 
-    button {
+    .btn {
       padding: 7px 14px;
       border-radius: 6px;
       border: none;
@@ -73,15 +71,16 @@
       text-align:center;
     }
 
-    .account-row {
+    .filter-bar {
       display:flex;
-      justify-content:space-between;
       align-items:center;
-      margin-bottom:6px;
+      gap:10px;
+      margin-bottom:15px;
     }
 
     @media(max-width:1000px){
       .row { flex-direction: column; }
+      .filter-bar { flex-direction: column; align-items:stretch; }
     }
   </style>
 </head>
@@ -92,37 +91,30 @@
 
 <h2>Daybook</h2>
 
-<!-- HORIZONTAL SECTION -->
 <div class="row">
 
   <!-- ACCOUNTS -->
   <div class="card">
     <h3>Create Account</h3>
-
     <input id="accountName" placeholder="Account Name">
     <input id="openingBalance" type="number" placeholder="Opening Balance">
-    <button class="blue" onclick="createAccount()">Add Account</button>
-
+    <button class="btn blue" onclick="createAccount()">Add Account</button>
     <div id="accountsList" style="margin-top:15px;"></div>
   </div>
 
   <!-- ADD ENTRY -->
   <div class="card">
     <h3>Add Entry</h3>
-
     <input id="entryName" placeholder="Name">
     <input id="purpose" placeholder="Purpose">
     <input id="amount" type="number" placeholder="Amount">
     <input id="date" type="date">
-
     <select id="accountSelect"></select>
-
     <select id="type">
       <option value="Dr">Debit (Dr)</option>
       <option value="Cr">Credit (Cr)</option>
     </select>
-
-    <button class="green" onclick="addEntry()">Add Entry</button>
+    <button class="btn green" onclick="addEntry()">Add Entry</button>
   </div>
 
 </div>
@@ -132,9 +124,14 @@
 
   <h3>View Entries</h3>
 
-  <button class="grey" onclick="viewToday()">Today</button>
-  <button class="grey" onclick="viewAll()">All</button>
-  <button class="red" onclick="viewDeleted()">Deleted</button>
+  <div class="filter-bar">
+    <button class="btn grey" onclick="viewToday()">Today</button>
+    <button class="btn grey" onclick="viewAll()">All</button>
+    <button class="btn red" onclick="viewDeleted()">Deleted</button>
+
+    <input type="date" id="filterDate" style="max-width:200px;">
+    <button class="btn blue" onclick="filterByDate()">Filter Date</button>
+  </div>
 
   <div id="tableContainer"></div>
 
@@ -183,11 +180,11 @@ async function loadAccounts(){
       `<option value="${d.id}">${data.name}</option>`;
 
     accountsList.innerHTML += `
-      <div class="account-row">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
         <div>${data.name} - ₹${data.balance}</div>
         <div>
-          <button class="grey" onclick="editAccount('${d.id}')">Edit</button>
-          <button class="red" onclick="deleteAccount('${d.id}')">Delete</button>
+          <button class="btn grey" onclick="editAccount('${d.id}')">Edit</button>
+          <button class="btn red" onclick="deleteAccount('${d.id}')">Delete</button>
         </div>
       </div>
     `;
@@ -204,10 +201,7 @@ window.createAccount = async function(){
     return;
   }
 
-  await addDoc(collection(db,"accounts"),{
-    name,
-    balance
-  });
+  await addDoc(collection(db,"accounts"),{ name, balance });
 
   accountName.value="";
   openingBalance.value="";
@@ -229,10 +223,7 @@ window.editAccount = async function(id){
   const newBalance = prompt("New Balance", data.balance);
   if(newBalance === null) return;
 
-  await updateDoc(ref,{
-    balance: Number(newBalance)
-  });
-
+  await updateDoc(ref,{ balance:Number(newBalance) });
   loadAccounts();
 };
 
@@ -277,55 +268,51 @@ window.addEntry = async function(){
   entryName.value="";
   purpose.value="";
   amount.value="";
-
   viewToday();
 };
 
 /* DELETE ENTRY */
 window.deleteEntry = async function(id){
-  await updateDoc(doc(db,"daybook",id),{
-    deleted:true
-  });
+  await updateDoc(doc(db,"daybook",id),{ deleted:true });
   viewToday();
 };
 
-/* VIEW TODAY */
+/* VIEW FUNCTIONS */
 window.viewToday = async function(){
   const today = new Date().toISOString().split("T")[0];
-
-  const q = query(
-    collection(db,"daybook"),
+  const q = query(collection(db,"daybook"),
     where("date","==",today),
     where("deleted","==",false)
   );
-
-  const snapshot = await getDocs(q);
-  render(snapshot,false);
+  render(await getDocs(q),false);
 };
 
-/* VIEW ALL */
 window.viewAll = async function(){
-  const q = query(
-    collection(db,"daybook"),
+  const q = query(collection(db,"daybook"),
     where("deleted","==",false)
   );
-
-  const snapshot = await getDocs(q);
-  render(snapshot,false);
+  render(await getDocs(q),false);
 };
 
-/* VIEW DELETED */
 window.viewDeleted = async function(){
-  const q = query(
-    collection(db,"daybook"),
+  const q = query(collection(db,"daybook"),
     where("deleted","==",true)
   );
-
-  const snapshot = await getDocs(q);
-  render(snapshot,true);
+  render(await getDocs(q),true);
 };
 
-/* RENDER TABLE */
+window.filterByDate = async function(){
+  const d = filterDate.value;
+  if(!d){ alert("Select date"); return; }
+
+  const q = query(collection(db,"daybook"),
+    where("date","==",d),
+    where("deleted","==",false)
+  );
+  render(await getDocs(q),false);
+};
+
+/* RENDER */
 function render(snapshot,isDeleted){
 
   let html=`<table>
@@ -349,7 +336,7 @@ function render(snapshot,isDeleted){
         <td>${d.date}</td>
         <td>${d.type}</td>
         ${!isDeleted
-          ? `<td><button class="red" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
+          ? `<td><button class="btn red" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
           : ""
         }
       </tr>`;
