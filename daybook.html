@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <title>Office Daybook</title>
 
+<!-- html2canvas for image capture -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
 body{
     margin:0;
@@ -74,7 +77,7 @@ th{background:#f8f9fa;}
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="daybookArea">
 
 <h2>OFFICE DAYBOOK</h2>
 
@@ -167,8 +170,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 const accountsCol = collection(db,"accounts");
 const entriesCol = collection(db,"entries");
-const deletedCol = collection(db,"deletedEntries");
-const editedCol = collection(db,"editedEntries");
 
 const accountName = document.getElementById("accountName");
 const accountAmount = document.getElementById("accountAmount");
@@ -186,23 +187,16 @@ const addEntryBtn = document.getElementById("addEntry");
 
 const filterDate = document.getElementById("filterDate");
 const todayBtn = document.getElementById("todayBtn");
-const showEntriesBtn = document.getElementById("showEntries");
-const showDeletedBtn = document.getElementById("showDeleted");
-const showEditedBtn = document.getElementById("showEdited");
 const ssBtn = document.getElementById("ssBtn");
 
 const tableHead = document.getElementById("tableHead");
 const tableBody = document.getElementById("tableBody");
-const tableTitle = document.getElementById("tableTitle");
 
 const openingBalanceEl = document.getElementById("openingBalance");
 const closingBalanceEl = document.getElementById("closingBalance");
 
 let accounts=[];
 let entries=[];
-let deletedEntries=[];
-let editedEntries=[];
-let mode="entries";
 
 function today(){
     return new Date().toISOString().split("T")[0];
@@ -257,10 +251,6 @@ todayBtn.onclick=()=>{
     render();
 };
 
-showEntriesBtn.onclick=()=>{mode="entries";render();};
-showDeletedBtn.onclick=()=>{mode="deleted";render();};
-showEditedBtn.onclick=()=>{mode="edited";render();};
-
 filterDate.onchange=render;
 
 onSnapshot(accountsCol,snap=>{
@@ -284,23 +274,9 @@ onSnapshot(accountsCol,snap=>{
 onSnapshot(entriesCol,snap=>{
     entries=[];
     snap.forEach(d=>{
-        entries.push({...d.data(),id:d.id});
+        entries.push(d.data());
     });
     render();
-});
-
-onSnapshot(deletedCol,snap=>{
-    deletedEntries=[];
-    snap.forEach(d=>{
-        deletedEntries.push(d.data());
-    });
-});
-
-onSnapshot(editedCol,snap=>{
-    editedEntries=[];
-    snap.forEach(d=>{
-        editedEntries.push(d.data());
-    });
 });
 
 function calculateBalances(){
@@ -324,95 +300,54 @@ function render(){
     tableBody.innerHTML="";
     let selectedDate=filterDate.value;
 
-    if(mode==="entries"){
-        tableTitle.innerText="Entries";
-        tableHead.innerHTML=`
+    tableHead.innerHTML=`
+    <tr>
+    <th>Name</th><th>Purpose</th><th>Account</th>
+    <th>Amount</th><th>Type</th><th>Date</th>
+    <th>Note</th>
+    </tr>`;
+
+    entries.filter(e=>e.date===selectedDate)
+    .forEach(e=>{
+        tableBody.innerHTML+=`
         <tr>
-        <th>Name</th><th>Purpose</th><th>Account</th>
-        <th>Amount</th><th>Type</th><th>Date</th>
-        <th>Note</th><th>Action</th>
+        <td>${e.name}</td>
+        <td>${e.purpose}</td>
+        <td>${e.accountName}</td>
+        <td>${e.amount}</td>
+        <td>${e.type}</td>
+        <td>${e.date}</td>
+        <td>${e.note}</td>
         </tr>`;
-
-        entries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.purpose}</td>
-            <td>${e.accountName}</td>
-            <td>${e.amount}</td>
-            <td>${e.type}</td>
-            <td>${e.date}</td>
-            <td>${e.note}</td>
-            <td>
-            <button onclick="deleteEntry('${e.id}')">Delete</button>
-            </td>
-            </tr>`;
-        });
-    }
-
-    if(mode==="deleted"){
-        tableTitle.innerText="Deleted Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th></tr>`;
-
-        deletedEntries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.purpose}</td>
-            <td>${e.amount}</td>
-            <td>${e.date}</td>
-            </tr>`;
-        });
-    }
-
-    if(mode==="edited"){
-        tableTitle.innerText="Edited Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Before</th><th>After</th><th>Date</th></tr>`;
-
-        editedEntries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.before}</td>
-            <td>${e.after}</td>
-            <td>${e.date}</td>
-            </tr>`;
-        });
-    }
+    });
 
     calculateBalances();
 }
 
-ssBtn.onclick=()=>{
-    let selectedDate=filterDate.value;
-    let text=`DAY BOOK - ${selectedDate}\n\n`;
-    text+=`Opening Balance: ${openingBalanceEl.innerText}\n\nEntries:\n`;
+ssBtn.onclick = async () => {
 
-    entries.filter(e=>e.date===selectedDate)
-    .forEach(e=>{
-        text+=`${e.name} | ${e.purpose} | ${e.accountName} | ${e.amount} | ${e.type}\n`;
+    if(filterDate.value !== today()){
+        alert("SS only works for today's daybook");
+        return;
+    }
+
+    const element = document.getElementById("daybookArea");
+
+    const canvas = await html2canvas(element, { scale:2 });
+
+    canvas.toBlob(async (blob)=>{
+        try{
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob })
+            ]);
+            alert("Daybook copied as image!");
+        }catch{
+            const link=document.createElement("a");
+            link.download="daybook.png";
+            link.href=canvas.toDataURL();
+            link.click();
+        }
     });
-
-    text+=`\nClosing Balance: ${closingBalanceEl.innerText}\n\nAccount Balances:\n`;
-
-    accounts.forEach(a=>{
-        text+=`${a.name}: ${a.balance.toFixed(2)}\n`;
-    });
-
-    navigator.clipboard.writeText(text);
-    alert("Daybook copied successfully!");
-};
-
-window.deleteEntry=async(id)=>{
-    const ref=doc(db,"entries",id);
-    const snap=await getDoc(ref);
-    await addDoc(deletedCol,snap.data());
-    await deleteDoc(ref);
 };
 
 });
