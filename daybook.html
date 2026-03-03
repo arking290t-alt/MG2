@@ -7,19 +7,74 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
-body{margin:0;font-family:Segoe UI;background:#f1f3f6;}
-.container{width:95%;margin:auto;margin-top:20px;}
-h2{margin-bottom:20px;}
-.top-grid{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
-.card{background:#fff;padding:18px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.08);margin-bottom:20px;}
-input,select{padding:8px;margin:6px 6px 6px 0;border-radius:6px;border:1px solid #ccc;}
-button{padding:6px 10px;border:none;border-radius:6px;background:#0d6efd;color:white;cursor:pointer;font-size:13px;}
-button:hover{background:#0b5ed7;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{padding:8px;border-bottom:1px solid #ddd;text-align:center;}
-th{background:#f8f9fa;}
-.balance-row{margin-top:10px;font-weight:600;}
-#exportArea{position:absolute;left:-9999px;top:0;width:900px;background:white;padding:25px;}
+body{
+  margin:0;
+  font-family:Segoe UI;
+  background:#f2f4f8;
+}
+.container{
+  width:95%;
+  margin:auto;
+  margin-top:20px;
+}
+h2{
+  margin-bottom:20px;
+}
+.top-grid{
+  display:grid;
+  grid-template-columns:1fr 2fr;
+  gap:20px;
+}
+.card{
+  background:#fff;
+  padding:18px;
+  border-radius:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.08);
+  margin-bottom:20px;
+}
+input,select{
+  padding:8px;
+  margin:6px 6px 6px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+button{
+  padding:6px 12px;
+  border:none;
+  border-radius:6px;
+  background:#0d6efd;
+  color:white;
+  cursor:pointer;
+  font-size:13px;
+}
+button:hover{
+  background:#0b5ed7;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+th,td{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
+}
+th{
+  background:#f8f9fa;
+}
+.balance-row{
+  margin-top:12px;
+  font-weight:600;
+}
+#exportArea{
+  position:absolute;
+  left:-9999px;
+  top:0;
+  width:900px;
+  background:white;
+  padding:25px;
+}
 </style>
 </head>
 
@@ -31,8 +86,10 @@ th{background:#f8f9fa;}
 
 <div class="top-grid">
 
+<!-- ACCOUNT SECTION -->
 <div class="card">
 <h3>Add Account</h3>
+
 <input type="text" id="accountName" placeholder="Account Name"><br>
 <input type="number" id="accountAmount" placeholder="Opening Amount"><br>
 <button id="addAccount">Add Account</button>
@@ -52,12 +109,13 @@ th{background:#f8f9fa;}
 </table>
 </div>
 
+<!-- ENTRY SECTION -->
 <div class="card">
 <h3>Add Entry</h3>
 
 <select id="entryMode">
-  <option value="normal">Normal Entry</option>
-  <option value="transfer">Inter Account Transfer</option>
+<option value="normal">Normal Entry</option>
+<option value="transfer">Inter Account Transfer</option>
 </select><br>
 
 <input type="text" id="entryName" placeholder="Name">
@@ -66,16 +124,16 @@ th{background:#f8f9fa;}
 <input type="date" id="date"><br>
 
 <div id="normalFields">
-  <select id="accountSelect"></select>
-  <select id="type">
-    <option value="Dr">Debit (Dr)</option>
-    <option value="Cr">Credit (Cr)</option>
-  </select>
+<select id="accountSelect"></select>
+<select id="type">
+<option value="Dr">Debit (Dr)</option>
+<option value="Cr">Credit (Cr)</option>
+</select>
 </div>
 
 <div id="transferFields" style="display:none;">
-  From: <select id="fromAccount"></select>
-  To: <select id="toAccount"></select>
+From: <select id="fromAccount"></select>
+To: <select id="toAccount"></select>
 </div><br>
 
 <input type="text" id="note" placeholder="Note">
@@ -84,12 +142,10 @@ th{background:#f8f9fa;}
 
 </div>
 
+<!-- FILTER SECTION -->
 <div class="card">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
-<button id="showEntries">Entries</button>
-<button id="showDeleted">Deleted</button>
-<button id="showEdited">Edited</button>
 <button id="ssBtn">SS</button>
 
 <div class="balance-row">
@@ -97,10 +153,22 @@ Opening Balance: <span id="openingBalance">0.00</span>
 </div>
 </div>
 
+<!-- ENTRY TABLE -->
 <div class="card">
-<h3 id="tableTitle">Entries</h3>
+<h3>Entries</h3>
 <table>
-<thead id="tableHead"></thead>
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Date</th>
+<th>Note</th>
+<th>Action</th>
+</tr>
+</thead>
 <tbody id="tableBody"></tbody>
 </table>
 
@@ -119,21 +187,24 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-  authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
-  storageBucket: "mg-manager-3ab66.firebasestorage.app",
-  messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
+const firebaseConfig={
+apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+authDomain:"mg-manager-3ab66.firebaseapp.com",
+projectId:"mg-manager-3ab66",
+storageBucket:"mg-manager-3ab66.firebasestorage.app",
+messagingSenderId:"330667005987",
+appId:"1:330667005987:web:95de27b6259ace9fc6b996"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
 
-function today(){return new Date().toISOString().split("T")[0];}
+function today(){
+return new Date().toISOString().split("T")[0];
+}
+
 function yesterday(){
 let d=new Date();
 d.setDate(d.getDate()-1);
@@ -142,12 +213,10 @@ return d.toISOString().split("T")[0];
 
 const accountsCol=collection(db,"accounts");
 const entriesCol=collection(db,"entries");
-const deletedCol=collection(db,"deletedEntries");
-const editedCol=collection(db,"editedEntries");
 const dailyCol=collection(db,"dailySummary");
 
-let accounts=[],entries=[],deletedEntries=[],editedEntries=[];
-let mode="entries";
+let accounts=[];
+let entries=[];
 
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
@@ -171,16 +240,10 @@ const transferFields=document.getElementById("transferFields");
 
 const filterDate=document.getElementById("filterDate");
 const todayBtn=document.getElementById("todayBtn");
-const showEntriesBtn=document.getElementById("showEntries");
-const showDeletedBtn=document.getElementById("showDeleted");
-const showEditedBtn=document.getElementById("showEdited");
-const ssBtn=document.getElementById("ssBtn");
-
-const tableHead=document.getElementById("tableHead");
 const tableBody=document.getElementById("tableBody");
-const tableTitle=document.getElementById("tableTitle");
 const openingBalanceEl=document.getElementById("openingBalance");
 const closingBalanceEl=document.getElementById("closingBalance");
+const ssBtn=document.getElementById("ssBtn");
 
 date.value=today();
 filterDate.value=today();
@@ -195,52 +258,67 @@ transferFields.style.display="none";
 }
 };
 
-async function ensureDailyOpening(){
+async function ensureOpening(){
 const todayRef=doc(db,"dailySummary",today());
-const todaySnap=await getDoc(todayRef);
-if(!todaySnap.exists()){
-const yesterdayRef=doc(db,"dailySummary",yesterday());
-const ySnap=await getDoc(yesterdayRef);
-let opening=0;
-if(ySnap.exists()) opening=ySnap.data().closing;
-await setDoc(todayRef,{date:today(),opening:opening,closing:opening});
+const snap=await getDoc(todayRef);
+if(!snap.exists()){
+let yRef=doc(db,"dailySummary",yesterday());
+let ySnap=await getDoc(yRef);
+let open=0;
+if(ySnap.exists()) open=ySnap.data().closing||0;
+await setDoc(todayRef,{date:today(),opening:open,closing:open});
 }
 }
 
-async function updateClosing(){
-const ref=doc(db,"dailySummary",filterDate.value);
-const snap=await getDoc(ref);
+async function updateClosingBalance(){
+let ref=doc(db,"dailySummary",filterDate.value);
+let snap=await getDoc(ref);
 if(!snap.exists()) return;
-let opening=snap.data().opening;
-let totalDr=0,totalCr=0;
-entries.filter(e=>e.date===filterDate.value)
-.forEach(e=>{
-if(e.type==="Dr") totalDr+=e.amount;
-else totalCr+=e.amount;
+
+let opening=snap.data().opening||0;
+
+let totalDr=0;
+let totalCr=0;
+
+entries.forEach(e=>{
+if(e.date===filterDate.value){
+if(e.type==="Dr") totalDr+=Number(e.amount)||0;
+if(e.type==="Cr") totalCr+=Number(e.amount)||0;
+}
 });
+
 let closing=opening+totalCr-totalDr;
+
 await updateDoc(ref,{closing:closing});
+
 openingBalanceEl.innerText=opening.toFixed(2);
 closingBalanceEl.innerText=closing.toFixed(2);
 }
 
 addAccountBtn.onclick=async()=>{
 if(!accountName.value||!accountAmount.value)return;
-await addDoc(accountsCol,{name:accountName.value,balance:parseFloat(accountAmount.value)});
-accountName.value="";accountAmount.value="";
+await addDoc(accountsCol,{
+name:accountName.value,
+balance:Number(accountAmount.value)||0
+});
+accountName.value="";
+accountAmount.value="";
 };
 
 addEntryBtn.onclick=async()=>{
-if(date.value!==today()){alert("Cannot add past entry");return;}
-await ensureDailyOpening();
+if(!amount.value) return;
+
+await ensureOpening();
+
+let amt=Number(amount.value)||0;
 
 if(entryMode.value==="normal"){
 
 await addDoc(entriesCol,{
 name:entryName.value,
 purpose:purpose.value,
-amount:parseFloat(amount.value),
-accountName:accountSelect.options[accountSelect.selectedIndex].text,
+amount:amt,
+accountName:accountSelect.value,
 type:type.value,
 date:date.value,
 note:note.value
@@ -248,20 +326,16 @@ note:note.value
 
 }else{
 
-let fromAcc=fromAccount.options[fromAccount.selectedIndex].text;
-let toAcc=toAccount.options[toAccount.selectedIndex].text;
-let amt=parseFloat(amount.value);
-
-if(fromAcc===toAcc){
-alert("From and To account cannot be same");
+if(fromAccount.value===toAccount.value){
+alert("Accounts cannot be same");
 return;
 }
 
 await addDoc(entriesCol,{
 name:entryName.value,
-purpose:"Transfer to "+toAcc,
+purpose:"Transfer to "+toAccount.value,
 amount:amt,
-accountName:fromAcc,
+accountName:fromAccount.value,
 type:"Dr",
 date:date.value,
 note:note.value
@@ -269,14 +343,13 @@ note:note.value
 
 await addDoc(entriesCol,{
 name:entryName.value,
-purpose:"Transfer from "+fromAcc,
+purpose:"Transfer from "+fromAccount.value,
 amount:amt,
-accountName:toAcc,
+accountName:toAccount.value,
 type:"Cr",
 date:date.value,
 note:note.value
 });
-
 }
 
 entryName.value="";
@@ -286,13 +359,18 @@ note.value="";
 };
 
 onSnapshot(accountsCol,snap=>{
-accounts=[];accountTable.innerHTML="";accountSelect.innerHTML="";
-fromAccount.innerHTML="";toAccount.innerHTML="";
-snap.forEach(d=>accounts.push({...d.data(),id:d.id}));
-accounts.forEach((a,i)=>{
-accountSelect.innerHTML+=`<option value="${i}">${a.name}</option>`;
-fromAccount.innerHTML+=`<option value="${i}">${a.name}</option>`;
-toAccount.innerHTML+=`<option value="${i}">${a.name}</option>`;
+accounts=[];
+accountTable.innerHTML="";
+accountSelect.innerHTML="";
+fromAccount.innerHTML="";
+toAccount.innerHTML="";
+snap.forEach(doc=>{
+accounts.push({...doc.data(),id:doc.id});
+});
+accounts.forEach(a=>{
+accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 accountTable.innerHTML+=`
 <tr>
 <td>${a.name}</td>
@@ -306,23 +384,17 @@ accountTable.innerHTML+=`
 });
 
 onSnapshot(entriesCol,snap=>{
-entries=[];snap.forEach(d=>entries.push({...d.data(),id:d.id}));render();
+entries=[];
+snap.forEach(doc=>{
+entries.push({...doc.data(),id:doc.id});
 });
-onSnapshot(deletedCol,snap=>{
-deletedEntries=[];snap.forEach(d=>deletedEntries.push(d.data()));
-});
-onSnapshot(editedCol,snap=>{
-editedEntries=[];snap.forEach(d=>editedEntries.push(d.data()));
+renderEntries();
 });
 
-function render(){
+function renderEntries(){
 tableBody.innerHTML="";
-tableTitle.innerText="Entries";
-tableHead.innerHTML=`<tr>
-<th>Name</th><th>Purpose</th><th>Account</th>
-<th>Debit</th><th>Credit</th><th>Date</th><th>Note</th></tr>`;
-entries.filter(e=>e.date===filterDate.value)
-.forEach(e=>{
+entries.forEach(e=>{
+if(e.date===filterDate.value){
 tableBody.innerHTML+=`
 <tr>
 <td>${e.name}</td>
@@ -332,10 +404,18 @@ tableBody.innerHTML+=`
 <td>${e.type==="Cr"?e.amount:""}</td>
 <td>${e.date}</td>
 <td>${e.note}</td>
+<td>
+<button onclick="deleteEntry('${e.id}')">Delete</button>
+</td>
 </tr>`;
-});
-updateClosing();
 }
+});
+updateClosingBalance();
+}
+
+window.deleteEntry=async(id)=>{
+await deleteDoc(doc(db,"entries",id));
+};
 
 window.editAccount=async(id,name)=>{
 let pass=prompt("Enter Password");
@@ -351,7 +431,22 @@ if(pass!==PASSWORD){alert("Wrong Password");return;}
 await deleteDoc(doc(db,"accounts",id));
 };
 
-ensureDailyOpening();
+todayBtn.onclick=()=>{
+filterDate.value=today();
+renderEntries();
+};
+
+ssBtn.onclick=async()=>{
+const exportArea=document.getElementById("exportArea");
+exportArea.innerHTML=document.querySelector(".card:nth-of-type(3)").innerHTML;
+const canvas=await html2canvas(exportArea,{scale:2});
+const link=document.createElement("a");
+link.download="daybook.png";
+link.href=canvas.toDataURL();
+link.click();
+};
+
+ensureOpening();
 
 </script>
 
