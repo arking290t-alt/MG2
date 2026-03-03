@@ -19,7 +19,6 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}
 th,td{padding:8px;border-bottom:1px solid #ddd;text-align:center;}
 th{background:#f8f9fa;}
 .balance-row{margin-top:10px;font-weight:600;}
-.balance-highlight{color:#0d6efd;font-weight:600;}
 #exportArea{position:absolute;left:-9999px;top:0;width:900px;background:white;padding:25px;}
 </style>
 </head>
@@ -55,15 +54,30 @@ th{background:#f8f9fa;}
 
 <div class="card">
 <h3>Add Entry</h3>
+
+<select id="entryMode">
+  <option value="normal">Normal Entry</option>
+  <option value="transfer">Inter Account Transfer</option>
+</select><br>
+
 <input type="text" id="entryName" placeholder="Name">
 <input type="text" id="purpose" placeholder="Purpose">
 <input type="number" id="amount" placeholder="Amount">
-<input type="date" id="date">
-<select id="accountSelect"></select>
-<select id="type">
-<option value="Dr">Debit (Dr)</option>
-<option value="Cr">Credit (Cr)</option>
-</select>
+<input type="date" id="date"><br>
+
+<div id="normalFields">
+  <select id="accountSelect"></select>
+  <select id="type">
+    <option value="Dr">Debit (Dr)</option>
+    <option value="Cr">Credit (Cr)</option>
+  </select>
+</div>
+
+<div id="transferFields" style="display:none;">
+  From: <select id="fromAccount"></select>
+  To: <select id="toAccount"></select>
+</div><br>
+
 <input type="text" id="note" placeholder="Note">
 <button id="addEntry">Add Entry</button>
 </div>
@@ -99,7 +113,6 @@ Closing Balance: <span id="closingBalance">0.00</span>
 
 <div id="exportArea"></div>
 
-<!-- FIREBASE FIXED CDN VERSION -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -120,9 +133,6 @@ const db = getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
 
-let accounts=[],entries=[],deletedEntries=[],editedEntries=[];
-let mode="entries";
-
 function today(){return new Date().toISOString().split("T")[0];}
 function yesterday(){
 let d=new Date();
@@ -136,11 +146,16 @@ const deletedCol=collection(db,"deletedEntries");
 const editedCol=collection(db,"editedEntries");
 const dailyCol=collection(db,"dailySummary");
 
+let accounts=[],entries=[],deletedEntries=[],editedEntries=[];
+let mode="entries";
+
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
 const addAccountBtn=document.getElementById("addAccount");
 const accountTable=document.getElementById("accountTable");
 const accountSelect=document.getElementById("accountSelect");
+const fromAccount=document.getElementById("fromAccount");
+const toAccount=document.getElementById("toAccount");
 
 const entryName=document.getElementById("entryName");
 const purpose=document.getElementById("purpose");
@@ -149,6 +164,10 @@ const date=document.getElementById("date");
 const type=document.getElementById("type");
 const note=document.getElementById("note");
 const addEntryBtn=document.getElementById("addEntry");
+
+const entryMode=document.getElementById("entryMode");
+const normalFields=document.getElementById("normalFields");
+const transferFields=document.getElementById("transferFields");
 
 const filterDate=document.getElementById("filterDate");
 const todayBtn=document.getElementById("todayBtn");
@@ -165,6 +184,16 @@ const closingBalanceEl=document.getElementById("closingBalance");
 
 date.value=today();
 filterDate.value=today();
+
+entryMode.onchange=()=>{
+if(entryMode.value==="transfer"){
+normalFields.style.display="none";
+transferFields.style.display="block";
+}else{
+normalFields.style.display="block";
+transferFields.style.display="none";
+}
+};
 
 async function ensureDailyOpening(){
 const todayRef=doc(db,"dailySummary",today());
@@ -204,6 +233,9 @@ accountName.value="";accountAmount.value="";
 addEntryBtn.onclick=async()=>{
 if(date.value!==today()){alert("Cannot add past entry");return;}
 await ensureDailyOpening();
+
+if(entryMode.value==="normal"){
+
 await addDoc(entriesCol,{
 name:entryName.value,
 purpose:purpose.value,
@@ -213,20 +245,54 @@ type:type.value,
 date:date.value,
 note:note.value
 });
-entryName.value="";purpose.value="";amount.value="";note.value="";
-};
 
-todayBtn.onclick=()=>{filterDate.value=today();render();};
-filterDate.onchange=render;
-showEntriesBtn.onclick=()=>{mode="entries";render();};
-showDeletedBtn.onclick=()=>{mode="deleted";render();};
-showEditedBtn.onclick=()=>{mode="edited";render();};
+}else{
+
+let fromAcc=fromAccount.options[fromAccount.selectedIndex].text;
+let toAcc=toAccount.options[toAccount.selectedIndex].text;
+let amt=parseFloat(amount.value);
+
+if(fromAcc===toAcc){
+alert("From and To account cannot be same");
+return;
+}
+
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer to "+toAcc,
+amount:amt,
+accountName:fromAcc,
+type:"Dr",
+date:date.value,
+note:note.value
+});
+
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer from "+fromAcc,
+amount:amt,
+accountName:toAcc,
+type:"Cr",
+date:date.value,
+note:note.value
+});
+
+}
+
+entryName.value="";
+purpose.value="";
+amount.value="";
+note.value="";
+};
 
 onSnapshot(accountsCol,snap=>{
 accounts=[];accountTable.innerHTML="";accountSelect.innerHTML="";
+fromAccount.innerHTML="";toAccount.innerHTML="";
 snap.forEach(d=>accounts.push({...d.data(),id:d.id}));
 accounts.forEach((a,i)=>{
 accountSelect.innerHTML+=`<option value="${i}">${a.name}</option>`;
+fromAccount.innerHTML+=`<option value="${i}">${a.name}</option>`;
+toAccount.innerHTML+=`<option value="${i}">${a.name}</option>`;
 accountTable.innerHTML+=`
 <tr>
 <td>${a.name}</td>
@@ -251,11 +317,10 @@ editedEntries=[];snap.forEach(d=>editedEntries.push(d.data()));
 
 function render(){
 tableBody.innerHTML="";
-if(mode==="entries"){
 tableTitle.innerText="Entries";
 tableHead.innerHTML=`<tr>
 <th>Name</th><th>Purpose</th><th>Account</th>
-<th>Debit</th><th>Credit</th><th>Date</th><th>Note</th><th>Action</th></tr>`;
+<th>Debit</th><th>Credit</th><th>Date</th><th>Note</th></tr>`;
 entries.filter(e=>e.date===filterDate.value)
 .forEach(e=>{
 tableBody.innerHTML+=`
@@ -267,13 +332,8 @@ tableBody.innerHTML+=`
 <td>${e.type==="Cr"?e.amount:""}</td>
 <td>${e.date}</td>
 <td>${e.note}</td>
-<td>
-<button onclick="editEntry('${e.id}')">Edit</button>
-<button onclick="deleteEntry('${e.id}')">Delete</button>
-</td>
 </tr>`;
 });
-}
 updateClosing();
 }
 
@@ -289,55 +349,6 @@ window.deleteAccount=async(id)=>{
 let pass=prompt("Enter Password");
 if(pass!==PASSWORD){alert("Wrong Password");return;}
 await deleteDoc(doc(db,"accounts",id));
-};
-
-window.deleteEntry=async(id)=>{
-const snap=await getDoc(doc(db,"entries",id));
-await addDoc(deletedCol,snap.data());
-await deleteDoc(doc(db,"entries",id));
-};
-
-window.editEntry=async(id)=>{
-const ref=doc(db,"entries",id);
-const snap=await getDoc(ref);
-const old=snap.data();
-if(old.date!==today()){alert("Cannot edit past");return;}
-let newAmt=prompt("New Amount",old.amount);
-if(!newAmt)return;
-await addDoc(editedCol,{
-name:old.name,
-before:old.amount,
-after:newAmt,
-date:old.date
-});
-await updateDoc(ref,{amount:parseFloat(newAmt)});
-};
-
-ssBtn.onclick=async()=>{
-const exportArea=document.getElementById("exportArea");
-let html=`<h2>OFFICE DAYBOOK</h2>
-<p>Date: ${filterDate.value}</p>
-<p><strong>Opening Balance:</strong> ${openingBalanceEl.innerText}</p>
-<table border="1" style="width:100%;border-collapse:collapse;">
-<tr><th>Name</th><th>Purpose</th><th>Account</th><th>Debit</th><th>Credit</th></tr>`;
-entries.filter(e=>e.date===filterDate.value)
-.forEach(e=>{
-html+=`<tr>
-<td>${e.name}</td>
-<td>${e.purpose}</td>
-<td>${e.accountName}</td>
-<td>${e.type==="Dr"?e.amount:""}</td>
-<td>${e.type==="Cr"?e.amount:""}</td>
-</tr>`;
-});
-html+=`</table>
-<p><strong>Closing Balance:</strong> ${closingBalanceEl.innerText}</p>`;
-exportArea.innerHTML=html;
-const canvas=await html2canvas(exportArea,{scale:2});
-const link=document.createElement("a");
-link.download="daybook.png";
-link.href=canvas.toDataURL();
-link.click();
 };
 
 ensureDailyOpening();
