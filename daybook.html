@@ -3,65 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <title>Daybook</title>
+
 <style>
 body{
-    font-family: 'Segoe UI', sans-serif;
-    background:#f4f6f9;
+    font-family:Segoe UI, sans-serif;
+    background:#f1f3f6;
     margin:0;
-    padding:20px;
+    padding:15px;
 }
-h2{margin:5px 0;}
-.container{max-width:1400px;margin:auto;}
+.container{max-width:1600px;margin:auto;}
+h2{margin:5px 0 15px 0;}
+
 .card{
     background:#fff;
-    padding:20px;
-    border-radius:10px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.08);
-    margin-bottom:20px;
+    padding:12px 15px;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom:12px;
 }
-.flex{display:flex;gap:15px;flex-wrap:wrap;align-items:center;}
-input,select,button{
-    padding:8px 10px;
+
+.row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+input,select{
+    padding:6px 8px;
     border-radius:6px;
     border:1px solid #ccc;
+    font-size:13px;
 }
+
 button{
-    background:#007bff;
-    color:white;
+    padding:6px 10px;
     border:none;
+    border-radius:6px;
+    background:#0d6efd;
+    color:#fff;
     cursor:pointer;
+    font-size:13px;
 }
-button:hover{background:#0056b3;}
+button:hover{background:#084298;}
+
 table{
     width:100%;
     border-collapse:collapse;
+    font-size:13px;
 }
 th,td{
-    padding:10px;
-    border-bottom:1px solid #ddd;
+    padding:8px;
+    border-bottom:1px solid #e5e5e5;
     text-align:center;
 }
-th{background:#f0f2f5;}
-.badge-dr{color:red;font-weight:bold;}
-.badge-cr{color:green;font-weight:bold;}
-.small-btn{
-    padding:5px 8px;
-    font-size:12px;
-}
-.summary-box{
+th{background:#f7f9fb;}
+
+.badge-dr{color:red;font-weight:600;}
+.badge-cr{color:green;font-weight:600;}
+
+.summary{
     display:flex;
-    gap:30px;
+    gap:20px;
     flex-wrap:wrap;
 }
-.summary-item{
+.summary-box{
     background:#eef2ff;
-    padding:15px;
-    border-radius:8px;
+    padding:8px 12px;
+    border-radius:6px;
+    font-size:13px;
 }
-.deleted-section{
-    background:#fff3f3;
-    padding:15px;
-    border-radius:8px;
+.deleted{
+    background:#fff4f4;
+    padding:10px;
+    border-radius:6px;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -71,59 +87,57 @@ th{background:#f0f2f5;}
 
 <h2>DAYBOOK</h2>
 
-<!-- Opening Summary -->
-<div class="card summary-box" id="summary"></div>
+<!-- SUMMARY -->
+<div class="card summary" id="summary"></div>
 
-<!-- Add Account -->
-<div class="card">
-<h3>Add Account</h3>
-<div class="flex">
+<!-- ACCOUNT + ENTRY IN SAME ROW -->
+<div class="card row">
+
 <input type="text" id="accountName" placeholder="Account Name">
 <input type="number" id="accountAmount" placeholder="Opening Amount">
-<button onclick="addAccount()">Add Account</button>
-</div>
-<br>
-<table id="accountTable">
-<thead>
-<tr>
-<th>Account</th>
-<th>Balance</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
+<button id="addAccount">Add Account</button>
 
-<!-- Add Entry -->
-<div class="card">
-<h3>Add Entry</h3>
-<div class="flex">
+<div style="flex:1"></div>
+
 <input type="text" id="entryName" placeholder="Name">
 <input type="text" id="purpose" placeholder="Purpose">
 <input type="number" id="amount" placeholder="Amount">
 <input type="date" id="date">
 <select id="accountSelect"></select>
 <select id="type">
-<option value="Dr">Debited (Dr)</option>
-<option value="Cr">Credited (Cr)</option>
+<option value="Dr">Dr</option>
+<option value="Cr">Cr</option>
 </select>
-<input type="text" id="note" placeholder="Add Note">
-<button onclick="addEntry()">Add Entry</button>
-</div>
+<input type="text" id="note" placeholder="Note">
+<button id="addEntry">Add</button>
+
 </div>
 
-<!-- Filter -->
-<div class="card flex">
-<input type="date" id="filterDate" onchange="renderEntries()">
-<button onclick="showToday()">Today</button>
-<button onclick="showDeleted()">Deleted Entries</button>
+<!-- FILTER -->
+<div class="card row">
+<input type="date" id="filterDate">
+<button id="todayBtn">Today</button>
+<button id="showDeleted">Deleted Entries</button>
 </div>
 
-<!-- Entries -->
+<!-- ACCOUNTS -->
 <div class="card">
-<h3>Entries</h3>
-<table id="entryTable">
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Opening</th>
+<th>Closing</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="accountTable"></tbody>
+</table>
+</div>
+
+<!-- ENTRIES -->
+<div class="card">
+<table>
 <thead>
 <tr>
 <th>Name</th>
@@ -136,14 +150,13 @@ th{background:#f0f2f5;}
 <th>Action</th>
 </tr>
 </thead>
-<tbody></tbody>
+<tbody id="entryTable"></tbody>
 </table>
 </div>
 
-<!-- Deleted -->
-<div class="deleted-section" id="deletedSection" style="display:none;">
-<h3>Deleted Entries</h3>
-<table id="deletedTable">
+<div class="deleted" id="deletedSection" style="display:none;">
+<h4>Deleted Entries</h4>
+<table>
 <thead>
 <tr>
 <th>Name</th>
@@ -152,165 +165,182 @@ th{background:#f0f2f5;}
 <th>Date</th>
 </tr>
 </thead>
-<tbody></tbody>
+<tbody id="deletedTable"></tbody>
 </table>
 </div>
 
 </div>
 
-<script>
-let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
-let entries = JSON.parse(localStorage.getItem("entries")) || [];
-let deletedEntries = JSON.parse(localStorage.getItem("deletedEntries")) || [];
+<script type="module">
 
-function saveData(){
-    localStorage.setItem("accounts", JSON.stringify(accounts));
-    localStorage.setItem("entries", JSON.stringify(entries));
-    localStorage.setItem("deletedEntries", JSON.stringify(deletedEntries));
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+  measurementId: "G-05HW0KSN38"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const accountsCol = collection(db,"accounts");
+const entriesCol = collection(db,"entries");
+const deletedCol = collection(db,"deleted");
+
+let accounts=[];
+
+function todayDate(){
+    return new Date().toISOString().split("T")[0];
 }
 
-function addAccount(){
-    let name = accountName.value;
-    let amt = parseFloat(accountAmount.value);
-    if(!name || !amt) return alert("Fill all fields");
-    accounts.push({name, balance:amt, opening:amt});
-    saveData();
-    renderAccounts();
-}
+date.value=todayDate();
+filterDate.value=todayDate();
 
-function renderAccounts(){
-    let tbody = document.querySelector("#accountTable tbody");
-    tbody.innerHTML="";
-    accountSelect.innerHTML="";
-    accounts.forEach((acc,i)=>{
-        tbody.innerHTML += `
-        <tr>
-            <td>${acc.name}</td>
-            <td>${acc.balance.toFixed(2)}</td>
-            <td>
-                <button class="small-btn" onclick="editAccount(${i})">Edit</button>
-                <button class="small-btn" onclick="deleteAccount(${i})">Delete</button>
-            </td>
-        </tr>`;
-        accountSelect.innerHTML += `<option value="${i}">${acc.name}</option>`;
+todayBtn.onclick=()=>{filterDate.value=todayDate();renderEntries();};
+
+addAccount.onclick=async()=>{
+    if(!accountName.value||!accountAmount.value) return;
+    await addDoc(accountsCol,{
+        name:accountName.value,
+        opening:parseFloat(accountAmount.value),
+        balance:parseFloat(accountAmount.value)
     });
-    renderSummary();
-}
+    accountName.value="";
+    accountAmount.value="";
+};
 
-function editAccount(i){
-    let pass = prompt("Enter Password");
-    if(pass !== "BNPRATHAM@8056079200") return alert("Wrong Password");
-    let newAmt = prompt("Enter new balance");
-    accounts[i].balance = parseFloat(newAmt);
-    saveData();
-    renderAccounts();
-}
+addEntry.onclick=async()=>{
+    if(!entryName.value||!amount.value||!date.value) return;
 
-function deleteAccount(i){
-    let pass = prompt("Enter Password");
-    if(pass !== "BNPRATHAM@8056079200") return alert("Wrong Password");
-    accounts.splice(i,1);
-    saveData();
-    renderAccounts();
-}
+    const acc=accounts[accountSelect.value];
 
-function addEntry(){
-    let entry={
+    let newBalance = acc.balance;
+    if(type.value==="Dr") newBalance-=parseFloat(amount.value);
+    else newBalance+=parseFloat(amount.value);
+
+    await updateDoc(doc(db,"accounts",acc.id),{balance:newBalance});
+
+    await addDoc(entriesCol,{
         name:entryName.value,
         purpose:purpose.value,
         amount:parseFloat(amount.value),
-        date:date.value,
-        accountIndex:accountSelect.value,
+        accountId:acc.id,
+        accountName:acc.name,
         type:type.value,
+        date:date.value,
         note:note.value
-    };
-    if(!entry.name||!entry.amount||!entry.date) return alert("Fill all fields");
-    let acc = accounts[entry.accountIndex];
-    if(entry.type=="Dr") acc.balance -= entry.amount;
-    else acc.balance += entry.amount;
-    entries.push(entry);
-    saveData();
-    renderAccounts();
-    renderEntries();
-}
-
-function renderEntries(){
-    let filter = filterDate.value;
-    let tbody = document.querySelector("#entryTable tbody");
-    tbody.innerHTML="";
-    let totalDr=0,totalCr=0;
-    entries.forEach((e,i)=>{
-        if(filter && e.date!==filter) return;
-        if(e.type=="Dr") totalDr+=e.amount;
-        else totalCr+=e.amount;
-        tbody.innerHTML+=`
-        <tr>
-            <td>${e.name}</td>
-            <td>${e.purpose}</td>
-            <td>${accounts[e.accountIndex]?.name}</td>
-            <td>${e.amount}</td>
-            <td class="${e.type=='Dr'?'badge-dr':'badge-cr'}">${e.type}</td>
-            <td>${e.date}</td>
-            <td>${e.note}</td>
-            <td><button class="small-btn" onclick="deleteEntry(${i})">Delete</button></td>
-        </tr>`;
     });
-    renderSummary(totalDr,totalCr);
-}
 
-function deleteEntry(i){
-    deletedEntries.push(entries[i]);
-    let e=entries[i];
-    let acc=accounts[e.accountIndex];
-    if(e.type=="Dr") acc.balance+=e.amount;
-    else acc.balance-=e.amount;
-    entries.splice(i,1);
-    saveData();
-    renderAccounts();
-    renderEntries();
-}
+    entryName.value="";
+    purpose.value="";
+    amount.value="";
+    note.value="";
+};
 
-function renderSummary(totalDr=0,totalCr=0){
-    let html="";
-    accounts.forEach(acc=>{
-        html+=`<div class="summary-item">
+onSnapshot(accountsCol,(snap)=>{
+    accounts=[];
+    accountTable.innerHTML="";
+    accountSelect.innerHTML="";
+    summary.innerHTML="";
+    snap.forEach(docu=>{
+        const d=docu.data();
+        accounts.push({...d,id:docu.id});
+    });
+
+    accounts.forEach((acc,i)=>{
+        accountTable.innerHTML+=`
+        <tr>
+        <td>${acc.name}</td>
+        <td>${acc.opening}</td>
+        <td>${acc.balance}</td>
+        <td>
+        <button onclick="editAcc('${acc.id}')">Edit</button>
+        <button onclick="delAcc('${acc.id}')">Delete</button>
+        </td>
+        </tr>`;
+
+        accountSelect.innerHTML+=`<option value="${i}">${acc.name}</option>`;
+
+        summary.innerHTML+=`
+        <div class="summary-box">
         <strong>${acc.name}</strong><br>
-        Opening: ${acc.opening.toFixed(2)}<br>
-        Closing: ${acc.balance.toFixed(2)}
+        Opening: ${acc.opening}<br>
+        Closing: ${acc.balance}
         </div>`;
     });
-    html+=`<div class="summary-item">
-    <strong>Total Debit:</strong> ${totalDr.toFixed(2)}<br>
-    <strong>Total Credit:</strong> ${totalCr.toFixed(2)}
-    </div>`;
-    summary.innerHTML=html;
-}
+});
 
-function showToday(){
-    let today=new Date().toISOString().split("T")[0];
-    filterDate.value=today;
-    renderEntries();
-}
+onSnapshot(entriesCol,(snap)=>{
+    renderEntries(snap);
+});
 
-function showDeleted(){
-    deletedSection.style.display="block";
-    let tbody=document.querySelector("#deletedTable tbody");
-    tbody.innerHTML="";
-    deletedEntries.forEach(e=>{
-        tbody.innerHTML+=`
+function renderEntries(snapshot){
+    entryTable.innerHTML="";
+    const filter=filterDate.value;
+    snapshot.forEach(docu=>{
+        const e=docu.data();
+        if(filter && e.date!==filter) return;
+        entryTable.innerHTML+=`
         <tr>
         <td>${e.name}</td>
         <td>${e.purpose}</td>
+        <td>${e.accountName}</td>
         <td>${e.amount}</td>
+        <td class="${e.type==="Dr"?"badge-dr":"badge-cr"}">${e.type}</td>
         <td>${e.date}</td>
+        <td>${e.note}</td>
+        <td><button onclick="deleteEntry('${docu.id}')">Delete</button></td>
         </tr>`;
     });
 }
 
-showToday();
-renderAccounts();
-renderEntries();
-</script>
+window.deleteEntry=async(id)=>{
+    const snap=await getDocs(entriesCol);
+    snap.forEach(async d=>{
+        if(d.id===id){
+            await addDoc(deletedCol,d.data());
+            await deleteDoc(doc(db,"entries",id));
+        }
+    });
+};
 
+window.editAcc=async(id)=>{
+    const pass=prompt("Password");
+    if(pass!=="BNPRATHAM@8056079200") return alert("Wrong Password");
+    const newBal=prompt("Enter new balance");
+    await updateDoc(doc(db,"accounts",id),{balance:parseFloat(newBal)});
+};
+
+window.delAcc=async(id)=>{
+    const pass=prompt("Password");
+    if(pass!=="BNPRATHAM@8056079200") return alert("Wrong Password");
+    await deleteDoc(doc(db,"accounts",id));
+};
+
+showDeleted.onclick=()=>{
+    deletedSection.style.display="block";
+    onSnapshot(deletedCol,(snap)=>{
+        deletedTable.innerHTML="";
+        snap.forEach(d=>{
+            const e=d.data();
+            deletedTable.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.purpose}</td>
+            <td>${e.amount}</td>
+            <td>${e.date}</td>
+            </tr>`;
+        });
+    });
+};
+
+</script>
 </body>
 </html>
