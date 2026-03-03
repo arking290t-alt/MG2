@@ -7,50 +7,45 @@
       margin:0;
       font-family:Segoe UI;
       background:#eef2f7;
-      color:#111;
     }
 
     .container{
-      max-width:1300px;
+      max-width:1200px;
       margin:40px auto;
       padding:20px;
     }
 
-    .top-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:25px;
-      margin-bottom:30px;
-    }
-
     .card{
       background:#fff;
-      padding:25px;
-      border-radius:12px;
-      box-shadow:0 4px 15px rgba(0,0,0,0.06);
+      padding:20px;
+      border-radius:10px;
+      margin-bottom:25px;
+      box-shadow:0 3px 10px rgba(0,0,0,0.06);
     }
+
+    h2,h3{margin-top:0;}
 
     input,select{
       width:100%;
-      padding:10px;
+      padding:8px;
       margin-bottom:10px;
       border-radius:6px;
       border:1px solid #ccc;
     }
 
-    .btn{
+    button{
       padding:7px 14px;
       border:none;
       border-radius:6px;
       cursor:pointer;
       margin-right:5px;
-      font-size:13px;
+      color:white;
     }
 
-    .blue{background:#1d72f3;color:#fff;}
-    .green{background:#28a745;color:#fff;}
-    .red{background:#dc3545;color:#fff;}
-    .grey{background:#6c757d;color:#fff;}
+    .blue{background:#1d72f3;}
+    .green{background:#28a745;}
+    .red{background:#dc3545;}
+    .grey{background:#6c757d;}
 
     table{
       width:100%;
@@ -60,85 +55,54 @@
 
     th{
       background:#1d72f3;
-      color:#fff;
-      padding:10px;
+      color:white;
+      padding:8px;
     }
 
     td{
-      padding:10px;
+      padding:8px;
       border-bottom:1px solid #eee;
       text-align:center;
     }
-
-    .summary{
-      background:#f4f6f9;
-      padding:12px;
-      border-radius:8px;
-      margin-top:10px;
-      font-weight:600;
-    }
-
-    @media(max-width:1000px){
-      .top-grid{grid-template-columns:1fr;}
-    }
   </style>
 </head>
-
 <body>
 
 <div class="container">
 
 <h2>Daybook</h2>
 
-<div class="top-grid">
+<!-- CREATE ACCOUNT -->
+<div class="card">
+  <h3>Create Account</h3>
+  <input id="accountName" placeholder="Account Name">
+  <input id="openingBalance" type="number" placeholder="Opening Balance">
+  <button class="blue" onclick="createAccount()">Add Account</button>
+  <div id="accountsList"></div>
+</div>
 
-  <!-- ACCOUNTS -->
-  <div class="card">
-    <h3>Accounts</h3>
-
-    <input id="accountName" placeholder="Account Name">
-    <input id="openingBalance" type="number" placeholder="Opening Balance">
-    <button class="btn blue" onclick="createAccount()">Add Account</button>
-
-    <div id="accountsList"></div>
-  </div>
-
-  <!-- ADD ENTRY -->
-  <div class="card">
-    <h3>Add Entry</h3>
-
-    <input id="entryName" placeholder="Name">
-    <input id="purpose" placeholder="Purpose">
-    <input id="amount" type="number" placeholder="Amount">
-    <input id="date" type="date">
-
-    <select id="accountSelect"></select>
-
-    <select id="type">
-      <option value="Dr">Debit (Dr)</option>
-      <option value="Cr">Credit (Cr)</option>
-    </select>
-
-    <button class="btn green" onclick="addEntry()">Add Entry</button>
-  </div>
-
+<!-- ADD ENTRY -->
+<div class="card">
+  <h3>Add Entry</h3>
+  <input id="entryName" placeholder="Name">
+  <input id="purpose" placeholder="Purpose">
+  <input id="amount" type="number" placeholder="Amount">
+  <input id="date" type="date">
+  <select id="accountSelect"></select>
+  <select id="type">
+    <option value="Dr">Debit (Dr)</option>
+    <option value="Cr">Credit (Cr)</option>
+  </select>
+  <button class="green" onclick="addEntry()">Add Entry</button>
 </div>
 
 <!-- VIEW -->
 <div class="card">
-
-  <h3>Daybook View</h3>
-
-  <button class="btn grey" onclick="viewToday()">Today</button>
-  <button class="btn grey" onclick="viewAll()">All Entries</button>
-  <button class="btn red" onclick="viewDeleted()">Deleted</button>
-
-  <input type="date" id="filterDate" style="max-width:200px;">
-  <button class="btn blue" onclick="filterByDate()">Filter</button>
-
+  <h3>View Entries</h3>
+  <button class="grey" onclick="viewToday()">Today</button>
+  <button class="grey" onclick="viewAll()">All</button>
+  <button class="red" onclick="viewDeleted()">Deleted</button>
   <div id="tableContainer"></div>
-  <div id="summaryBox" class="summary"></div>
-
 </div>
 
 </div>
@@ -152,20 +116,16 @@ import {
   addDoc,
   getDocs,
   updateDoc,
-  deleteDoc,
   doc,
   query,
-  where,
-  getDoc
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
   authDomain: "mg-manager-3ab66.firebaseapp.com",
-  projectId: "mg-manager-3ab66",
+  projectId: "mg-manager-3ab66"
 };
-
-const PASSWORD="BNPRATHAM@8056079200";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -182,13 +142,8 @@ async function loadAccounts(){
     accountSelect.innerHTML+=
       `<option value="${d.id}">${data.name}</option>`;
 
-    accountsList.innerHTML+=`
-      <div style="margin:6px 0;">
-        ${data.name} - ₹${data.balance}
-        <button class="btn grey" onclick="editAccount('${d.id}')">Edit</button>
-        <button class="btn red" onclick="deleteAccount('${d.id}')">Delete</button>
-      </div>
-    `;
+    accountsList.innerHTML+=
+      `<div>${data.name} - ₹${data.balance}</div>`;
   });
 }
 
@@ -196,137 +151,109 @@ async function loadAccounts(){
 window.createAccount=async function(){
   const name=accountName.value.trim();
   const balance=Number(openingBalance.value)||0;
-  if(!name) return alert("Enter account name");
 
-  await addDoc(collection(db,"accounts"),{name,balance});
+  if(!name){
+    alert("Enter account name");
+    return;
+  }
+
+  await addDoc(collection(db,"accounts"),{
+    name,
+    balance
+  });
+
   accountName.value="";
   openingBalance.value="";
   loadAccounts();
-}
-
-/* EDIT ACCOUNT */
-window.editAccount=async function(id){
-  const pass=prompt("Enter Password");
-  if(pass!==PASSWORD) return alert("Wrong Password");
-
-  const ref=doc(db,"accounts",id);
-  const snap=await getDoc(ref);
-  const data=snap.data();
-
-  const newBalance=prompt("New Balance",data.balance);
-  await updateDoc(ref,{balance:Number(newBalance)});
-  loadAccounts();
-}
-
-/* DELETE ACCOUNT */
-window.deleteAccount=async function(id){
-  const pass=prompt("Enter Password");
-  if(pass!==PASSWORD) return alert("Wrong Password");
-
-  if(!confirm("Delete this account?")) return;
-
-  await deleteDoc(doc(db,"accounts",id));
-  loadAccounts();
-}
+};
 
 /* ADD ENTRY */
 window.addEntry=async function(){
-  const name=entryName.value;
-  const purpose=purpose.value;
+  const name=entryName.value.trim();
+  const purpose=purpose.value.trim();
   const amount=Number(amount.value);
   const date=date.value;
   const accountId=accountSelect.value;
   const type=type.value;
 
-  if(!name||!amount||!date) return alert("Fill all fields");
+  if(!name || !purpose || !amount || !date || !accountId){
+    alert("Fill all fields");
+    return;
+  }
 
   await addDoc(collection(db,"daybook"),{
-    name,purpose,amount,date,accountId,type,deleted:false
+    name,
+    purpose,
+    amount,
+    date,
+    accountId,
+    type,
+    deleted:false
   });
-
-  // Update account balance
-  const accRef=doc(db,"accounts",accountId);
-  const accSnap=await getDoc(accRef);
-  const acc=accSnap.data();
-
-  let newBalance=acc.balance;
-  if(type==="Dr") newBalance-=amount;
-  else newBalance+=amount;
-
-  await updateDoc(accRef,{balance:newBalance});
 
   entryName.value="";
   purpose.value="";
   amount.value="";
+
   viewToday();
-  loadAccounts();
-}
+};
 
 /* DELETE ENTRY */
 window.deleteEntry=async function(id){
-  await updateDoc(doc(db,"daybook",id),{deleted:true});
+  await updateDoc(doc(db,"daybook",id),{
+    deleted:true
+  });
   viewToday();
-}
+};
 
 /* VIEW TODAY */
 window.viewToday=async function(){
   const today=new Date().toISOString().split("T")[0];
-  const q=query(collection(db,"daybook"),
+
+  const q=query(
+    collection(db,"daybook"),
     where("date","==",today),
     where("deleted","==",false)
   );
+
   const snapshot=await getDocs(q);
   render(snapshot,false);
-}
+};
 
 /* VIEW ALL */
 window.viewAll=async function(){
-  const q=query(collection(db,"daybook"),
+  const q=query(
+    collection(db,"daybook"),
     where("deleted","==",false)
   );
   const snapshot=await getDocs(q);
   render(snapshot,false);
-}
+};
 
 /* VIEW DELETED */
 window.viewDeleted=async function(){
-  const q=query(collection(db,"daybook"),
+  const q=query(
+    collection(db,"daybook"),
     where("deleted","==",true)
   );
   const snapshot=await getDocs(q);
   render(snapshot,true);
-}
+};
 
-/* FILTER */
-window.filterByDate=async function(){
-  const d=filterDate.value;
-  const q=query(collection(db,"daybook"),
-    where("date","==",d)
-  );
-  const snapshot=await getDocs(q);
-  render(snapshot,false);
-}
-
-/* RENDER */
+/* RENDER TABLE */
 function render(snapshot,isDeleted){
-
   let html=`<table>
-  <tr>
-    <th>Name</th>
-    <th>Purpose</th>
-    <th>Amount</th>
-    <th>Date</th>
-    <th>Type</th>
-    ${!isDeleted?"<th>Action</th>":""}
-  </tr>`;
-
-  let totalDr=0,totalCr=0;
+    <tr>
+      <th>Name</th>
+      <th>Purpose</th>
+      <th>Amount</th>
+      <th>Date</th>
+      <th>Type</th>
+      ${!isDeleted ? "<th>Action</th>" : ""}
+    </tr>`;
 
   snapshot.forEach(docSnap=>{
     const d=docSnap.data();
-
-    if(d.type==="Dr") totalDr+=d.amount;
-    else totalCr+=d.amount;
 
     html+=`
       <tr>
@@ -335,19 +262,15 @@ function render(snapshot,isDeleted){
         <td>${d.amount}</td>
         <td>${d.date}</td>
         <td>${d.type}</td>
-        ${!isDeleted?
-          `<td><button class="btn red" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
-          :""
+        ${!isDeleted
+          ? `<td><button onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
+          : ""
         }
-      </tr>
-    `;
+      </tr>`;
   });
 
   html+="</table>";
   tableContainer.innerHTML=html;
-
-  summaryBox.innerHTML=
-    `Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr}`;
 }
 
 loadAccounts();
