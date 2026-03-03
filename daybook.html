@@ -10,7 +10,7 @@
 body{
   margin:0;
   font-family:Segoe UI;
-  background:#f2f4f8;
+  background:#eef2f7;
 }
 .container{
   width:95%;
@@ -67,13 +67,9 @@ th{
   margin-top:12px;
   font-weight:600;
 }
-#exportArea{
-  position:absolute;
-  left:-9999px;
-  top:0;
-  width:900px;
-  background:white;
-  padding:25px;
+#captureArea{
+  background:#fff;
+  padding:20px;
 }
 </style>
 </head>
@@ -86,10 +82,8 @@ th{
 
 <div class="top-grid">
 
-<!-- ACCOUNT SECTION -->
 <div class="card">
 <h3>Add Account</h3>
-
 <input type="text" id="accountName" placeholder="Account Name"><br>
 <input type="number" id="accountAmount" placeholder="Opening Amount"><br>
 <button id="addAccount">Add Account</button>
@@ -109,7 +103,6 @@ th{
 </table>
 </div>
 
-<!-- ENTRY SECTION -->
 <div class="card">
 <h3>Add Entry</h3>
 
@@ -142,7 +135,6 @@ To: <select id="toAccount"></select>
 
 </div>
 
-<!-- FILTER SECTION -->
 <div class="card">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
@@ -153,8 +145,8 @@ Opening Balance: <span id="openingBalance">0.00</span>
 </div>
 </div>
 
-<!-- ENTRY TABLE -->
-<div class="card">
+<div id="captureArea" class="card">
+
 <h3>Entries</h3>
 <table>
 <thead>
@@ -175,11 +167,10 @@ Opening Balance: <span id="openingBalance">0.00</span>
 <div class="balance-row">
 Closing Balance: <span id="closingBalance">0.00</span>
 </div>
-</div>
 
 </div>
 
-<div id="exportArea"></div>
+</div>
 
 <script type="module">
 
@@ -190,10 +181,7 @@ from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const firebaseConfig={
 apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
 authDomain:"mg-manager-3ab66.firebaseapp.com",
-projectId:"mg-manager-3ab66",
-storageBucket:"mg-manager-3ab66.firebasestorage.app",
-messagingSenderId:"330667005987",
-appId:"1:330667005987:web:95de27b6259ace9fc6b996"
+projectId:"mg-manager-3ab66"
 };
 
 const app=initializeApp(firebaseConfig);
@@ -213,6 +201,8 @@ return d.toISOString().split("T")[0];
 
 const accountsCol=collection(db,"accounts");
 const entriesCol=collection(db,"entries");
+const deletedCol=collection(db,"deletedEntries");
+const editedCol=collection(db,"editedEntries");
 const dailyCol=collection(db,"dailySummary");
 
 let accounts=[];
@@ -306,7 +296,7 @@ accountAmount.value="";
 };
 
 addEntryBtn.onclick=async()=>{
-if(!amount.value) return;
+if(!amount.value)return;
 
 await ensureOpening();
 
@@ -405,6 +395,7 @@ tableBody.innerHTML+=`
 <td>${e.date}</td>
 <td>${e.note}</td>
 <td>
+<button onclick="editEntry('${e.id}')">Edit</button>
 <button onclick="deleteEntry('${e.id}')">Delete</button>
 </td>
 </tr>`;
@@ -414,7 +405,29 @@ updateClosingBalance();
 }
 
 window.deleteEntry=async(id)=>{
-await deleteDoc(doc(db,"entries",id));
+const ref=doc(db,"entries",id);
+const snap=await getDoc(ref);
+await addDoc(deletedCol,snap.data());
+await deleteDoc(ref);
+};
+
+window.editEntry=async(id)=>{
+const ref=doc(db,"entries",id);
+const snap=await getDoc(ref);
+const old=snap.data();
+if(old.date!==today()){
+alert("Only today entry editable");
+return;
+}
+let newAmt=prompt("New Amount",old.amount);
+if(!newAmt)return;
+await addDoc(editedCol,{
+name:old.name,
+before:old.amount,
+after:newAmt,
+date:old.date
+});
+await updateDoc(ref,{amount:Number(newAmt)||0});
 };
 
 window.editAccount=async(id,name)=>{
@@ -437,9 +450,8 @@ renderEntries();
 };
 
 ssBtn.onclick=async()=>{
-const exportArea=document.getElementById("exportArea");
-exportArea.innerHTML=document.querySelector(".card:nth-of-type(3)").innerHTML;
-const canvas=await html2canvas(exportArea,{scale:2});
+const element=document.getElementById("captureArea");
+const canvas=await html2canvas(element,{scale:2});
 const link=document.createElement("a");
 link.download="daybook.png";
 link.href=canvas.toDataURL();
