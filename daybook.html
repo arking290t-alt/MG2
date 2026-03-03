@@ -41,11 +41,11 @@
     }
 
     .btn {
-      padding: 8px 16px;
+      padding: 6px 12px;
       border-radius: 6px;
       border: none;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
       margin-right: 6px;
     }
 
@@ -88,6 +88,7 @@
         grid-template-columns: 1fr;
       }
     }
+
   </style>
 </head>
 
@@ -154,13 +155,15 @@
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
   authDomain: "mg-manager-3ab66.firebaseapp.com",
   projectId: "mg-manager-3ab66",
 };
+
+const PASSWORD = "BNPRATHAM@8056079200";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -173,8 +176,16 @@ async function loadAccounts(){
 
   snapshot.forEach(docSnap=>{
     const data=docSnap.data();
+
     accountSelect.innerHTML+=`<option value="${docSnap.id}">${data.name}</option>`;
-    accountsList.innerHTML+=`<div>${data.name} - ₹${data.balance}</div>`;
+
+    accountsList.innerHTML+=`
+      <div style="margin:8px 0;">
+        ${data.name} - ₹${data.balance}
+        <button class="btn grey" onclick="editBalance('${docSnap.id}',${data.balance})">Edit</button>
+        <button class="btn red" onclick="deleteAccount('${docSnap.id}')">Delete</button>
+      </div>
+    `;
   });
 }
 
@@ -187,6 +198,28 @@ window.createAccount = async function(){
   await addDoc(collection(db,"accounts"),{name,balance});
   accountName.value="";
   openingBalance.value="";
+  loadAccounts();
+};
+
+/* EDIT BALANCE */
+window.editBalance = async function(id,current){
+  const pass=prompt("Enter Password");
+  if(pass!==PASSWORD) return alert("Wrong Password");
+
+  const newBalance=prompt("New Balance",current);
+  await updateDoc(doc(db,"accounts",id),{balance:Number(newBalance)});
+  loadAccounts();
+};
+
+/* DELETE ACCOUNT */
+window.deleteAccount = async function(id){
+  const pass=prompt("Enter Password to Delete Account");
+  if(pass!==PASSWORD) return alert("Wrong Password");
+
+  const confirmDelete=confirm("Are you sure you want to delete this account?");
+  if(!confirmDelete) return;
+
+  await deleteDoc(doc(db,"accounts",id));
   loadAccounts();
 };
 
@@ -243,19 +276,13 @@ window.filterByDate = async function(){
 };
 
 /* RENDER */
-
-async function render(snapshot,isDeleted){
+function render(snapshot,isDeleted){
 
   let html=`<table>
   <tr><th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th><th>Type</th>${!isDeleted?"<th>Action</th>":""}</tr>`;
 
-  let totalDr=0,totalCr=0;
-
   snapshot.forEach(docSnap=>{
     const d=docSnap.data();
-
-    if(d.type==="Dr") totalDr+=d.amount;
-    else totalCr+=d.amount;
 
     html+=`
     <tr>
@@ -270,8 +297,6 @@ async function render(snapshot,isDeleted){
 
   html+="</table>";
   tableContainer.innerHTML=html;
-
-  closingSummary.innerHTML=`Total Debit: ₹${totalDr} | Total Credit: ₹${totalCr}`;
 }
 
 loadAccounts();
