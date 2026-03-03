@@ -6,31 +6,34 @@
 
 <style>
 body{
-    font-family:Segoe UI, sans-serif;
-    background:#f1f3f6;
     margin:0;
-    padding:15px;
+    font-family:Segoe UI, sans-serif;
+    background:#eef1f5;
 }
-.container{max-width:1600px;margin:auto;}
-h2{margin:5px 0 15px 0;}
+.container{
+    width:95%;
+    margin:auto;
+    margin-top:20px;
+}
+
+h2{margin-bottom:15px;}
+
+.top-grid{
+    display:grid;
+    grid-template-columns: 1fr 2fr;
+    gap:20px;
+}
 
 .card{
     background:#fff;
-    padding:12px 15px;
+    padding:15px;
     border-radius:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    margin-bottom:12px;
-}
-
-.row{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    flex-wrap:wrap;
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
 
 input,select{
     padding:6px 8px;
+    margin:4px 4px 4px 0;
     border-radius:6px;
     border:1px solid #ccc;
     font-size:13px;
@@ -42,8 +45,8 @@ button{
     border-radius:6px;
     background:#0d6efd;
     color:#fff;
-    cursor:pointer;
     font-size:13px;
+    cursor:pointer;
 }
 button:hover{background:#084298;}
 
@@ -54,30 +57,22 @@ table{
 }
 th,td{
     padding:8px;
-    border-bottom:1px solid #e5e5e5;
+    border-bottom:1px solid #ddd;
     text-align:center;
 }
-th{background:#f7f9fb;}
+th{background:#f7f7f7;}
+
+.bottom-section{
+    margin-top:20px;
+}
 
 .badge-dr{color:red;font-weight:600;}
 .badge-cr{color:green;font-weight:600;}
 
-.summary{
+.flex-row{
     display:flex;
-    gap:20px;
     flex-wrap:wrap;
-}
-.summary-box{
-    background:#eef2ff;
-    padding:8px 12px;
-    border-radius:6px;
-    font-size:13px;
-}
-.deleted{
-    background:#fff4f4;
-    padding:10px;
-    border-radius:6px;
-    margin-top:10px;
+    align-items:center;
 }
 </style>
 </head>
@@ -87,18 +82,20 @@ th{background:#f7f9fb;}
 
 <h2>DAYBOOK</h2>
 
-<!-- SUMMARY -->
-<div class="card summary" id="summary"></div>
+<div class="top-grid">
 
-<!-- ACCOUNT + ENTRY IN SAME ROW -->
-<div class="card row">
-
-<input type="text" id="accountName" placeholder="Account Name">
-<input type="number" id="accountAmount" placeholder="Opening Amount">
+<!-- LEFT: ADD ACCOUNT -->
+<div class="card">
+<h3>Add Account</h3>
+<input type="text" id="accountName" placeholder="Account Name"><br>
+<input type="number" id="accountAmount" placeholder="Opening Amount"><br>
 <button id="addAccount">Add Account</button>
+</div>
 
-<div style="flex:1"></div>
-
+<!-- RIGHT: ADD ENTRY -->
+<div class="card">
+<h3>Add Entry</h3>
+<div class="flex-row">
 <input type="text" id="entryName" placeholder="Name">
 <input type="text" id="purpose" placeholder="Purpose">
 <input type="number" id="amount" placeholder="Amount">
@@ -110,18 +107,23 @@ th{background:#f7f9fb;}
 </select>
 <input type="text" id="note" placeholder="Note">
 <button id="addEntry">Add</button>
+</div>
+</div>
 
 </div>
 
 <!-- FILTER -->
-<div class="card row">
+<div class="card" style="margin-top:20px;">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
 <button id="showDeleted">Deleted Entries</button>
 </div>
 
-<!-- ACCOUNTS -->
+<!-- BOTTOM SECTION -->
+<div class="bottom-section">
+
 <div class="card">
+<h3>Accounts</h3>
 <table>
 <thead>
 <tr>
@@ -135,8 +137,8 @@ th{background:#f7f9fb;}
 </table>
 </div>
 
-<!-- ENTRIES -->
-<div class="card">
+<div class="card" style="margin-top:20px;">
+<h3>Entries</h3>
 <table>
 <thead>
 <tr>
@@ -154,8 +156,8 @@ th{background:#f7f9fb;}
 </table>
 </div>
 
-<div class="deleted" id="deletedSection" style="display:none;">
-<h4>Deleted Entries</h4>
+<div class="card" id="deletedSection" style="display:none;margin-top:20px;">
+<h3>Deleted Entries</h3>
 <table>
 <thead>
 <tr>
@@ -170,11 +172,12 @@ th{background:#f7f9fb;}
 </div>
 
 </div>
+</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } 
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -183,8 +186,7 @@ const firebaseConfig = {
   projectId: "mg-manager-3ab66",
   storageBucket: "mg-manager-3ab66.firebasestorage.app",
   messagingSenderId: "330667005987",
-  appId: "1:330667005987:web:95de27b6259ace9fc6b996",
-  measurementId: "G-05HW0KSN38"
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -203,7 +205,7 @@ function todayDate(){
 date.value=todayDate();
 filterDate.value=todayDate();
 
-todayBtn.onclick=()=>{filterDate.value=todayDate();renderEntries();};
+todayBtn.onclick=()=>{filterDate.value=todayDate();};
 
 addAccount.onclick=async()=>{
     if(!accountName.value||!accountAmount.value) return;
@@ -220,8 +222,8 @@ addEntry.onclick=async()=>{
     if(!entryName.value||!amount.value||!date.value) return;
 
     const acc=accounts[accountSelect.value];
+    let newBalance=acc.balance;
 
-    let newBalance = acc.balance;
     if(type.value==="Dr") newBalance-=parseFloat(amount.value);
     else newBalance+=parseFloat(amount.value);
 
@@ -248,7 +250,6 @@ onSnapshot(accountsCol,(snap)=>{
     accounts=[];
     accountTable.innerHTML="";
     accountSelect.innerHTML="";
-    summary.innerHTML="";
     snap.forEach(docu=>{
         const d=docu.data();
         accounts.push({...d,id:docu.id});
@@ -267,26 +268,15 @@ onSnapshot(accountsCol,(snap)=>{
         </tr>`;
 
         accountSelect.innerHTML+=`<option value="${i}">${acc.name}</option>`;
-
-        summary.innerHTML+=`
-        <div class="summary-box">
-        <strong>${acc.name}</strong><br>
-        Opening: ${acc.opening}<br>
-        Closing: ${acc.balance}
-        </div>`;
     });
 });
 
 onSnapshot(entriesCol,(snap)=>{
-    renderEntries(snap);
-});
-
-function renderEntries(snapshot){
     entryTable.innerHTML="";
-    const filter=filterDate.value;
-    snapshot.forEach(docu=>{
+    snap.forEach(docu=>{
         const e=docu.data();
-        if(filter && e.date!==filter) return;
+        if(filterDate.value && e.date!==filterDate.value) return;
+
         entryTable.innerHTML+=`
         <tr>
         <td>${e.name}</td>
@@ -299,22 +289,19 @@ function renderEntries(snapshot){
         <td><button onclick="deleteEntry('${docu.id}')">Delete</button></td>
         </tr>`;
     });
-}
+});
 
 window.deleteEntry=async(id)=>{
-    const snap=await getDocs(entriesCol);
-    snap.forEach(async d=>{
-        if(d.id===id){
-            await addDoc(deletedCol,d.data());
-            await deleteDoc(doc(db,"entries",id));
-        }
-    });
+    const entryRef=doc(db,"entries",id);
+    const snap=await getDoc(entryRef);
+    await addDoc(deletedCol,snap.data());
+    await deleteDoc(entryRef);
 };
 
 window.editAcc=async(id)=>{
     const pass=prompt("Password");
     if(pass!=="BNPRATHAM@8056079200") return alert("Wrong Password");
-    const newBal=prompt("Enter new balance");
+    const newBal=prompt("New Balance");
     await updateDoc(doc(db,"accounts",id),{balance:parseFloat(newBal)});
 };
 
