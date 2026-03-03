@@ -23,9 +23,11 @@ th{background:#f8f9fa;}
 #exportArea{position:absolute;left:-9999px;top:0;width:900px;background:white;padding:25px;}
 </style>
 </head>
+
 <body>
 
 <div class="container">
+
 <h2>OFFICE DAYBOOK</h2>
 
 <div class="top-grid">
@@ -41,7 +43,11 @@ th{background:#f8f9fa;}
 <h4>Accounts</h4>
 <table>
 <thead>
-<tr><th>Account</th><th>Balance</th><th>Action</th></tr>
+<tr>
+<th>Account</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
 </thead>
 <tbody id="accountTable"></tbody>
 </table>
@@ -83,6 +89,7 @@ Opening Balance: <span id="openingBalance">0.00</span>
 <thead id="tableHead"></thead>
 <tbody id="tableBody"></tbody>
 </table>
+
 <div class="balance-row">
 Closing Balance: <span id="closingBalance">0.00</span>
 </div>
@@ -92,28 +99,26 @@ Closing Balance: <span id="closingBalance">0.00</span>
 
 <div id="exportArea"></div>
 
+<!-- FIREBASE FIXED CDN VERSION -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const PASSWORD="BNPRATHAM@8056079200";
-
-const firebaseConfig={
-apiKey:"AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
-authDomain:"mg-manager-3ab66.firebaseapp.com",
-projectId:"mg-manager-3ab66"
+const firebaseConfig = {
+  apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+  authDomain: "mg-manager-3ab66.firebaseapp.com",
+  projectId: "mg-manager-3ab66",
+  storageBucket: "mg-manager-3ab66.firebasestorage.app",
+  messagingSenderId: "330667005987",
+  appId: "1:330667005987:web:95de27b6259ace9fc6b996"
 };
 
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const accountsCol=collection(db,"accounts");
-const entriesCol=collection(db,"entries");
-const deletedCol=collection(db,"deletedEntries");
-const editedCol=collection(db,"editedEntries");
-const dailyCol=collection(db,"dailySummary");
+const PASSWORD="BNPRATHAM@8056079200";
 
 let accounts=[],entries=[],deletedEntries=[],editedEntries=[];
 let mode="entries";
@@ -124,6 +129,12 @@ let d=new Date();
 d.setDate(d.getDate()-1);
 return d.toISOString().split("T")[0];
 }
+
+const accountsCol=collection(db,"accounts");
+const entriesCol=collection(db,"entries");
+const deletedCol=collection(db,"deletedEntries");
+const editedCol=collection(db,"editedEntries");
+const dailyCol=collection(db,"dailySummary");
 
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
@@ -162,27 +173,26 @@ if(!todaySnap.exists()){
 const yesterdayRef=doc(db,"dailySummary",yesterday());
 const ySnap=await getDoc(yesterdayRef);
 let opening=0;
-if(ySnap.exists())opening=ySnap.data().closing;
+if(ySnap.exists()) opening=ySnap.data().closing;
 await setDoc(todayRef,{date:today(),opening:opening,closing:opening});
 }
 }
 
 async function updateClosing(){
-const todayRef=doc(db,"dailySummary",filterDate.value);
+const ref=doc(db,"dailySummary",filterDate.value);
+const snap=await getDoc(ref);
+if(!snap.exists()) return;
+let opening=snap.data().opening;
 let totalDr=0,totalCr=0;
 entries.filter(e=>e.date===filterDate.value)
 .forEach(e=>{
-if(e.type==="Dr")totalDr+=e.amount;
+if(e.type==="Dr") totalDr+=e.amount;
 else totalCr+=e.amount;
 });
-const snap=await getDoc(todayRef);
-if(snap.exists()){
-let opening=snap.data().opening;
 let closing=opening+totalCr-totalDr;
-await updateDoc(todayRef,{closing:closing});
-closingBalanceEl.innerText=closing.toFixed(2);
+await updateDoc(ref,{closing:closing});
 openingBalanceEl.innerText=opening.toFixed(2);
-}
+closingBalanceEl.innerText=closing.toFixed(2);
 }
 
 addAccountBtn.onclick=async()=>{
@@ -220,7 +230,7 @@ accountSelect.innerHTML+=`<option value="${i}">${a.name}</option>`;
 accountTable.innerHTML+=`
 <tr>
 <td>${a.name}</td>
-<td class="balance-highlight">${a.balance.toFixed(2)}</td>
+<td>${a.balance.toFixed(2)}</td>
 <td>
 <button onclick="editAccount('${a.id}','${a.name}')">Edit</button>
 <button onclick="deleteAccount('${a.id}')">Delete</button>
@@ -245,7 +255,7 @@ if(mode==="entries"){
 tableTitle.innerText="Entries";
 tableHead.innerHTML=`<tr>
 <th>Name</th><th>Purpose</th><th>Account</th>
-<th>Debit</th><th>Credit</th><th>Date</th><th>Note</th></tr>`;
+<th>Debit</th><th>Credit</th><th>Date</th><th>Note</th><th>Action</th></tr>`;
 entries.filter(e=>e.date===filterDate.value)
 .forEach(e=>{
 tableBody.innerHTML+=`
@@ -257,6 +267,10 @@ tableBody.innerHTML+=`
 <td>${e.type==="Cr"?e.amount:""}</td>
 <td>${e.date}</td>
 <td>${e.note}</td>
+<td>
+<button onclick="editEntry('${e.id}')">Edit</button>
+<button onclick="deleteEntry('${e.id}')">Delete</button>
+</td>
 </tr>`;
 });
 }
@@ -277,8 +291,30 @@ if(pass!==PASSWORD){alert("Wrong Password");return;}
 await deleteDoc(doc(db,"accounts",id));
 };
 
+window.deleteEntry=async(id)=>{
+const snap=await getDoc(doc(db,"entries",id));
+await addDoc(deletedCol,snap.data());
+await deleteDoc(doc(db,"entries",id));
+};
+
+window.editEntry=async(id)=>{
+const ref=doc(db,"entries",id);
+const snap=await getDoc(ref);
+const old=snap.data();
+if(old.date!==today()){alert("Cannot edit past");return;}
+let newAmt=prompt("New Amount",old.amount);
+if(!newAmt)return;
+await addDoc(editedCol,{
+name:old.name,
+before:old.amount,
+after:newAmt,
+date:old.date
+});
+await updateDoc(ref,{amount:parseFloat(newAmt)});
+};
+
 ssBtn.onclick=async()=>{
-let exportArea=document.getElementById("exportArea");
+const exportArea=document.getElementById("exportArea");
 let html=`<h2>OFFICE DAYBOOK</h2>
 <p>Date: ${filterDate.value}</p>
 <p><strong>Opening Balance:</strong> ${openingBalanceEl.innerText}</p>
@@ -306,7 +342,7 @@ link.click();
 
 ensureDailyOpening();
 
-});
 </script>
+
 </body>
 </html>
