@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Office Daybook</title>
 
-<!-- Image Export Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
@@ -19,13 +18,11 @@ body{
     margin-top:20px;
 }
 h2{margin-bottom:20px;}
-
 .top-grid{
     display:grid;
     grid-template-columns: 1fr 2fr;
     gap:20px;
 }
-
 .card{
     background:#fff;
     padding:18px;
@@ -33,69 +30,60 @@ h2{margin-bottom:20px;}
     box-shadow:0 3px 8px rgba(0,0,0,0.08);
     margin-bottom:20px;
 }
-
 input,select{
     padding:8px;
     margin:6px 6px 6px 0;
     border-radius:6px;
     border:1px solid #ccc;
-    font-size:14px;
 }
-
 button{
     padding:8px 12px;
     border:none;
     border-radius:6px;
     background:#0d6efd;
     color:white;
-    font-size:14px;
     cursor:pointer;
 }
 button:hover{background:#0b5ed7;}
-
 table{
     width:100%;
     border-collapse:collapse;
     margin-top:10px;
 }
-
 th,td{
     padding:8px;
     border-bottom:1px solid #ddd;
     text-align:center;
 }
-
-th{
-    background:#f8f9fa;
-}
-
-.header-row{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    flex-wrap:wrap;
-}
-
-.balance-highlight{
-    font-weight:600;
-    color:#0d6efd;
-}
-
+th{background:#f8f9fa;}
 .balance-row{
     margin-top:10px;
     font-weight:600;
+}
+.balance-highlight{
+    color:#0d6efd;
+    font-weight:600;
+}
+
+/* Hidden clean export layout */
+#exportArea{
+    position:absolute;
+    left:-9999px;
+    top:0;
+    width:800px;
+    background:white;
+    padding:20px;
 }
 </style>
 </head>
 <body>
 
-<div class="container" id="daybookArea">
+<div class="container">
 
 <h2>OFFICE DAYBOOK</h2>
 
 <div class="top-grid">
 
-<!-- ACCOUNT SECTION -->
 <div class="card">
 <h3>Add Account</h3>
 <input type="text" id="accountName" placeholder="Account Name"><br>
@@ -107,16 +95,12 @@ th{
 <h4>Accounts</h4>
 <table>
 <thead>
-<tr>
-<th>Account</th>
-<th>Balance</th>
-</tr>
+<tr><th>Account</th><th>Balance</th></tr>
 </thead>
 <tbody id="accountTable"></tbody>
 </table>
 </div>
 
-<!-- ENTRY SECTION -->
 <div class="card">
 <h3>Add Entry</h3>
 <input type="text" id="entryName" placeholder="Name">
@@ -134,27 +118,25 @@ th{
 
 </div>
 
-<!-- FILTER SECTION -->
 <div class="card">
-<div class="header-row">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
-<button id="showEntries">Entries</button>
-<button id="showDeleted">Deleted</button>
-<button id="showEdited">Edited</button>
 <button id="ssBtn">SS</button>
-</div>
 
 <div class="balance-row">
 Opening Balance: <span id="openingBalance">0.00</span>
 </div>
 </div>
 
-<!-- TABLE SECTION -->
 <div class="card">
-<h3 id="tableTitle">Entries</h3>
+<h3>Entries</h3>
 <table>
-<thead id="tableHead"></thead>
+<thead>
+<tr>
+<th>Name</th><th>Purpose</th><th>Account</th>
+<th>Amount</th><th>Type</th><th>Date</th><th>Note</th>
+</tr>
+</thead>
 <tbody id="tableBody"></tbody>
 </table>
 
@@ -165,10 +147,13 @@ Closing Balance: <span id="closingBalance">0.00</span>
 
 </div>
 
+<!-- CLEAN EXPORT AREA -->
+<div id="exportArea"></div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc } 
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -184,8 +169,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 const accountsCol = collection(db,"accounts");
 const entriesCol = collection(db,"entries");
-const deletedCol = collection(db,"deletedEntries");
-const editedCol = collection(db,"editedEntries");
 
 const accountName = document.getElementById("accountName");
 const accountAmount = document.getElementById("accountAmount");
@@ -203,23 +186,14 @@ const addEntryBtn = document.getElementById("addEntry");
 
 const filterDate = document.getElementById("filterDate");
 const todayBtn = document.getElementById("todayBtn");
-const showEntriesBtn = document.getElementById("showEntries");
-const showDeletedBtn = document.getElementById("showDeleted");
-const showEditedBtn = document.getElementById("showEdited");
 const ssBtn = document.getElementById("ssBtn");
 
-const tableHead = document.getElementById("tableHead");
 const tableBody = document.getElementById("tableBody");
-const tableTitle = document.getElementById("tableTitle");
-
 const openingBalanceEl = document.getElementById("openingBalance");
 const closingBalanceEl = document.getElementById("closingBalance");
 
 let accounts=[];
 let entries=[];
-let deletedEntries=[];
-let editedEntries=[];
-let mode="entries";
 
 function today(){
     return new Date().toISOString().split("T")[0];
@@ -239,11 +213,7 @@ addAccountBtn.onclick=async()=>{
 };
 
 addEntryBtn.onclick=async()=>{
-    if(date.value!==today()){
-        alert("Cannot add entry to past date");
-        return;
-    }
-    if(!entryName.value || !amount.value) return;
+    if(date.value!==today()) return;
 
     const acc=accounts[accountSelect.value];
     let newBalance=acc.balance;
@@ -274,10 +244,6 @@ todayBtn.onclick=()=>{
     render();
 };
 
-showEntriesBtn.onclick=()=>{mode="entries";render();};
-showDeletedBtn.onclick=()=>{mode="deleted";render();};
-showEditedBtn.onclick=()=>{mode="edited";render();};
-
 filterDate.onchange=render;
 
 onSnapshot(accountsCol,snap=>{
@@ -301,23 +267,9 @@ onSnapshot(accountsCol,snap=>{
 onSnapshot(entriesCol,snap=>{
     entries=[];
     snap.forEach(d=>{
-        entries.push({...d.data(),id:d.id});
+        entries.push(d.data());
     });
     render();
-});
-
-onSnapshot(deletedCol,snap=>{
-    deletedEntries=[];
-    snap.forEach(d=>{
-        deletedEntries.push(d.data());
-    });
-});
-
-onSnapshot(editedCol,snap=>{
-    editedEntries=[];
-    snap.forEach(d=>{
-        editedEntries.push(d.data());
-    });
 });
 
 function calculateBalances(){
@@ -341,82 +293,73 @@ function render(){
     tableBody.innerHTML="";
     let selectedDate=filterDate.value;
 
-    if(mode==="entries"){
-        tableTitle.innerText="Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Purpose</th><th>Account</th>
-        <th>Amount</th><th>Type</th><th>Date</th>
-        <th>Note</th><th>Action</th></tr>`;
-
-        entries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.purpose}</td>
-            <td>${e.accountName}</td>
-            <td>${e.amount}</td>
-            <td>${e.type}</td>
-            <td>${e.date}</td>
-            <td>${e.note}</td>
-            <td>
-            <button onclick="deleteEntry('${e.id}')">Delete</button>
-            </td>
-            </tr>`;
-        });
-    }
-
-    if(mode==="deleted"){
-        tableTitle.innerText="Deleted Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th></tr>`;
-        deletedEntries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.purpose}</td>
-            <td>${e.amount}</td>
-            <td>${e.date}</td>
-            </tr>`;
-        });
-    }
-
-    if(mode==="edited"){
-        tableTitle.innerText="Edited Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Before</th><th>After</th><th>Date</th></tr>`;
-        editedEntries.filter(e=>e.date===selectedDate)
-        .forEach(e=>{
-            tableBody.innerHTML+=`
-            <tr>
-            <td>${e.name}</td>
-            <td>${e.before}</td>
-            <td>${e.after}</td>
-            <td>${e.date}</td>
-            </tr>`;
-        });
-    }
+    entries.filter(e=>e.date===selectedDate)
+    .forEach(e=>{
+        tableBody.innerHTML+=`
+        <tr>
+        <td>${e.name}</td>
+        <td>${e.purpose}</td>
+        <td>${e.accountName}</td>
+        <td>${e.amount}</td>
+        <td>${e.type}</td>
+        <td>${e.date}</td>
+        <td>${e.note}</td>
+        </tr>`;
+    });
 
     calculateBalances();
 }
 
+/* CLEAN IMAGE EXPORT */
 ssBtn.onclick = async ()=>{
-    const element=document.getElementById("daybookArea");
-    const canvas=await html2canvas(element,{scale:2});
-    canvas.toBlob(blob=>{
-        const link=document.createElement("a");
-        link.download="daybook.png";
-        link.href=canvas.toDataURL();
-        link.click();
-    });
-};
 
-window.deleteEntry=async(id)=>{
-    const ref=doc(db,"entries",id);
-    const snap=await getDoc(ref);
-    await addDoc(deletedCol,snap.data());
-    await deleteDoc(ref);
+    let selectedDate = filterDate.value;
+
+    let exportArea = document.getElementById("exportArea");
+
+    let html = `
+        <h2>OFFICE DAYBOOK</h2>
+        <p>Date: ${selectedDate}</p>
+        <p><strong>Opening Balance:</strong> ${openingBalanceEl.innerText}</p>
+        <h3>Entries</h3>
+        <table border="1" style="width:100%;border-collapse:collapse;">
+        <tr>
+        <th>Name</th><th>Purpose</th><th>Account</th>
+        <th>Amount</th><th>Type</th><th>Date</th>
+        </tr>
+    `;
+
+    entries.filter(e=>e.date===selectedDate)
+    .forEach(e=>{
+        html+=`
+        <tr>
+        <td>${e.name}</td>
+        <td>${e.purpose}</td>
+        <td>${e.accountName}</td>
+        <td>${e.amount}</td>
+        <td>${e.type}</td>
+        <td>${e.date}</td>
+        </tr>`;
+    });
+
+    html+=`</table>
+    <p><strong>Closing Balance:</strong> ${closingBalanceEl.innerText}</p>
+    <h3>Account Balances</h3>
+    <ul>`;
+
+    accounts.forEach(a=>{
+        html+=`<li>${a.name} : ${a.balance.toFixed(2)}</li>`;
+    });
+
+    html+=`</ul>`;
+
+    exportArea.innerHTML=html;
+
+    const canvas=await html2canvas(exportArea,{scale:2});
+    const link=document.createElement("a");
+    link.download="daybook.png";
+    link.href=canvas.toDataURL();
+    link.click();
 };
 
 });
