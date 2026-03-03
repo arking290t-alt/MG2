@@ -2,107 +2,135 @@
 <html>
 <head>
   <title>Daybook | MG</title>
+
   <style>
-    body{
-      margin:0;
-      font-family:Segoe UI;
-      background:#eef2f7;
+    body {
+      margin: 0;
+      font-family: Segoe UI, sans-serif;
+      background: #eef2f7;
     }
 
-    .container{
-      max-width:1200px;
-      margin:40px auto;
-      padding:20px;
+    .container {
+      max-width: 1300px;
+      margin: 40px auto;
+      padding: 20px;
     }
 
-    .card{
-      background:#fff;
-      padding:20px;
-      border-radius:10px;
-      margin-bottom:25px;
-      box-shadow:0 3px 10px rgba(0,0,0,0.06);
+    h2 { margin-top: 0; }
+
+    .row {
+      display: flex;
+      gap: 25px;
+      margin-bottom: 30px;
     }
 
-    h2,h3{margin-top:0;}
-
-    input,select{
-      width:100%;
-      padding:8px;
-      margin-bottom:10px;
-      border-radius:6px;
-      border:1px solid #ccc;
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      flex: 1;
     }
 
-    button{
-      padding:7px 14px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      margin-right:5px;
-      color:white;
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
-    .blue{background:#1d72f3;}
-    .green{background:#28a745;}
-    .red{background:#dc3545;}
-    .grey{background:#6c757d;}
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:15px;
+    button {
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      margin-right: 6px;
+      color: white;
+      font-size: 13px;
     }
 
-    th{
+    .blue { background:#1d72f3; }
+    .green { background:#28a745; }
+    .red { background:#dc3545; }
+    .grey { background:#6c757d; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th {
       background:#1d72f3;
       color:white;
       padding:8px;
     }
 
-    td{
+    td {
       padding:8px;
       border-bottom:1px solid #eee;
       text-align:center;
     }
+
+    @media(max-width:1000px){
+      .row { flex-direction: column; }
+    }
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
 <h2>Daybook</h2>
 
-<!-- CREATE ACCOUNT -->
-<div class="card">
-  <h3>Create Account</h3>
-  <input id="accountName" placeholder="Account Name">
-  <input id="openingBalance" type="number" placeholder="Opening Balance">
-  <button class="blue" onclick="createAccount()">Add Account</button>
-  <div id="accountsList"></div>
+<!-- TOP HORIZONTAL SECTION -->
+<div class="row">
+
+  <!-- ACCOUNTS -->
+  <div class="card">
+    <h3>Create Account</h3>
+
+    <input id="accountName" placeholder="Account Name">
+    <input id="openingBalance" type="number" placeholder="Opening Balance">
+    <button class="blue" onclick="createAccount()">Add Account</button>
+
+    <div id="accountsList" style="margin-top:15px;"></div>
+  </div>
+
+  <!-- ADD ENTRY -->
+  <div class="card">
+    <h3>Add Entry</h3>
+
+    <input id="entryName" placeholder="Name">
+    <input id="purpose" placeholder="Purpose">
+    <input id="amount" type="number" placeholder="Amount">
+    <input id="date" type="date">
+
+    <select id="accountSelect"></select>
+
+    <select id="type">
+      <option value="Dr">Debit (Dr)</option>
+      <option value="Cr">Credit (Cr)</option>
+    </select>
+
+    <button class="green" onclick="addEntry()">Add Entry</button>
+  </div>
+
 </div>
 
-<!-- ADD ENTRY -->
+<!-- VIEW SECTION -->
 <div class="card">
-  <h3>Add Entry</h3>
-  <input id="entryName" placeholder="Name">
-  <input id="purpose" placeholder="Purpose">
-  <input id="amount" type="number" placeholder="Amount">
-  <input id="date" type="date">
-  <select id="accountSelect"></select>
-  <select id="type">
-    <option value="Dr">Debit (Dr)</option>
-    <option value="Cr">Credit (Cr)</option>
-  </select>
-  <button class="green" onclick="addEntry()">Add Entry</button>
-</div>
 
-<!-- VIEW -->
-<div class="card">
   <h3>View Entries</h3>
+
   <button class="grey" onclick="viewToday()">Today</button>
   <button class="grey" onclick="viewAll()">All</button>
   <button class="red" onclick="viewDeleted()">Deleted</button>
+
   <div id="tableContainer"></div>
+
 </div>
 
 </div>
@@ -176,7 +204,7 @@ window.addEntry=async function(){
   const accountId=accountSelect.value;
   const type=type.value;
 
-  if(!name || !purpose || !amount || !date || !accountId){
+  if(!name||!purpose||!amount||!date||!accountId){
     alert("Fill all fields");
     return;
   }
@@ -194,7 +222,6 @@ window.addEntry=async function(){
   entryName.value="";
   purpose.value="";
   amount.value="";
-
   viewToday();
 };
 
@@ -226,6 +253,7 @@ window.viewAll=async function(){
     collection(db,"daybook"),
     where("deleted","==",false)
   );
+
   const snapshot=await getDocs(q);
   render(snapshot,false);
 };
@@ -236,12 +264,14 @@ window.viewDeleted=async function(){
     collection(db,"daybook"),
     where("deleted","==",true)
   );
+
   const snapshot=await getDocs(q);
   render(snapshot,true);
 };
 
-/* RENDER TABLE */
+/* RENDER */
 function render(snapshot,isDeleted){
+
   let html=`<table>
     <tr>
       <th>Name</th>
@@ -263,7 +293,7 @@ function render(snapshot,isDeleted){
         <td>${d.date}</td>
         <td>${d.type}</td>
         ${!isDeleted
-          ? `<td><button onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
+          ? `<td><button class="red" onclick="deleteEntry('${docSnap.id}')">Delete</button></td>`
           : ""
         }
       </tr>`;
