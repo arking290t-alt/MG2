@@ -8,65 +8,72 @@
 body{
     margin:0;
     font-family:Segoe UI, sans-serif;
-    background:#eef2f6;
+    background:#f1f3f6;
 }
 .container{
     width:95%;
     margin:auto;
     margin-top:20px;
 }
-h2{margin-bottom:15px;}
-
+h2{
+    margin-bottom:20px;
+}
 .top-grid{
     display:grid;
     grid-template-columns: 1fr 2fr;
     gap:20px;
 }
-
 .card{
     background:#fff;
-    padding:15px;
-    border-radius:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.08);
-    margin-bottom:20px;
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.08);
 }
-
 input,select{
-    padding:6px 8px;
-    margin:4px;
+    padding:8px;
+    margin:6px 6px 6px 0;
     border-radius:6px;
     border:1px solid #ccc;
-    font-size:13px;
+    font-size:14px;
 }
-
 button{
-    padding:6px 10px;
+    padding:8px 12px;
     border:none;
     border-radius:6px;
     background:#0d6efd;
-    color:#fff;
-    font-size:13px;
+    color:white;
+    font-size:14px;
     cursor:pointer;
 }
-button:hover{background:#084298;}
-
+button:hover{
+    background:#0b5ed7;
+}
 table{
     width:100%;
     border-collapse:collapse;
-    font-size:13px;
+    margin-top:10px;
 }
 th,td{
     padding:8px;
     border-bottom:1px solid #ddd;
     text-align:center;
 }
-th{background:#f5f5f5;}
-
+th{
+    background:#f8f9fa;
+}
 .header-row{
     display:flex;
-    align-items:center;
     gap:10px;
+    align-items:center;
     flex-wrap:wrap;
+}
+.section-title{
+    font-weight:600;
+    margin-bottom:10px;
+}
+.balance-highlight{
+    font-weight:600;
+    color:#0d6efd;
 }
 </style>
 </head>
@@ -83,6 +90,19 @@ th{background:#f5f5f5;}
 <input type="text" id="accountName" placeholder="Account Name"><br>
 <input type="number" id="accountAmount" placeholder="Opening Amount"><br>
 <button id="addAccount">Add Account</button>
+
+<hr>
+
+<div class="section-title">Accounts</div>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody id="accountTable"></tbody>
+</table>
 </div>
 
 <div class="card">
@@ -93,16 +113,16 @@ th{background:#f5f5f5;}
 <input type="date" id="date">
 <select id="accountSelect"></select>
 <select id="type">
-<option value="Dr">Dr</option>
-<option value="Cr">Cr</option>
+<option value="Dr">Debit (Dr)</option>
+<option value="Cr">Credit (Cr)</option>
 </select>
 <input type="text" id="note" placeholder="Note">
-<button id="addEntry">Add</button>
+<button id="addEntry">Add Entry</button>
 </div>
 
 </div>
 
-<div class="card">
+<div class="card" style="margin-top:20px;">
 <div class="header-row">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
@@ -113,7 +133,7 @@ th{background:#f5f5f5;}
 </div>
 
 <div class="card">
-<h3 id="tableTitle">Entries</h3>
+<div class="section-title" id="tableTitle">Entries</div>
 <table>
 <thead id="tableHead"></thead>
 <tbody id="tableBody"></tbody>
@@ -137,7 +157,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded",()=>{
 
 const accountsCol = collection(db,"accounts");
 const entriesCol = collection(db,"entries");
@@ -147,6 +167,7 @@ const editedCol = collection(db,"editedEntries");
 const accountName = document.getElementById("accountName");
 const accountAmount = document.getElementById("accountAmount");
 const addAccountBtn = document.getElementById("addAccount");
+const accountTable = document.getElementById("accountTable");
 
 const entryName = document.getElementById("entryName");
 const purpose = document.getElementById("purpose");
@@ -177,10 +198,10 @@ function today(){
     return new Date().toISOString().split("T")[0];
 }
 
-date.value = today();
-filterDate.value = today();
+date.value=today();
+filterDate.value=today();
 
-addAccountBtn.addEventListener("click", async ()=>{
+addAccountBtn.onclick=async()=>{
     if(!accountName.value || !accountAmount.value) return;
     await addDoc(accountsCol,{
         name:accountName.value,
@@ -188,21 +209,20 @@ addAccountBtn.addEventListener("click", async ()=>{
     });
     accountName.value="";
     accountAmount.value="";
-});
+};
 
-addEntryBtn.addEventListener("click", async ()=>{
-    if(date.value !== today()){
+addEntryBtn.onclick=async()=>{
+    if(date.value!==today()){
         alert("Cannot add entry to past date");
         return;
     }
-
     if(!entryName.value || !amount.value) return;
 
-    const acc = accounts[accountSelect.value];
-    let newBalance = acc.balance;
+    const acc=accounts[accountSelect.value];
+    let newBalance=acc.balance;
 
-    if(type.value==="Dr") newBalance -= parseFloat(amount.value);
-    else newBalance += parseFloat(amount.value);
+    if(type.value==="Dr") newBalance-=parseFloat(amount.value);
+    else newBalance+=parseFloat(amount.value);
 
     await updateDoc(doc(db,"accounts",acc.id),{balance:newBalance});
 
@@ -220,27 +240,33 @@ addEntryBtn.addEventListener("click", async ()=>{
     purpose.value="";
     amount.value="";
     note.value="";
-});
+};
 
-todayBtn.addEventListener("click", ()=>{
+todayBtn.onclick=()=>{
     filterDate.value=today();
     render();
-});
+};
 
-showEntriesBtn.addEventListener("click", ()=>{ mode="entries"; render(); });
-showDeletedBtn.addEventListener("click", ()=>{ mode="deleted"; render(); });
-showEditedBtn.addEventListener("click", ()=>{ mode="edited"; render(); });
+showEntriesBtn.onclick=()=>{mode="entries";render();};
+showDeletedBtn.onclick=()=>{mode="deleted";render();};
+showEditedBtn.onclick=()=>{mode="edited";render();};
 
-filterDate.addEventListener("change", render);
+filterDate.onchange=render;
 
 onSnapshot(accountsCol,snap=>{
     accounts=[];
     accountSelect.innerHTML="";
+    accountTable.innerHTML="";
     snap.forEach(d=>{
         accounts.push({...d.data(),id:d.id});
     });
     accounts.forEach((a,i)=>{
         accountSelect.innerHTML+=`<option value="${i}">${a.name}</option>`;
+        accountTable.innerHTML+=`
+        <tr>
+        <td>${a.name}</td>
+        <td class="balance-highlight">${a.balance.toFixed(2)}</td>
+        </tr>`;
     });
 });
 
@@ -272,13 +298,23 @@ function render(){
 
     if(mode==="entries"){
         tableTitle.innerText="Entries";
-        tableHead.innerHTML=`<tr>
-        <th>Name</th><th>Purpose</th><th>Account</th>
-        <th>Amount</th><th>Type</th><th>Date</th>
-        <th>Note</th><th>Action</th></tr>`;
+        tableHead.innerHTML=`
+        <tr>
+        <th>Name</th>
+        <th>Purpose</th>
+        <th>Account</th>
+        <th>Amount</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Note</th>
+        <th>Action</th>
+        </tr>`;
 
         entries.filter(e=>e.date===selectedDate)
         .forEach(e=>{
+            let editBtn=e.date===today()?
+            `<button onclick="editEntry('${e.id}')">Edit</button>`:"";
+
             tableBody.innerHTML+=`
             <tr>
             <td>${e.name}</td>
@@ -289,21 +325,80 @@ function render(){
             <td>${e.date}</td>
             <td>${e.note}</td>
             <td>
+            ${editBtn}
             <button onclick="deleteEntry('${e.id}')">Delete</button>
             </td>
             </tr>`;
         });
     }
+
+    if(mode==="deleted"){
+        tableTitle.innerText="Deleted Entries";
+        tableHead.innerHTML=`<tr>
+        <th>Name</th><th>Purpose</th><th>Amount</th><th>Date</th></tr>`;
+
+        deletedEntries.filter(e=>e.date===selectedDate)
+        .forEach(e=>{
+            tableBody.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.purpose}</td>
+            <td>${e.amount}</td>
+            <td>${e.date}</td>
+            </tr>`;
+        });
+    }
+
+    if(mode==="edited"){
+        tableTitle.innerText="Edited Entries";
+        tableHead.innerHTML=`<tr>
+        <th>Name</th><th>Before</th><th>After</th><th>Date</th></tr>`;
+
+        editedEntries.filter(e=>e.date===selectedDate)
+        .forEach(e=>{
+            tableBody.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.before}</td>
+            <td>${e.after}</td>
+            <td>${e.date}</td>
+            </tr>`;
+        });
+    }
 }
 
-window.deleteEntry = async(id)=>{
-    const ref = doc(db,"entries",id);
-    const snap = await getDoc(ref);
+window.deleteEntry=async(id)=>{
+    const ref=doc(db,"entries",id);
+    const snap=await getDoc(ref);
     await addDoc(deletedCol,snap.data());
     await deleteDoc(ref);
 };
 
+window.editEntry=async(id)=>{
+    const ref=doc(db,"entries",id);
+    const snap=await getDoc(ref);
+    const oldData=snap.data();
+
+    if(oldData.date!==today()){
+        alert("Cannot edit past date");
+        return;
+    }
+
+    let newAmount=prompt("New Amount",oldData.amount);
+    if(!newAmount) return;
+
+    await addDoc(editedCol,{
+        name:oldData.name,
+        before:oldData.amount,
+        after:newAmount,
+        date:oldData.date
+    });
+
+    await updateDoc(ref,{amount:parseFloat(newAmount)});
+};
+
 });
+
 </script>
 
 </body>
