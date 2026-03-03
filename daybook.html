@@ -62,9 +62,17 @@ th,td{
 }
 th{background:#f5f5f5;}
 
-.badge-dr{color:red;font-weight:600;}
-.badge-cr{color:green;font-weight:600;}
-.section-title{margin-top:10px;font-weight:600;}
+.header-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.section-title{
+    font-weight:600;
+    margin-bottom:10px;
+}
 </style>
 </head>
 <body>
@@ -100,58 +108,20 @@ th{background:#f5f5f5;}
 </div>
 
 <div class="card">
+<div class="header-row">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
+<button id="showEntries">Entries</button>
+<button id="showDeleted">Deleted</button>
+<button id="showEdited">Edited</button>
+</div>
 </div>
 
 <div class="card">
-<div class="section-title">Entries</div>
+<div class="section-title" id="tableTitle">Entries</div>
 <table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Purpose</th>
-<th>Account</th>
-<th>Amount</th>
-<th>Type</th>
-<th>Date</th>
-<th>Note</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="entryTable"></tbody>
-</table>
-</div>
-
-<div class="card">
-<div class="section-title">Deleted Entries</div>
-<input type="date" id="deletedFilter">
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Purpose</th>
-<th>Amount</th>
-<th>Date</th>
-</tr>
-</thead>
-<tbody id="deletedTable"></tbody>
-</table>
-</div>
-
-<div class="card">
-<div class="section-title">Edited Entries</div>
-<input type="date" id="editedFilter">
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Before</th>
-<th>After</th>
-<th>Date</th>
-</tr>
-</thead>
-<tbody id="editedTable"></tbody>
+<thead id="tableHead"></thead>
+<tbody id="tableBody"></tbody>
 </table>
 </div>
 
@@ -179,6 +149,9 @@ const editedCol = collection(db,"editedEntries");
 
 let accounts=[];
 let entries=[];
+let deletedEntries=[];
+let editedEntries=[];
+let mode="entries";
 
 function today(){
     return new Date().toISOString().split("T")[0];
@@ -187,13 +160,19 @@ function today(){
 date.value = today();
 filterDate.value = today();
 
-todayBtn.onclick = ()=>{
-    filterDate.value = today();
-    renderEntries();
+todayBtn.onclick=()=>{
+    filterDate.value=today();
+    render();
 };
 
-addAccount.onclick = async()=>{
-    if(!accountName.value || !accountAmount.value) return;
+showEntries.onclick=()=>{ mode="entries"; render(); };
+showDeleted.onclick=()=>{ mode="deleted"; render(); };
+showEdited.onclick=()=>{ mode="edited"; render(); };
+
+filterDate.onchange=()=>render();
+
+addAccount.onclick=async()=>{
+    if(!accountName.value||!accountAmount.value) return;
     await addDoc(accountsCol,{
         name:accountName.value,
         balance:parseFloat(accountAmount.value)
@@ -202,17 +181,17 @@ addAccount.onclick = async()=>{
     accountAmount.value="";
 };
 
-addEntry.onclick = async()=>{
-    if(date.value !== today()){
+addEntry.onclick=async()=>{
+    if(date.value!==today()){
         alert("Cannot add entry to past date");
         return;
     }
 
-    const acc = accounts[accountSelect.value];
-    let newBalance = acc.balance;
+    const acc=accounts[accountSelect.value];
+    let newBalance=acc.balance;
 
-    if(type.value==="Dr") newBalance -= parseFloat(amount.value);
-    else newBalance += parseFloat(amount.value);
+    if(type.value==="Dr") newBalance-=parseFloat(amount.value);
+    else newBalance+=parseFloat(amount.value);
 
     await updateDoc(doc(db,"accounts",acc.id),{balance:newBalance});
 
@@ -220,7 +199,6 @@ addEntry.onclick = async()=>{
         name:entryName.value,
         purpose:purpose.value,
         amount:parseFloat(amount.value),
-        accountId:acc.id,
         accountName:acc.name,
         type:type.value,
         date:date.value,
@@ -233,70 +211,142 @@ addEntry.onclick = async()=>{
     note.value="";
 };
 
-onSnapshot(accountsCol,(snap)=>{
+onSnapshot(accountsCol,snap=>{
     accounts=[];
     accountSelect.innerHTML="";
     snap.forEach(d=>{
         accounts.push({...d.data(),id:d.id});
     });
-    accounts.forEach((acc,i)=>{
-        accountSelect.innerHTML+=`<option value="${i}">${acc.name}</option>`;
+    accounts.forEach((a,i)=>{
+        accountSelect.innerHTML+=`<option value="${i}">${a.name}</option>`;
     });
 });
 
-onSnapshot(entriesCol,(snap)=>{
+onSnapshot(entriesCol,snap=>{
     entries=[];
     snap.forEach(d=>{
         entries.push({...d.data(),id:d.id});
     });
-    renderEntries();
+    render();
 });
 
-function renderEntries(){
-    entryTable.innerHTML="";
-    let selectedDate = filterDate.value;
+onSnapshot(deletedCol,snap=>{
+    deletedEntries=[];
+    snap.forEach(d=>{
+        deletedEntries.push(d.data());
+    });
+});
 
-    entries.filter(e=>e.date===selectedDate)
-    .forEach(e=>{
-        let editBtn = e.date===today() ? 
-        `<button onclick="editEntry('${e.id}')">Edit</button>` : "";
+onSnapshot(editedCol,snap=>{
+    editedEntries=[];
+    snap.forEach(d=>{
+        editedEntries.push(d.data());
+    });
+});
 
-        entryTable.innerHTML+=`
+function render(){
+    tableBody.innerHTML="";
+    let selectedDate=filterDate.value;
+
+    if(mode==="entries"){
+        tableTitle.innerText="Entries";
+        tableHead.innerHTML=`
         <tr>
-        <td>${e.name}</td>
-        <td>${e.purpose}</td>
-        <td>${e.accountName}</td>
-        <td>${e.amount}</td>
-        <td class="${e.type==="Dr"?"badge-dr":"badge-cr"}">${e.type}</td>
-        <td>${e.date}</td>
-        <td>${e.note}</td>
-        <td>
+        <th>Name</th>
+        <th>Purpose</th>
+        <th>Account</th>
+        <th>Amount</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Note</th>
+        <th>Action</th>
+        </tr>`;
+
+        entries.filter(e=>e.date===selectedDate)
+        .forEach(e=>{
+            let editBtn = e.date===today() ?
+            `<button onclick="editEntry('${e.id}')">Edit</button>` : "";
+
+            tableBody.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.purpose}</td>
+            <td>${e.accountName}</td>
+            <td>${e.amount}</td>
+            <td>${e.type}</td>
+            <td>${e.date}</td>
+            <td>${e.note}</td>
+            <td>
             ${editBtn}
             <button onclick="deleteEntry('${e.id}')">Delete</button>
-        </td>
+            </td>
+            </tr>`;
+        });
+    }
+
+    if(mode==="deleted"){
+        tableTitle.innerText="Deleted Entries";
+        tableHead.innerHTML=`
+        <tr>
+        <th>Name</th>
+        <th>Purpose</th>
+        <th>Amount</th>
+        <th>Date</th>
         </tr>`;
-    });
+
+        deletedEntries.filter(e=>e.date===selectedDate)
+        .forEach(e=>{
+            tableBody.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.purpose}</td>
+            <td>${e.amount}</td>
+            <td>${e.date}</td>
+            </tr>`;
+        });
+    }
+
+    if(mode==="edited"){
+        tableTitle.innerText="Edited Entries";
+        tableHead.innerHTML=`
+        <tr>
+        <th>Name</th>
+        <th>Before</th>
+        <th>After</th>
+        <th>Date</th>
+        </tr>`;
+
+        editedEntries.filter(e=>e.date===selectedDate)
+        .forEach(e=>{
+            tableBody.innerHTML+=`
+            <tr>
+            <td>${e.name}</td>
+            <td>${e.before}</td>
+            <td>${e.after}</td>
+            <td>${e.date}</td>
+            </tr>`;
+        });
+    }
 }
 
-window.deleteEntry = async(id)=>{
-    const ref = doc(db,"entries",id);
-    const snap = await getDoc(ref);
-
+window.deleteEntry=async(id)=>{
+    const ref=doc(db,"entries",id);
+    const snap=await getDoc(ref);
     await addDoc(deletedCol,snap.data());
     await deleteDoc(ref);
 };
 
-window.editEntry = async(id)=>{
-    const ref = doc(db,"entries",id);
-    const snap = await getDoc(ref);
-    const oldData = snap.data();
+window.editEntry=async(id)=>{
+    const ref=doc(db,"entries",id);
+    const snap=await getDoc(ref);
+    const oldData=snap.data();
 
-    if(oldData.date !== today()){
+    if(oldData.date!==today()){
         alert("Cannot edit past date");
         return;
     }
 
-    let newAmount = prompt("New Amount", oldData.amount);
+    let newAmount=prompt("New Amount",oldData.amount);
     if(!newAmount) return;
 
     await addDoc(editedCol,{
@@ -307,42 +357,6 @@ window.editEntry = async(id)=>{
     });
 
     await updateDoc(ref,{amount:parseFloat(newAmount)});
-};
-
-deletedFilter.onchange = ()=>{
-    deletedTable.innerHTML="";
-    onSnapshot(deletedCol,(snap)=>{
-        snap.forEach(d=>{
-            if(d.data().date===deletedFilter.value){
-                let e=d.data();
-                deletedTable.innerHTML+=`
-                <tr>
-                <td>${e.name}</td>
-                <td>${e.purpose}</td>
-                <td>${e.amount}</td>
-                <td>${e.date}</td>
-                </tr>`;
-            }
-        });
-    });
-};
-
-editedFilter.onchange = ()=>{
-    editedTable.innerHTML="";
-    onSnapshot(editedCol,(snap)=>{
-        snap.forEach(d=>{
-            if(d.data().date===editedFilter.value){
-                let e=d.data();
-                editedTable.innerHTML+=`
-                <tr>
-                <td>${e.name}</td>
-                <td>${e.before}</td>
-                <td>${e.after}</td>
-                <td>${e.date}</td>
-                </tr>`;
-            }
-        });
-    });
 };
 
 </script>
