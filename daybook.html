@@ -65,14 +65,14 @@ th{background:#f8f9fa;}
     font-weight:600;
 }
 
-/* Hidden clean export layout */
+/* Hidden export layout */
 #exportArea{
     position:absolute;
     left:-9999px;
     top:0;
-    width:800px;
+    width:900px;
     background:white;
-    padding:20px;
+    padding:25px;
 }
 </style>
 </head>
@@ -95,7 +95,10 @@ th{background:#f8f9fa;}
 <h4>Accounts</h4>
 <table>
 <thead>
-<tr><th>Account</th><th>Balance</th></tr>
+<tr>
+<th>Account</th>
+<th>Balance</th>
+</tr>
 </thead>
 <tbody id="accountTable"></tbody>
 </table>
@@ -133,11 +136,17 @@ Opening Balance: <span id="openingBalance">0.00</span>
 <table>
 <thead>
 <tr>
-<th>Name</th><th>Purpose</th><th>Account</th>
-<th>Amount</th><th>Type</th><th>Date</th><th>Note</th>
+<th>Name</th>
+<th>Purpose</th>
+<th>Account</th>
+<th>Amount</th>
+<th>Type</th>
+<th>Date</th>
+<th>Note</th>
+<th>Action</th>
 </tr>
 </thead>
-<tbody id="tableBody"></tbody>
+<tbody id="entryTable"></tbody>
 </table>
 
 <div class="balance-row">
@@ -147,13 +156,12 @@ Closing Balance: <span id="closingBalance">0.00</span>
 
 </div>
 
-<!-- CLEAN EXPORT AREA -->
 <div id="exportArea"></div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot } 
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } 
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -188,7 +196,7 @@ const filterDate = document.getElementById("filterDate");
 const todayBtn = document.getElementById("todayBtn");
 const ssBtn = document.getElementById("ssBtn");
 
-const tableBody = document.getElementById("tableBody");
+const entryTable = document.getElementById("entryTable");
 const openingBalanceEl = document.getElementById("openingBalance");
 const closingBalanceEl = document.getElementById("closingBalance");
 
@@ -213,8 +221,10 @@ addAccountBtn.onclick=async()=>{
 };
 
 addEntryBtn.onclick=async()=>{
-    if(date.value!==today()) return;
-
+    if(date.value!==today()){
+        alert("Cannot add entry to past date");
+        return;
+    }
     const acc=accounts[accountSelect.value];
     let newBalance=acc.balance;
 
@@ -267,7 +277,7 @@ onSnapshot(accountsCol,snap=>{
 onSnapshot(entriesCol,snap=>{
     entries=[];
     snap.forEach(d=>{
-        entries.push(d.data());
+        entries.push({...d.data(),id:d.id});
     });
     render();
 });
@@ -290,12 +300,12 @@ function calculateBalances(){
 }
 
 function render(){
-    tableBody.innerHTML="";
+    entryTable.innerHTML="";
     let selectedDate=filterDate.value;
 
     entries.filter(e=>e.date===selectedDate)
     .forEach(e=>{
-        tableBody.innerHTML+=`
+        entryTable.innerHTML+=`
         <tr>
         <td>${e.name}</td>
         <td>${e.purpose}</td>
@@ -304,20 +314,22 @@ function render(){
         <td>${e.type}</td>
         <td>${e.date}</td>
         <td>${e.note}</td>
+        <td><button onclick="deleteEntry('${e.id}')">Delete</button></td>
         </tr>`;
     });
 
     calculateBalances();
 }
 
-/* CLEAN IMAGE EXPORT */
-ssBtn.onclick = async ()=>{
+window.deleteEntry=async(id)=>{
+    await deleteDoc(doc(db,"entries",id));
+};
 
-    let selectedDate = filterDate.value;
+ssBtn.onclick=async()=>{
+    let selectedDate=filterDate.value;
+    let exportArea=document.getElementById("exportArea");
 
-    let exportArea = document.getElementById("exportArea");
-
-    let html = `
+    let html=`
         <h2>OFFICE DAYBOOK</h2>
         <p>Date: ${selectedDate}</p>
         <p><strong>Opening Balance:</strong> ${openingBalanceEl.innerText}</p>
@@ -326,8 +338,7 @@ ssBtn.onclick = async ()=>{
         <tr>
         <th>Name</th><th>Purpose</th><th>Account</th>
         <th>Amount</th><th>Type</th><th>Date</th>
-        </tr>
-    `;
+        </tr>`;
 
     entries.filter(e=>e.date===selectedDate)
     .forEach(e=>{
@@ -363,7 +374,6 @@ ssBtn.onclick = async ()=>{
 };
 
 });
-
 </script>
 
 </body>
