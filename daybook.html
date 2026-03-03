@@ -202,7 +202,6 @@ if(e.type==="Cr") totalCr+=Number(e.amount)||0;
 });
 
 let closing=opening+totalCr-totalDr;
-
 openingBalanceEl.innerText=opening.toFixed(2);
 closingBalanceEl.innerText=closing.toFixed(2);
 }
@@ -286,6 +285,44 @@ tableBody.innerHTML+=`
 });
 calculateBalances();
 }
+
+if(viewMode==="deleted"){
+viewTitle.innerText="Deleted Entries";
+deletedEntries.forEach(d=>{
+if(d.date===filterDate.value){
+tableBody.innerHTML+=`
+<tr>
+<td>${d.name}</td>
+<td>${d.purpose}</td>
+<td>${d.accountName||""}</td>
+<td>${d.type==="Dr"?d.amount:""}</td>
+<td>${d.type==="Cr"?d.amount:""}</td>
+<td>${d.date}</td>
+<td>${d.note||""}</td>
+<td></td>
+</tr>`;
+}
+});
+}
+
+if(viewMode==="edited"){
+viewTitle.innerText="Edited Entries";
+editedEntries.forEach(e=>{
+if(e.date===filterDate.value){
+tableBody.innerHTML+=`
+<tr>
+<td>${e.name}</td>
+<td>Before: ${e.before}</td>
+<td>${e.accountName||""}</td>
+<td></td>
+<td>After: ${e.after}</td>
+<td>${e.date}</td>
+<td></td>
+<td></td>
+</tr>`;
+}
+});
+}
 }
 
 window.deleteEntry=async(id)=>{
@@ -320,8 +357,9 @@ await deleteDoc(doc(db,"accounts",id));
 };
 
 todayBtn.onclick=()=>{viewMode="entries";filterDate.value=today();render();};
-showDeletedBtn.onclick=()=>{viewMode="deleted";};
-showEditedBtn.onclick=()=>{viewMode="edited";};
+showDeletedBtn.onclick=()=>{viewMode="deleted";render();};
+showEditedBtn.onclick=()=>{viewMode="edited";render();};
+filterDate.onchange=()=>render();
 
 ssBtn.onclick=async()=>{
 let html=`<h2>OFFICE DAYBOOK</h2>
