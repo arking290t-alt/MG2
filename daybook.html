@@ -15,9 +15,7 @@ body{
     margin:auto;
     margin-top:20px;
 }
-h2{
-    margin-bottom:20px;
-}
+h2{margin-bottom:20px;}
 .top-grid{
     display:grid;
     grid-template-columns: 1fr 2fr;
@@ -28,6 +26,7 @@ h2{
     padding:18px;
     border-radius:10px;
     box-shadow:0 3px 8px rgba(0,0,0,0.08);
+    margin-bottom:20px;
 }
 input,select{
     padding:8px;
@@ -45,9 +44,7 @@ button{
     font-size:14px;
     cursor:pointer;
 }
-button:hover{
-    background:#0b5ed7;
-}
+button:hover{background:#0b5ed7;}
 table{
     width:100%;
     border-collapse:collapse;
@@ -58,22 +55,20 @@ th,td{
     border-bottom:1px solid #ddd;
     text-align:center;
 }
-th{
-    background:#f8f9fa;
-}
+th{background:#f8f9fa;}
 .header-row{
     display:flex;
     gap:10px;
     align-items:center;
     flex-wrap:wrap;
 }
-.section-title{
-    font-weight:600;
-    margin-bottom:10px;
-}
 .balance-highlight{
     font-weight:600;
     color:#0d6efd;
+}
+.balance-row{
+    margin-top:10px;
+    font-weight:600;
 }
 </style>
 </head>
@@ -93,7 +88,7 @@ th{
 
 <hr>
 
-<div class="section-title">Accounts</div>
+<h4>Accounts</h4>
 <table>
 <thead>
 <tr>
@@ -122,22 +117,33 @@ th{
 
 </div>
 
-<div class="card" style="margin-top:20px;">
+<div class="card">
 <div class="header-row">
 <input type="date" id="filterDate">
 <button id="todayBtn">Today</button>
 <button id="showEntries">Entries</button>
 <button id="showDeleted">Deleted</button>
 <button id="showEdited">Edited</button>
+<button id="ssBtn">SS</button>
 </div>
+
+<div class="balance-row">
+Opening Balance: <span id="openingBalance">0.00</span>
+</div>
+
 </div>
 
 <div class="card">
-<div class="section-title" id="tableTitle">Entries</div>
+<h3 id="tableTitle">Entries</h3>
 <table>
 <thead id="tableHead"></thead>
 <tbody id="tableBody"></tbody>
 </table>
+
+<div class="balance-row">
+Closing Balance: <span id="closingBalance">0.00</span>
+</div>
+
 </div>
 
 </div>
@@ -183,10 +189,14 @@ const todayBtn = document.getElementById("todayBtn");
 const showEntriesBtn = document.getElementById("showEntries");
 const showDeletedBtn = document.getElementById("showDeleted");
 const showEditedBtn = document.getElementById("showEdited");
+const ssBtn = document.getElementById("ssBtn");
 
 const tableHead = document.getElementById("tableHead");
 const tableBody = document.getElementById("tableBody");
 const tableTitle = document.getElementById("tableTitle");
+
+const openingBalanceEl = document.getElementById("openingBalance");
+const closingBalanceEl = document.getElementById("closingBalance");
 
 let accounts=[];
 let entries=[];
@@ -268,6 +278,7 @@ onSnapshot(accountsCol,snap=>{
         <td class="balance-highlight">${a.balance.toFixed(2)}</td>
         </tr>`;
     });
+    calculateBalances();
 });
 
 onSnapshot(entriesCol,snap=>{
@@ -292,6 +303,23 @@ onSnapshot(editedCol,snap=>{
     });
 });
 
+function calculateBalances(){
+    let selectedDate=filterDate.value;
+    let opening=0;
+    accounts.forEach(a=>opening+=a.balance);
+    openingBalanceEl.innerText=opening.toFixed(2);
+
+    let totalDr=0,totalCr=0;
+    entries.filter(e=>e.date===selectedDate)
+    .forEach(e=>{
+        if(e.type==="Dr") totalDr+=e.amount;
+        else totalCr+=e.amount;
+    });
+
+    let closing=opening+totalCr-totalDr;
+    closingBalanceEl.innerText=closing.toFixed(2);
+}
+
 function render(){
     tableBody.innerHTML="";
     let selectedDate=filterDate.value;
@@ -300,21 +328,13 @@ function render(){
         tableTitle.innerText="Entries";
         tableHead.innerHTML=`
         <tr>
-        <th>Name</th>
-        <th>Purpose</th>
-        <th>Account</th>
-        <th>Amount</th>
-        <th>Type</th>
-        <th>Date</th>
-        <th>Note</th>
-        <th>Action</th>
+        <th>Name</th><th>Purpose</th><th>Account</th>
+        <th>Amount</th><th>Type</th><th>Date</th>
+        <th>Note</th><th>Action</th>
         </tr>`;
 
         entries.filter(e=>e.date===selectedDate)
         .forEach(e=>{
-            let editBtn=e.date===today()?
-            `<button onclick="editEntry('${e.id}')">Edit</button>`:"";
-
             tableBody.innerHTML+=`
             <tr>
             <td>${e.name}</td>
@@ -325,7 +345,6 @@ function render(){
             <td>${e.date}</td>
             <td>${e.note}</td>
             <td>
-            ${editBtn}
             <button onclick="deleteEntry('${e.id}')">Delete</button>
             </td>
             </tr>`;
@@ -365,36 +384,35 @@ function render(){
             </tr>`;
         });
     }
+
+    calculateBalances();
 }
+
+ssBtn.onclick=()=>{
+    let selectedDate=filterDate.value;
+    let text=`DAY BOOK - ${selectedDate}\n\n`;
+    text+=`Opening Balance: ${openingBalanceEl.innerText}\n\nEntries:\n`;
+
+    entries.filter(e=>e.date===selectedDate)
+    .forEach(e=>{
+        text+=`${e.name} | ${e.purpose} | ${e.accountName} | ${e.amount} | ${e.type}\n`;
+    });
+
+    text+=`\nClosing Balance: ${closingBalanceEl.innerText}\n\nAccount Balances:\n`;
+
+    accounts.forEach(a=>{
+        text+=`${a.name}: ${a.balance.toFixed(2)}\n`;
+    });
+
+    navigator.clipboard.writeText(text);
+    alert("Daybook copied successfully!");
+};
 
 window.deleteEntry=async(id)=>{
     const ref=doc(db,"entries",id);
     const snap=await getDoc(ref);
     await addDoc(deletedCol,snap.data());
     await deleteDoc(ref);
-};
-
-window.editEntry=async(id)=>{
-    const ref=doc(db,"entries",id);
-    const snap=await getDoc(ref);
-    const oldData=snap.data();
-
-    if(oldData.date!==today()){
-        alert("Cannot edit past date");
-        return;
-    }
-
-    let newAmount=prompt("New Amount",oldData.amount);
-    if(!newAmount) return;
-
-    await addDoc(editedCol,{
-        name:oldData.name,
-        before:oldData.amount,
-        after:newAmount,
-        date:oldData.date
-    });
-
-    await updateDoc(ref,{amount:parseFloat(newAmount)});
 };
 
 });
