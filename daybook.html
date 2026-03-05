@@ -307,16 +307,13 @@ transferFields.style.display="none";
 };
 
 
-// --- THE FIXED BALANCE LOGIC ---
 function calculateBalances(){
 
-// Total of all accounts right now
 let totalCurrentAssets = 0;
 accounts.forEach(a => {
     totalCurrentAssets += Number(a.balance) || 0;
 });
 
-// Sum of movements for the SELECTED date only
 let selectedDayDr = 0;
 let selectedDayCr = 0;
 
@@ -327,11 +324,9 @@ entries.forEach(e => {
     }
 });
 
-// Net change today
 let netChangeToday = selectedDayCr - selectedDayDr;
 
-// Opening Balance = Current Total - today's net change.
-// This effectively "undoes" today's entries to show what the balance was at 12:00 AM.
+// Opening Balance calculation (Current - Today's net movement)
 let openingBalance = totalCurrentAssets - netChangeToday;
 
 openingBalanceEl.innerText = openingBalance.toFixed(2);
@@ -389,7 +384,6 @@ if(entryMode.value === "normal"){
         note:note.value
     });
 
-    // Update the master account amount
     await updateAccountBalance(accountSelect.value, type.value, amt);
 
 }
@@ -401,7 +395,6 @@ else{
         return;
     }
 
-    // Debit side
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer to " + toAccount.value,
@@ -412,7 +405,6 @@ else{
         note:note.value
     });
 
-    // Credit side
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer from " + fromAccount.value,
@@ -423,7 +415,6 @@ else{
         note:note.value
     });
 
-    // Update account balances
     await updateAccountBalance(fromAccount.value, "Dr", amt);
     await updateAccountBalance(toAccount.value, "Cr", amt);
 
@@ -463,7 +454,7 @@ accountTable.innerHTML+=`
 <td>${(Number(a.balance) || 0).toFixed(2)}</td>
 <td>
 
-<button onclick="editAccount('${a.id}','${a.name}')">
+<button onclick="editAccount('${a.id}','${a.balance}')">
 Edit
 </button>
 
@@ -651,7 +642,6 @@ const data=snap.data();
 
 await addDoc(deletedCol,data);
 
-// Adjust account balance back
 await updateAccountBalance(
     data.accountName,
     data.type === "Dr" ? "Cr" : "Dr",
@@ -675,7 +665,6 @@ let newAmt=prompt("New Amount",old.amount);
 
 if(!newAmt)return;
 
-// Revert old, then apply new
 await updateAccountBalance(old.accountName, old.type === "Dr" ? "Cr" : "Dr", old.amount);
 await updateAccountBalance(old.accountName, old.type, newAmt);
 
@@ -693,21 +682,22 @@ amount:Number(newAmt)||0
 };
 
 
-window.editAccount=async(id,name)=>{
+// --- FIXED EDIT ACCOUNT FUNCTION (EDITS AMOUNT NOW) ---
+window.editAccount=async(id, currentBalance)=>{
 
-let pass=prompt("Enter Password");
+let pass=prompt("Enter Password to Edit Amount");
 
 if(pass!==PASSWORD){
 alert("Wrong Password");
 return;
 }
 
-let newName=prompt("New Name",name);
+let newBalance=prompt("Enter New Balance for this Account", currentBalance);
 
-if(!newName)return;
+if(newBalance === null || newBalance === "" || isNaN(newBalance)) return;
 
 await updateDoc(doc(db,"accounts",id),{
-name:newName
+balance: Number(newBalance)
 });
 
 };
@@ -715,7 +705,7 @@ name:newName
 
 window.deleteAccount=async(id)=>{
 
-let pass=prompt("Enter Password");
+let pass=prompt("Enter Password to Delete Account");
 
 if(pass!==PASSWORD){
 alert("Wrong Password");
