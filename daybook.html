@@ -206,6 +206,22 @@ openingBalanceEl.innerText=opening.toFixed(2);
 closingBalanceEl.innerText=closing.toFixed(2);
 }
 
+async function updateAccountBalance(accountName,type,amount){
+
+const acc=accounts.find(a=>a.name===accountName);
+if(!acc)return;
+
+let newBalance=acc.balance;
+
+if(type==="Dr") newBalance-=Number(amount);
+if(type==="Cr") newBalance+=Number(amount);
+
+await updateDoc(doc(db,"accounts",acc.id),{
+balance:newBalance
+});
+
+}
+
 addAccountBtn.onclick=async()=>{
 if(!accountName.value||!accountAmount.value)return;
 await addDoc(accountsCol,{name:accountName.value,balance:Number(accountAmount.value)||0});
@@ -214,9 +230,11 @@ accountName.value="";accountAmount.value="";
 
 addEntryBtn.onclick=async()=>{
 if(!amount.value)return;
+
 let amt=Number(amount.value)||0;
 
 if(entryMode.value==="normal"){
+
 await addDoc(entriesCol,{
 name:entryName.value,
 purpose:purpose.value,
@@ -226,22 +244,58 @@ type:type.value,
 date:date.value,
 note:note.value
 });
+
+await updateAccountBalance(accountSelect.value,type.value,amt);
+
 }else{
+
 if(fromAccount.value===toAccount.value){alert("Accounts cannot be same");return;}
-await addDoc(entriesCol,{name:entryName.value,purpose:"Transfer to "+toAccount.value,amount:amt,accountName:fromAccount.value,type:"Dr",date:date.value,note:note.value});
-await addDoc(entriesCol,{name:entryName.value,purpose:"Transfer from "+fromAccount.value,amount:amt,accountName:toAccount.value,type:"Cr",date:date.value,note:note.value});
+
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer to "+toAccount.value,
+amount:amt,
+accountName:fromAccount.value,
+type:"Dr",
+date:date.value,
+note:note.value
+});
+
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer from "+fromAccount.value,
+amount:amt,
+accountName:toAccount.value,
+type:"Cr",
+date:date.value,
+note:note.value
+});
+
+await updateAccountBalance(fromAccount.value,"Dr",amt);
+await updateAccountBalance(toAccount.value,"Cr",amt);
+
 }
 
-entryName.value="";purpose.value="";amount.value="";note.value="";
+entryName.value="";
+purpose.value="";
+amount.value="";
+note.value="";
 };
 
 onSnapshot(accountsCol,snap=>{
-accounts=[];accountTable.innerHTML="";accountSelect.innerHTML="";fromAccount.innerHTML="";toAccount.innerHTML="";
+accounts=[];
+accountTable.innerHTML="";
+accountSelect.innerHTML="";
+fromAccount.innerHTML="";
+toAccount.innerHTML="";
+
 snap.forEach(d=>accounts.push({...d.data(),id:d.id}));
+
 accounts.forEach(a=>{
 accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+
 accountTable.innerHTML+=`
 <tr>
 <td>${a.name}</td>
@@ -252,19 +306,33 @@ accountTable.innerHTML+=`
 </td>
 </tr>`;
 });
+
 calculateBalances();
 });
 
 onSnapshot(entriesCol,snap=>{
-entries=[];snap.forEach(d=>entries.push({...d.data(),id:d.id}));render();
+entries=[];
+snap.forEach(d=>entries.push({...d.data(),id:d.id}));
+render();
 });
-onSnapshot(deletedCol,snap=>{deletedEntries=[];snap.forEach(d=>deletedEntries.push(d.data()));});
-onSnapshot(editedCol,snap=>{editedEntries=[];snap.forEach(d=>editedEntries.push(d.data()));});
+
+onSnapshot(deletedCol,snap=>{
+deletedEntries=[];
+snap.forEach(d=>deletedEntries.push(d.data()));
+});
+
+onSnapshot(editedCol,snap=>{
+editedEntries=[];
+snap.forEach(d=>editedEntries.push(d.data()));
+});
 
 function render(){
+
 tableBody.innerHTML="";
+
 if(viewMode==="entries"){
 viewTitle.innerText="Entries";
+
 entries.forEach(e=>{
 if(e.date===filterDate.value){
 tableBody.innerHTML+=`
@@ -283,11 +351,13 @@ tableBody.innerHTML+=`
 </tr>`;
 }
 });
+
 calculateBalances();
 }
 
 if(viewMode==="deleted"){
 viewTitle.innerText="Deleted Entries";
+
 deletedEntries.forEach(d=>{
 if(d.date===filterDate.value){
 tableBody.innerHTML+=`
@@ -307,6 +377,7 @@ tableBody.innerHTML+=`
 
 if(viewMode==="edited"){
 viewTitle.innerText="Edited Entries";
+
 editedEntries.forEach(e=>{
 if(e.date===filterDate.value){
 tableBody.innerHTML+=`
@@ -323,23 +394,57 @@ tableBody.innerHTML+=`
 }
 });
 }
+
 }
 
 window.deleteEntry=async(id)=>{
+
 const ref=doc(db,"entries",id);
 const snap=await getDoc(ref);
-await addDoc(deletedCol,snap.data());
+const data=snap.data();
+
+await addDoc(deletedCol,data);
+
+await updateAccountBalance(
+data.accountName,
+data.type==="Dr"?"Cr":"Dr",
+data.amount
+);
+
 await deleteDoc(ref);
+
 };
 
 window.editEntry=async(id)=>{
+
 const ref=doc(db,"entries",id);
 const snap=await getDoc(ref);
 const old=snap.data();
+
 let newAmt=prompt("New Amount",old.amount);
 if(!newAmt)return;
-await addDoc(editedCol,{name:old.name,before:old.amount,after:newAmt,date:old.date});
+
+await updateAccountBalance(
+old.accountName,
+old.type==="Dr"?"Cr":"Dr",
+old.amount
+);
+
+await updateAccountBalance(
+old.accountName,
+old.type,
+newAmt
+);
+
+await addDoc(editedCol,{
+name:old.name,
+before:old.amount,
+after:newAmt,
+date:old.date
+});
+
 await updateDoc(ref,{amount:Number(newAmt)||0});
+
 };
 
 window.editAccount=async(id,name)=>{
@@ -356,39 +461,73 @@ if(pass!==PASSWORD){alert("Wrong Password");return;}
 await deleteDoc(doc(db,"accounts",id));
 };
 
-todayBtn.onclick=()=>{viewMode="entries";filterDate.value=today();render();};
-showDeletedBtn.onclick=()=>{viewMode="deleted";render();};
-showEditedBtn.onclick=()=>{viewMode="edited";render();};
+todayBtn.onclick=()=>{viewMode="entries";filterDate.value=today();render();}
+showDeletedBtn.onclick=()=>{viewMode="deleted";render();}
+showEditedBtn.onclick=()=>{viewMode="edited";render();}
 filterDate.onchange=()=>render();
 
 ssBtn.onclick=async()=>{
+
 let html=`<h2>OFFICE DAYBOOK</h2>
 <p>Date: ${filterDate.value}</p>
 <p>Opening Balance: ${openingBalanceEl.innerText}</p>
+
 <h4>Account Balances</h4>
+
 <table border="1" style="width:100%;border-collapse:collapse;">
 <tr><th>Account</th><th>Balance</th></tr>`;
-accounts.forEach(a=>{html+=`<tr><td>${a.name}</td><td>${a.balance.toFixed(2)}</td></tr>`;});
-html+=`</table><h4>Entries</h4>
+
+accounts.forEach(a=>{
+html+=`<tr><td>${a.name}</td><td>${a.balance.toFixed(2)}</td></tr>`;
+});
+
+html+=`</table>
+
+<h4>Entries</h4>
+
 <table border="1" style="width:100%;border-collapse:collapse;">
-<tr><th>Name</th><th>Purpose</th><th>Account</th><th>Debit</th><th>Credit</th><th>Date</th></tr>`;
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Date</th>
+</tr>`;
+
 entries.forEach(e=>{
 if(e.date===filterDate.value){
-html+=`<tr><td>${e.name}</td><td>${e.purpose}</td><td>${e.accountName}</td><td>${e.type==="Dr"?e.amount:""}</td><td>${e.type==="Cr"?e.amount:""}</td><td>${e.date}</td></tr>`;
+html+=`
+<tr>
+<td>${e.name}</td>
+<td>${e.purpose}</td>
+<td>${e.accountName}</td>
+<td>${e.type==="Dr"?e.amount:""}</td>
+<td>${e.type==="Cr"?e.amount:""}</td>
+<td>${e.date}</td>
+</tr>`;
 }
 });
-html+=`</table><p>Closing Balance: ${closingBalanceEl.innerText}</p>`;
+
+html+=`</table>
+<p>Closing Balance: ${closingBalanceEl.innerText}</p>`;
+
 let div=document.createElement("div");
 div.style.background="#fff";
 div.style.padding="20px";
 div.innerHTML=html;
+
 document.body.appendChild(div);
+
 const canvas=await html2canvas(div,{scale:2});
 const link=document.createElement("a");
+
 link.download="daybook.png";
 link.href=canvas.toDataURL();
 link.click();
+
 document.body.removeChild(div);
+
 };
 
 </script>
