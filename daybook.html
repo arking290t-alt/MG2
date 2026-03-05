@@ -237,6 +237,7 @@ projectId:"mg-manager-3ab66"
 };
 
 const app=initializeApp(firebaseConfig);
+
 const db=getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
@@ -252,14 +253,6 @@ const editedCol=collection(db,"editedEntries");
 
 let accounts=[];
 let entries=[];
-let deletedEntries=[];
-let editedEntries=[];
-let viewMode="entries";
-
-/* OPENING BALANCE LOCK SYSTEM */
-
-let dailyOpeningBalance=null;
-let lastOpeningDate=null;
 
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
@@ -277,51 +270,22 @@ const type=document.getElementById("type");
 const note=document.getElementById("note");
 const addEntryBtn=document.getElementById("addEntry");
 
-const entryMode=document.getElementById("entryMode");
-const normalFields=document.getElementById("normalFields");
-const transferFields=document.getElementById("transferFields");
-
 const filterDate=document.getElementById("filterDate");
-
-const todayBtn=document.getElementById("todayBtn");
-const showDeletedBtn=document.getElementById("showDeletedBtn");
-const showEditedBtn=document.getElementById("showEditedBtn");
-const ssBtn=document.getElementById("ssBtn");
 
 const tableBody=document.getElementById("tableBody");
 const openingBalanceEl=document.getElementById("openingBalance");
 const closingBalanceEl=document.getElementById("closingBalance");
-const viewTitle=document.getElementById("viewTitle");
 
 date.value=today();
 filterDate.value=today();
 
-entryMode.onchange=()=>{
-
-if(entryMode.value==="transfer"){
-normalFields.style.display="none";
-transferFields.style.display="block";
-}
-else{
-normalFields.style.display="block";
-transferFields.style.display="none";
-}
-
-};
-
 function calculateBalances(){
 
-if(lastOpeningDate!==filterDate.value){
-
-dailyOpeningBalance=0;
+let opening=0;
 
 accounts.forEach(a=>{
-dailyOpeningBalance+=Number(a.balance)||0;
+opening+=Number(a.balance)||0;
 });
-
-lastOpeningDate=filterDate.value;
-
-}
 
 let totalDr=0;
 let totalCr=0;
@@ -330,50 +294,72 @@ entries.forEach(e=>{
 
 if(e.date===filterDate.value){
 
-if(e.type==="Dr"){
-totalDr+=Number(e.amount)||0;
-}
-
-if(e.type==="Cr"){
-totalCr+=Number(e.amount)||0;
-}
+if(e.type==="Dr") totalDr+=Number(e.amount)||0;
+if(e.type==="Cr") totalCr+=Number(e.amount)||0;
 
 }
 
 });
 
-let closing=dailyOpeningBalance+totalCr-totalDr;
+let closing=opening+totalCr-totalDr;
 
-openingBalanceEl.innerText=dailyOpeningBalance.toFixed(2);
+openingBalanceEl.innerText=opening.toFixed(2);
 closingBalanceEl.innerText=closing.toFixed(2);
 
 }
 
-async function updateAccountBalance(accountName,type,amount){
+async function updateAccountBalance(name,type,amt){
 
-const acc=accounts.find(a=>a.name===accountName);
+const acc=accounts.find(a=>a.name===name);
+if(!acc) return;
 
-if(!acc)return;
+let newBalance=acc.balance;
 
-let newBalance=Number(acc.balance)||0;
+if(type==="Dr") newBalance-=amt;
+if(type==="Cr") newBalance+=amt;
 
-if(type==="Dr") newBalance-=Number(amount);
-if(type==="Cr") newBalance+=Number(amount);
+acc.balance=newBalance;
 
 await updateDoc(doc(db,"accounts",acc.id),{
 balance:newBalance
 });
 
-acc.balance=newBalance;
+renderAccounts();
 
-render();
+}
+
+function renderAccounts(){
+
+accountTable.innerHTML="";
+accountSelect.innerHTML="";
+fromAccount.innerHTML="";
+toAccount.innerHTML="";
+
+accounts.forEach(a=>{
+
+accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+
+accountTable.innerHTML+=`
+
+<tr>
+<td>${a.name}</td>
+<td>${Number(a.balance).toFixed(2)}</td>
+<td></td>
+</tr>
+
+`;
+
+});
+
 calculateBalances();
 
 }
 
 addAccountBtn.onclick=async()=>{
 
-if(!accountName.value||!accountAmount.value)return;
+if(!accountName.value||!accountAmount.value) return;
 
 await addDoc(accountsCol,{
 name:accountName.value,
@@ -387,11 +373,9 @@ accountAmount.value="";
 
 addEntryBtn.onclick=async()=>{
 
-if(!amount.value)return;
+if(!amount.value) return;
 
 let amt=Number(amount.value)||0;
-
-if(entryMode.value==="normal"){
 
 await addDoc(entriesCol,{
 name:entryName.value,
@@ -405,40 +389,6 @@ note:note.value
 
 await updateAccountBalance(accountSelect.value,type.value,amt);
 
-}
-
-else{
-
-if(fromAccount.value===toAccount.value){
-alert("Accounts cannot be same");
-return;
-}
-
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer to "+toAccount.value,
-amount:amt,
-accountName:fromAccount.value,
-type:"Dr",
-date:date.value,
-note:note.value
-});
-
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer from "+fromAccount.value,
-amount:amt,
-accountName:toAccount.value,
-type:"Cr",
-date:date.value,
-note:note.value
-});
-
-await updateAccountBalance(fromAccount.value,"Dr",amt);
-await updateAccountBalance(toAccount.value,"Cr",amt);
-
-}
-
 entryName.value="";
 purpose.value="";
 amount.value="";
@@ -449,57 +399,26 @@ note.value="";
 onSnapshot(accountsCol,snap=>{
 
 accounts=[];
-
-accountTable.innerHTML="";
-accountSelect.innerHTML="";
-fromAccount.innerHTML="";
-toAccount.innerHTML="";
-
 snap.forEach(d=>{
 accounts.push({...d.data(),id:d.id});
 });
 
-accounts.forEach(a=>{
-
-accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-
-accountTable.innerHTML+=`
-
-<tr>
-<td>${a.name}</td>
-<td>${a.balance.toFixed(2)}</td>
-<td>
-
-<button onclick="editAccount('${a.id}','${a.name}')">Edit</button>
-
-<button onclick="deleteAccount('${a.id}')">Delete</button>
-
-</td>
-</tr>
-
-`;
-
-});
-
-calculateBalances();
+renderAccounts();
 
 });
 
 onSnapshot(entriesCol,snap=>{
 
 entries=[];
-
 snap.forEach(d=>{
 entries.push({...d.data(),id:d.id});
 });
 
-render();
+renderEntries();
 
 });
 
-function render(){
+function renderEntries(){
 
 tableBody.innerHTML="";
 
@@ -521,12 +440,7 @@ tableBody.innerHTML+=`
 <td>${e.date}</td>
 <td>${e.note}</td>
 
-<td>
-
-<button onclick="editEntry('${e.id}')">Edit</button>
-<button onclick="deleteEntry('${e.id}')">Delete</button>
-
-</td>
+<td></td>
 
 </tr>
 
@@ -540,59 +454,7 @@ calculateBalances();
 
 }
 
-window.deleteEntry=async(id)=>{
-
-const ref=doc(db,"entries",id);
-const snap=await getDoc(ref);
-const data=snap.data();
-
-await addDoc(deletedCol,data);
-
-await updateAccountBalance(
-data.accountName,
-data.type==="Dr"?"Cr":"Dr",
-data.amount
-);
-
-await deleteDoc(ref);
-
-};
-
-window.editEntry=async(id)=>{
-
-const ref=doc(db,"entries",id);
-const snap=await getDoc(ref);
-const old=snap.data();
-
-let newAmt=prompt("New Amount",old.amount);
-if(!newAmt)return;
-
-await updateAccountBalance(
-old.accountName,
-old.type==="Dr"?"Cr":"Dr",
-old.amount
-);
-
-await updateAccountBalance(
-old.accountName,
-old.type,
-newAmt
-);
-
-await updateDoc(ref,{
-amount:Number(newAmt)||0
-});
-
-};
-
-todayBtn.onclick=()=>{
-filterDate.value=today();
-render();
-};
-
-filterDate.onchange=()=>{
-render();
-};
+filterDate.onchange=()=>renderEntries();
 
 </script>
 
