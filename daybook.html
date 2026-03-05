@@ -173,7 +173,7 @@ To
 <button id="ssBtn">SS</button>
 
 <div class="balance-row">
-Opening Balance (Start of Day):
+Opening Balance (Start of Day): 
 <span id="openingBalance">0.00</span>
 </div>
 
@@ -205,7 +205,7 @@ Opening Balance (Start of Day):
 </table>
 
 <div class="balance-row">
-Closing Balance (Current):
+Closing Balance (Current): 
 <span id="closingBalance">0.00</span>
 </div>
 
@@ -307,54 +307,50 @@ transferFields.style.display="none";
 };
 
 
+// --- THE FIXED BALANCE LOGIC ---
 function calculateBalances(){
 
-let currentTotalAllAccounts = 0;
+// Total of all accounts right now
+let totalCurrentAssets = 0;
 accounts.forEach(a => {
-    currentTotalAllAccounts += Number(a.balance) || 0;
+    totalCurrentAssets += Number(a.balance) || 0;
 });
 
-let selectedDayDebit = 0;
-let selectedDayCredit = 0;
+// Sum of movements for the SELECTED date only
+let selectedDayDr = 0;
+let selectedDayCr = 0;
 
 entries.forEach(e => {
     if(e.date === filterDate.value){
-        if(e.type === "Dr") selectedDayDebit += Number(e.amount) || 0;
-        if(e.type === "Cr") selectedDayCredit += Number(e.amount) || 0;
+        if(e.type === "Dr") selectedDayDr += Number(e.amount) || 0;
+        if(e.type === "Cr") selectedDayCr += Number(e.amount) || 0;
     }
 });
 
-let dayNetMovement = selectedDayCredit - selectedDayDebit;
+// Net change today
+let netChangeToday = selectedDayCr - selectedDayDr;
 
-// Opening balance is what we had before today's entries
-let opening = currentTotalAllAccounts - dayNetMovement;
+// Opening Balance = Current Total - today's net change.
+// This effectively "undoes" today's entries to show what the balance was at 12:00 AM.
+let openingBalance = totalCurrentAssets - netChangeToday;
 
-openingBalanceEl.innerText = opening.toFixed(2);
-closingBalanceEl.innerText = currentTotalAllAccounts.toFixed(2);
+openingBalanceEl.innerText = openingBalance.toFixed(2);
+closingBalanceEl.innerText = totalCurrentAssets.toFixed(2);
 
 }
 
 
-async function updateAccountBalance(targetAccountName, transactionType, transactionAmount){
+async function updateAccountBalance(accName, actionType, actionAmount){
 
-const targetAcc = accounts.find(a => a.name === targetAccountName);
+const acc = accounts.find(a => a.name === accName);
+if(!acc) return;
 
-if(!targetAcc) return;
+let current = Number(acc.balance) || 0;
+let change = Number(actionAmount) || 0;
+let final = (actionType === "Dr") ? (current - change) : (current + change);
 
-let currentBal = Number(targetAcc.balance) || 0;
-let change = Number(transactionAmount) || 0;
-let updatedBal = currentBal;
-
-if(transactionType === "Dr"){
-    updatedBal = currentBal - change;
-}
-
-if(transactionType === "Cr"){
-    updatedBal = currentBal + change;
-}
-
-await updateDoc(doc(db, "accounts", targetAcc.id), {
-    balance: updatedBal
+await updateDoc(doc(db, "accounts", acc.id), {
+    balance: final
 });
 
 }
@@ -393,7 +389,7 @@ if(entryMode.value === "normal"){
         note:note.value
     });
 
-    // Update individual account amount
+    // Update the master account amount
     await updateAccountBalance(accountSelect.value, type.value, amt);
 
 }
@@ -405,7 +401,7 @@ else{
         return;
     }
 
-    // Record Debit Side
+    // Debit side
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer to " + toAccount.value,
@@ -416,7 +412,7 @@ else{
         note:note.value
     });
 
-    // Record Credit Side
+    // Credit side
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer from " + fromAccount.value,
@@ -427,7 +423,7 @@ else{
         note:note.value
     });
 
-    // React to account amounts
+    // Update account balances
     await updateAccountBalance(fromAccount.value, "Dr", amt);
     await updateAccountBalance(toAccount.value, "Cr", amt);
 
@@ -655,7 +651,7 @@ const data=snap.data();
 
 await addDoc(deletedCol,data);
 
-// Reverse effect on account balance
+// Adjust account balance back
 await updateAccountBalance(
     data.accountName,
     data.type === "Dr" ? "Cr" : "Dr",
@@ -679,19 +675,9 @@ let newAmt=prompt("New Amount",old.amount);
 
 if(!newAmt)return;
 
-// Revert old balance
-await updateAccountBalance(
-    old.accountName,
-    old.type === "Dr" ? "Cr" : "Dr",
-    old.amount
-);
-
-// Apply new balance
-await updateAccountBalance(
-    old.accountName,
-    old.type,
-    newAmt
-);
+// Revert old, then apply new
+await updateAccountBalance(old.accountName, old.type === "Dr" ? "Cr" : "Dr", old.amount);
+await updateAccountBalance(old.accountName, old.type, newAmt);
 
 await addDoc(editedCol,{
 name:old.name,
