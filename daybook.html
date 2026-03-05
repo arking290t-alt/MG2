@@ -173,7 +173,7 @@ To
 <button id="ssBtn">SS</button>
 
 <div class="balance-row">
-Opening Balance:
+Opening Balance (Start of Day):
 <span id="openingBalance">0.00</span>
 </div>
 
@@ -205,7 +205,7 @@ Opening Balance:
 </table>
 
 <div class="balance-row">
-Closing Balance:
+Closing Balance (Current):
 <span id="closingBalance">0.00</span>
 </div>
 
@@ -306,61 +306,59 @@ transferFields.style.display="none";
 
 };
 
-// --- FIXED BALANCE CALCULATION ---
+
 function calculateBalances(){
 
-let totalMasterBalance=0;
-
-accounts.forEach(a=>{
-totalMasterBalance+=Number(a.balance)||0;
+let currentTotalAllAccounts = 0;
+accounts.forEach(a => {
+    currentTotalAllAccounts += Number(a.balance) || 0;
 });
 
-let dayDr=0;
-let dayCr=0;
+let selectedDayDebit = 0;
+let selectedDayCredit = 0;
 
-entries.forEach(e=>{
-if(e.date===filterDate.value){
-if(e.type==="Dr") dayDr+=Number(e.amount)||0;
-if(e.type==="Cr") dayCr+=Number(e.amount)||0;
-}
+entries.forEach(e => {
+    if(e.date === filterDate.value){
+        if(e.type === "Dr") selectedDayDebit += Number(e.amount) || 0;
+        if(e.type === "Cr") selectedDayCredit += Number(e.amount) || 0;
+    }
 });
 
-// Opening Balance shows current total assets
-openingBalanceEl.innerText=totalMasterBalance.toFixed(2);
-// Closing Balance shows net change for the selected filter date
-closingBalanceEl.innerText=(dayCr - dayDr).toFixed(2);
+let dayNetMovement = selectedDayCredit - selectedDayDebit;
+
+// Opening balance is what we had before today's entries
+let opening = currentTotalAllAccounts - dayNetMovement;
+
+openingBalanceEl.innerText = opening.toFixed(2);
+closingBalanceEl.innerText = currentTotalAllAccounts.toFixed(2);
 
 }
 
-// --- CORE FIX: UPDATING ACCOUNT BALANCES IN FIRESTORE ---
-async function updateAccountBalance(accName, entryType, entryAmount){
 
-const acc=accounts.find(a=>a.name===accName);
+async function updateAccountBalance(targetAccountName, transactionType, transactionAmount){
 
-if(!acc) {
-    console.error("Account not found for update");
-    return;
+const targetAcc = accounts.find(a => a.name === targetAccountName);
+
+if(!targetAcc) return;
+
+let currentBal = Number(targetAcc.balance) || 0;
+let change = Number(transactionAmount) || 0;
+let updatedBal = currentBal;
+
+if(transactionType === "Dr"){
+    updatedBal = currentBal - change;
 }
 
-let currentBalance=Number(acc.balance)||0;
-let changeAmount=Number(entryAmount)||0;
-let newBalance=currentBalance;
-
-// If money goes out (Dr), subtract from account balance
-if(entryType==="Dr"){
-newBalance=currentBalance - changeAmount;
+if(transactionType === "Cr"){
+    updatedBal = currentBal + change;
 }
 
-// If money comes in (Cr), add to account balance
-if(entryType==="Cr"){
-newBalance=currentBalance + changeAmount;
-}
-
-await updateDoc(doc(db,"accounts",acc.id),{
-balance:newBalance
+await updateDoc(doc(db, "accounts", targetAcc.id), {
+    balance: updatedBal
 });
 
 }
+
 
 addAccountBtn.onclick=async()=>{
 
@@ -376,65 +374,62 @@ accountAmount.value="";
 
 };
 
-// --- FIXED ENTRY SUBMISSION ---
+
 addEntryBtn.onclick=async()=>{
 
-if(!amount.value || isNaN(amount.value)) {
-    alert("Please enter a valid amount");
-    return;
-}
+if(!amount.value) return;
 
-let amt=Number(amount.value);
+let amt = Number(amount.value) || 0;
 
-if(entryMode.value==="normal"){
+if(entryMode.value === "normal"){
 
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:purpose.value,
-amount:amt,
-accountName:accountSelect.value,
-type:type.value,
-date:date.value,
-note:note.value
-});
+    await addDoc(entriesCol,{
+        name:entryName.value,
+        purpose:purpose.value,
+        amount:amt,
+        accountName:accountSelect.value,
+        type:type.value,
+        date:date.value,
+        note:note.value
+    });
 
-// CRITICAL FIX: Update the master account balance
-await updateAccountBalance(accountSelect.value, type.value, amt);
+    // Update individual account amount
+    await updateAccountBalance(accountSelect.value, type.value, amt);
 
 }
 
 else{
 
-if(fromAccount.value===toAccount.value){
-alert("Accounts cannot be same");
-return;
-}
+    if(fromAccount.value === toAccount.value){
+        alert("Accounts cannot be same");
+        return;
+    }
 
-// DR from the source account
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer to "+toAccount.value,
-amount:amt,
-accountName:fromAccount.value,
-type:"Dr",
-date:date.value,
-note:note.value
-});
+    // Record Debit Side
+    await addDoc(entriesCol,{
+        name:entryName.value,
+        purpose:"Transfer to " + toAccount.value,
+        amount:amt,
+        accountName:fromAccount.value,
+        type:"Dr",
+        date:date.value,
+        note:note.value
+    });
 
-// CR to the destination account
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer from "+fromAccount.value,
-amount:amt,
-accountName:toAccount.value,
-type:"Cr",
-date:date.value,
-note:note.value
-});
+    // Record Credit Side
+    await addDoc(entriesCol,{
+        name:entryName.value,
+        purpose:"Transfer from " + fromAccount.value,
+        amount:amt,
+        accountName:toAccount.value,
+        type:"Cr",
+        date:date.value,
+        note:note.value
+    });
 
-// CRITICAL FIX: Update both accounts involved in transfer
-await updateAccountBalance(fromAccount.value, "Dr", amt);
-await updateAccountBalance(toAccount.value, "Cr", amt);
+    // React to account amounts
+    await updateAccountBalance(fromAccount.value, "Dr", amt);
+    await updateAccountBalance(toAccount.value, "Cr", amt);
 
 }
 
@@ -444,6 +439,7 @@ amount.value="";
 note.value="";
 
 };
+
 
 onSnapshot(accountsCol,snap=>{
 
@@ -458,8 +454,6 @@ snap.forEach(d=>{
 accounts.push({...d.data(),id:d.id});
 });
 
-accounts.sort((a,b) => a.name.localeCompare(b.name));
-
 accounts.forEach(a=>{
 
 accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
@@ -470,14 +464,14 @@ accountTable.innerHTML+=`
 
 <tr>
 <td>${a.name}</td>
-<td>${(Number(a.balance)||0).toFixed(2)}</td>
+<td>${(Number(a.balance) || 0).toFixed(2)}</td>
 <td>
 
 <button onclick="editAccount('${a.id}','${a.name}')">
 Edit
 </button>
 
-<button onclick="deleteAccount('${a.id}')" style="background:red">
+<button onclick="deleteAccount('${a.id}')">
 Delete
 </button>
 
@@ -492,27 +486,41 @@ calculateBalances();
 
 });
 
+
 onSnapshot(entriesCol,snap=>{
+
 entries=[];
+
 snap.forEach(d=>{
 entries.push({...d.data(),id:d.id});
 });
+
 render();
+
 });
 
+
 onSnapshot(deletedCol,snap=>{
+
 deletedEntries=[];
+
 snap.forEach(d=>{
 deletedEntries.push(d.data());
 });
+
 });
 
+
 onSnapshot(editedCol,snap=>{
+
 editedEntries=[];
+
 snap.forEach(d=>{
 editedEntries.push(d.data());
 });
+
 });
+
 
 function render(){
 
@@ -546,7 +554,7 @@ tableBody.innerHTML+=`
 Edit
 </button>
 
-<button onclick="deleteEntry('${e.id}')" style="background:red">
+<button onclick="deleteEntry('${e.id}')">
 Delete
 </button>
 
@@ -636,49 +644,53 @@ tableBody.innerHTML+=`
 
 }
 
+
 window.deleteEntry=async(id)=>{
 
 const ref=doc(db,"entries",id);
+
 const snap=await getDoc(ref);
+
 const data=snap.data();
 
-// Add to deleted collection
 await addDoc(deletedCol,data);
 
-// Reverse the account balance impact
-// If it was Dr (out), add it back (Cr)
-// If it was Cr (in), take it out (Dr)
+// Reverse effect on account balance
 await updateAccountBalance(
-data.accountName,
-data.type==="Dr"?"Cr":"Dr",
-data.amount
+    data.accountName,
+    data.type === "Dr" ? "Cr" : "Dr",
+    data.amount
 );
 
 await deleteDoc(ref);
 
 };
 
+
 window.editEntry=async(id)=>{
 
 const ref=doc(db,"entries",id);
+
 const snap=await getDoc(ref);
+
 const old=snap.data();
 
 let newAmt=prompt("New Amount",old.amount);
 
-if(!newAmt || isNaN(newAmt))return;
+if(!newAmt)return;
 
-// Logic: Revert old amount, then apply new amount
+// Revert old balance
 await updateAccountBalance(
-old.accountName,
-old.type==="Dr"?"Cr":"Dr",
-old.amount
+    old.accountName,
+    old.type === "Dr" ? "Cr" : "Dr",
+    old.amount
 );
 
+// Apply new balance
 await updateAccountBalance(
-old.accountName,
-old.type,
-newAmt
+    old.accountName,
+    old.type,
+    newAmt
 );
 
 await addDoc(editedCol,{
@@ -693,6 +705,7 @@ amount:Number(newAmt)||0
 });
 
 };
+
 
 window.editAccount=async(id,name)=>{
 
@@ -713,6 +726,7 @@ name:newName
 
 };
 
+
 window.deleteAccount=async(id)=>{
 
 let pass=prompt("Enter Password");
@@ -725,6 +739,7 @@ return;
 await deleteDoc(doc(db,"accounts",id));
 
 };
+
 
 todayBtn.onclick=()=>{
 viewMode="entries";
@@ -746,6 +761,7 @@ filterDate.onchange=()=>{
 render();
 };
 
+
 ssBtn.onclick=async()=>{
 
 let html=`
@@ -754,7 +770,7 @@ let html=`
 
 <p>Date ${filterDate.value}</p>
 
-<p>Total Assets ${openingBalanceEl.innerText}</p>
+<p>Opening Balance ${openingBalanceEl.innerText}</p>
 
 <h4>Account Balances</h4>
 
@@ -771,7 +787,7 @@ accounts.forEach(a=>{
 html+=`
 <tr>
 <td>${a.name}</td>
-<td>${(Number(a.balance)||0).toFixed(2)}</td>
+<td>${(Number(a.balance) || 0).toFixed(2)}</td>
 </tr>
 `;
 });
@@ -826,22 +842,29 @@ html+=`
 
 </table>
 
-<p>Net Change ${closingBalanceEl.innerText}</p>
+<p>Closing Balance ${closingBalanceEl.innerText}</p>
 
 `;
 
 let div=document.createElement("div");
+
 div.style.background="#fff";
 div.style.padding="20px";
+
 div.innerHTML=html;
 
 document.body.appendChild(div);
 
 const canvas=await html2canvas(div,{scale:2});
+
 const link=document.createElement("a");
-link.download="daybook_"+filterDate.value+".png";
+
+link.download="daybook.png";
+
 link.href=canvas.toDataURL();
+
 link.click();
+
 document.body.removeChild(div);
 
 };
