@@ -253,6 +253,9 @@ const editedCol=collection(db,"editedEntries");
 
 let accounts=[];
 let entries=[];
+let deletedEntries=[];
+let editedEntries=[];
+let viewMode="entries";
 
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
@@ -270,96 +273,98 @@ const type=document.getElementById("type");
 const note=document.getElementById("note");
 const addEntryBtn=document.getElementById("addEntry");
 
+const entryMode=document.getElementById("entryMode");
+const normalFields=document.getElementById("normalFields");
+const transferFields=document.getElementById("transferFields");
+
 const filterDate=document.getElementById("filterDate");
+
+const todayBtn=document.getElementById("todayBtn");
+const showDeletedBtn=document.getElementById("showDeletedBtn");
+const showEditedBtn=document.getElementById("showEditedBtn");
+const ssBtn=document.getElementById("ssBtn");
 
 const tableBody=document.getElementById("tableBody");
 const openingBalanceEl=document.getElementById("openingBalance");
 const closingBalanceEl=document.getElementById("closingBalance");
+const viewTitle=document.getElementById("viewTitle");
 
 date.value=today();
 filterDate.value=today();
 
+entryMode.onchange=()=>{
+
+if(entryMode.value==="transfer"){
+normalFields.style.display="none";
+transferFields.style.display="block";
+}
+
+else{
+normalFields.style.display="block";
+transferFields.style.display="none";
+}
+
+};
+
+// --- FIXED BALANCE CALCULATION ---
 function calculateBalances(){
 
-let opening=0;
+let totalMasterBalance=0;
 
 accounts.forEach(a=>{
-opening+=Number(a.balance)||0;
+totalMasterBalance+=Number(a.balance)||0;
 });
 
-let totalDr=0;
-let totalCr=0;
+let dayDr=0;
+let dayCr=0;
 
 entries.forEach(e=>{
-
 if(e.date===filterDate.value){
-
-if(e.type==="Dr") totalDr+=Number(e.amount)||0;
-if(e.type==="Cr") totalCr+=Number(e.amount)||0;
-
+if(e.type==="Dr") dayDr+=Number(e.amount)||0;
+if(e.type==="Cr") dayCr+=Number(e.amount)||0;
 }
-
 });
 
-let closing=opening+totalCr-totalDr;
-
-openingBalanceEl.innerText=opening.toFixed(2);
-closingBalanceEl.innerText=closing.toFixed(2);
+// Opening Balance shows current total assets
+openingBalanceEl.innerText=totalMasterBalance.toFixed(2);
+// Closing Balance shows net change for the selected filter date
+closingBalanceEl.innerText=(dayCr - dayDr).toFixed(2);
 
 }
 
-async function updateAccountBalance(name,type,amt){
+// --- CORE FIX: UPDATING ACCOUNT BALANCES IN FIRESTORE ---
+async function updateAccountBalance(accName, entryType, entryAmount){
 
-const acc=accounts.find(a=>a.name===name);
-if(!acc) return;
+const acc=accounts.find(a=>a.name===accName);
 
-let newBalance=acc.balance;
+if(!acc) {
+    console.error("Account not found for update");
+    return;
+}
 
-if(type==="Dr") newBalance-=amt;
-if(type==="Cr") newBalance+=amt;
+let currentBalance=Number(acc.balance)||0;
+let changeAmount=Number(entryAmount)||0;
+let newBalance=currentBalance;
 
-acc.balance=newBalance;
+// If money goes out (Dr), subtract from account balance
+if(entryType==="Dr"){
+newBalance=currentBalance - changeAmount;
+}
+
+// If money comes in (Cr), add to account balance
+if(entryType==="Cr"){
+newBalance=currentBalance + changeAmount;
+}
 
 await updateDoc(doc(db,"accounts",acc.id),{
 balance:newBalance
 });
 
-renderAccounts();
-
-}
-
-function renderAccounts(){
-
-accountTable.innerHTML="";
-accountSelect.innerHTML="";
-fromAccount.innerHTML="";
-toAccount.innerHTML="";
-
-accounts.forEach(a=>{
-
-accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
-
-accountTable.innerHTML+=`
-
-<tr>
-<td>${a.name}</td>
-<td>${Number(a.balance).toFixed(2)}</td>
-<td></td>
-</tr>
-
-`;
-
-});
-
-calculateBalances();
-
 }
 
 addAccountBtn.onclick=async()=>{
 
-if(!accountName.value||!accountAmount.value) return;
+if(!accountName.value||!accountAmount.value)return;
 
 await addDoc(accountsCol,{
 name:accountName.value,
@@ -371,11 +376,17 @@ accountAmount.value="";
 
 };
 
+// --- FIXED ENTRY SUBMISSION ---
 addEntryBtn.onclick=async()=>{
 
-if(!amount.value) return;
+if(!amount.value || isNaN(amount.value)) {
+    alert("Please enter a valid amount");
+    return;
+}
 
-let amt=Number(amount.value)||0;
+let amt=Number(amount.value);
+
+if(entryMode.value==="normal"){
 
 await addDoc(entriesCol,{
 name:entryName.value,
@@ -387,7 +398,45 @@ date:date.value,
 note:note.value
 });
 
-await updateAccountBalance(accountSelect.value,type.value,amt);
+// CRITICAL FIX: Update the master account balance
+await updateAccountBalance(accountSelect.value, type.value, amt);
+
+}
+
+else{
+
+if(fromAccount.value===toAccount.value){
+alert("Accounts cannot be same");
+return;
+}
+
+// DR from the source account
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer to "+toAccount.value,
+amount:amt,
+accountName:fromAccount.value,
+type:"Dr",
+date:date.value,
+note:note.value
+});
+
+// CR to the destination account
+await addDoc(entriesCol,{
+name:entryName.value,
+purpose:"Transfer from "+fromAccount.value,
+amount:amt,
+accountName:toAccount.value,
+type:"Cr",
+date:date.value,
+note:note.value
+});
+
+// CRITICAL FIX: Update both accounts involved in transfer
+await updateAccountBalance(fromAccount.value, "Dr", amt);
+await updateAccountBalance(toAccount.value, "Cr", amt);
+
+}
 
 entryName.value="";
 purpose.value="";
@@ -399,28 +448,79 @@ note.value="";
 onSnapshot(accountsCol,snap=>{
 
 accounts=[];
+
+accountTable.innerHTML="";
+accountSelect.innerHTML="";
+fromAccount.innerHTML="";
+toAccount.innerHTML="";
+
 snap.forEach(d=>{
 accounts.push({...d.data(),id:d.id});
 });
 
-renderAccounts();
+accounts.sort((a,b) => a.name.localeCompare(b.name));
+
+accounts.forEach(a=>{
+
+accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
+
+accountTable.innerHTML+=`
+
+<tr>
+<td>${a.name}</td>
+<td>${(Number(a.balance)||0).toFixed(2)}</td>
+<td>
+
+<button onclick="editAccount('${a.id}','${a.name}')">
+Edit
+</button>
+
+<button onclick="deleteAccount('${a.id}')" style="background:red">
+Delete
+</button>
+
+</td>
+</tr>
+
+`;
+
+});
+
+calculateBalances();
 
 });
 
 onSnapshot(entriesCol,snap=>{
-
 entries=[];
 snap.forEach(d=>{
 entries.push({...d.data(),id:d.id});
 });
-
-renderEntries();
-
+render();
 });
 
-function renderEntries(){
+onSnapshot(deletedCol,snap=>{
+deletedEntries=[];
+snap.forEach(d=>{
+deletedEntries.push(d.data());
+});
+});
+
+onSnapshot(editedCol,snap=>{
+editedEntries=[];
+snap.forEach(d=>{
+editedEntries.push(d.data());
+});
+});
+
+function render(){
 
 tableBody.innerHTML="";
+
+if(viewMode==="entries"){
+
+viewTitle.innerText="Entries";
 
 entries.forEach(e=>{
 
@@ -440,7 +540,17 @@ tableBody.innerHTML+=`
 <td>${e.date}</td>
 <td>${e.note}</td>
 
-<td></td>
+<td>
+
+<button onclick="editEntry('${e.id}')">
+Edit
+</button>
+
+<button onclick="deleteEntry('${e.id}')" style="background:red">
+Delete
+</button>
+
+</td>
 
 </tr>
 
@@ -454,7 +564,287 @@ calculateBalances();
 
 }
 
-filterDate.onchange=()=>renderEntries();
+if(viewMode==="deleted"){
+
+viewTitle.innerText="Deleted Entries";
+
+deletedEntries.forEach(d=>{
+
+if(d.date===filterDate.value){
+
+tableBody.innerHTML+=`
+
+<tr>
+
+<td>${d.name}</td>
+<td>${d.purpose}</td>
+<td>${d.accountName||""}</td>
+
+<td>${d.type==="Dr"?d.amount:""}</td>
+<td>${d.type==="Cr"?d.amount:""}</td>
+
+<td>${d.date}</td>
+<td>${d.note||""}</td>
+
+<td></td>
+
+</tr>
+
+`;
+
+}
+
+});
+
+}
+
+if(viewMode==="edited"){
+
+viewTitle.innerText="Edited Entries";
+
+editedEntries.forEach(e=>{
+
+if(e.date===filterDate.value){
+
+tableBody.innerHTML+=`
+
+<tr>
+
+<td>${e.name}</td>
+<td>Before ${e.before}</td>
+<td>${e.accountName||""}</td>
+
+<td></td>
+
+<td>After ${e.after}</td>
+
+<td>${e.date}</td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+`;
+
+}
+
+});
+
+}
+
+}
+
+window.deleteEntry=async(id)=>{
+
+const ref=doc(db,"entries",id);
+const snap=await getDoc(ref);
+const data=snap.data();
+
+// Add to deleted collection
+await addDoc(deletedCol,data);
+
+// Reverse the account balance impact
+// If it was Dr (out), add it back (Cr)
+// If it was Cr (in), take it out (Dr)
+await updateAccountBalance(
+data.accountName,
+data.type==="Dr"?"Cr":"Dr",
+data.amount
+);
+
+await deleteDoc(ref);
+
+};
+
+window.editEntry=async(id)=>{
+
+const ref=doc(db,"entries",id);
+const snap=await getDoc(ref);
+const old=snap.data();
+
+let newAmt=prompt("New Amount",old.amount);
+
+if(!newAmt || isNaN(newAmt))return;
+
+// Logic: Revert old amount, then apply new amount
+await updateAccountBalance(
+old.accountName,
+old.type==="Dr"?"Cr":"Dr",
+old.amount
+);
+
+await updateAccountBalance(
+old.accountName,
+old.type,
+newAmt
+);
+
+await addDoc(editedCol,{
+name:old.name,
+before:old.amount,
+after:newAmt,
+date:old.date
+});
+
+await updateDoc(ref,{
+amount:Number(newAmt)||0
+});
+
+};
+
+window.editAccount=async(id,name)=>{
+
+let pass=prompt("Enter Password");
+
+if(pass!==PASSWORD){
+alert("Wrong Password");
+return;
+}
+
+let newName=prompt("New Name",name);
+
+if(!newName)return;
+
+await updateDoc(doc(db,"accounts",id),{
+name:newName
+});
+
+};
+
+window.deleteAccount=async(id)=>{
+
+let pass=prompt("Enter Password");
+
+if(pass!==PASSWORD){
+alert("Wrong Password");
+return;
+}
+
+await deleteDoc(doc(db,"accounts",id));
+
+};
+
+todayBtn.onclick=()=>{
+viewMode="entries";
+filterDate.value=today();
+render();
+};
+
+showDeletedBtn.onclick=()=>{
+viewMode="deleted";
+render();
+};
+
+showEditedBtn.onclick=()=>{
+viewMode="edited";
+render();
+};
+
+filterDate.onchange=()=>{
+render();
+};
+
+ssBtn.onclick=async()=>{
+
+let html=`
+
+<h2>OFFICE DAYBOOK</h2>
+
+<p>Date ${filterDate.value}</p>
+
+<p>Total Assets ${openingBalanceEl.innerText}</p>
+
+<h4>Account Balances</h4>
+
+<table border="1" style="width:100%;border-collapse:collapse;">
+
+<tr>
+<th>Account</th>
+<th>Balance</th>
+</tr>
+
+`;
+
+accounts.forEach(a=>{
+html+=`
+<tr>
+<td>${a.name}</td>
+<td>${(Number(a.balance)||0).toFixed(2)}</td>
+</tr>
+`;
+});
+
+html+=`
+
+</table>
+
+<h4>Entries</h4>
+
+<table border="1" style="width:100%;border-collapse:collapse;">
+
+<tr>
+
+<th>Name</th>
+<th>Purpose</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Date</th>
+
+</tr>
+
+`;
+
+entries.forEach(e=>{
+
+if(e.date===filterDate.value){
+
+html+=`
+
+<tr>
+
+<td>${e.name}</td>
+<td>${e.purpose}</td>
+<td>${e.accountName}</td>
+
+<td>${e.type==="Dr"?e.amount:""}</td>
+<td>${e.type==="Cr"?e.amount:""}</td>
+
+<td>${e.date}</td>
+
+</tr>
+
+`;
+
+}
+
+});
+
+html+=`
+
+</table>
+
+<p>Net Change ${closingBalanceEl.innerText}</p>
+
+`;
+
+let div=document.createElement("div");
+div.style.background="#fff";
+div.style.padding="20px";
+div.innerHTML=html;
+
+document.body.appendChild(div);
+
+const canvas=await html2canvas(div,{scale:2});
+const link=document.createElement("a");
+link.download="daybook_"+filterDate.value+".png";
+link.href=canvas.toDataURL();
+link.click();
+document.body.removeChild(div);
+
+};
 
 </script>
 
