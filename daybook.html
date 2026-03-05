@@ -237,7 +237,6 @@ projectId:"mg-manager-3ab66"
 };
 
 const app=initializeApp(firebaseConfig);
-
 const db=getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
@@ -256,6 +255,11 @@ let entries=[];
 let deletedEntries=[];
 let editedEntries=[];
 let viewMode="entries";
+
+/* OPENING BALANCE LOCK SYSTEM */
+
+let dailyOpeningBalance=null;
+let lastOpeningDate=null;
 
 const accountName=document.getElementById("accountName");
 const accountAmount=document.getElementById("accountAmount");
@@ -298,7 +302,6 @@ if(entryMode.value==="transfer"){
 normalFields.style.display="none";
 transferFields.style.display="block";
 }
-
 else{
 normalFields.style.display="block";
 transferFields.style.display="none";
@@ -308,11 +311,17 @@ transferFields.style.display="none";
 
 function calculateBalances(){
 
-let opening=0;
+if(lastOpeningDate!==filterDate.value){
+
+dailyOpeningBalance=0;
 
 accounts.forEach(a=>{
-opening+=Number(a.balance)||0;
+dailyOpeningBalance+=Number(a.balance)||0;
 });
+
+lastOpeningDate=filterDate.value;
+
+}
 
 let totalDr=0;
 let totalCr=0;
@@ -333,9 +342,9 @@ totalCr+=Number(e.amount)||0;
 
 });
 
-let closing=opening+totalCr-totalDr;
+let closing=dailyOpeningBalance+totalCr-totalDr;
 
-openingBalanceEl.innerText=opening.toFixed(2);
+openingBalanceEl.innerText=dailyOpeningBalance.toFixed(2);
 closingBalanceEl.innerText=closing.toFixed(2);
 
 }
@@ -348,13 +357,8 @@ if(!acc)return;
 
 let newBalance=Number(acc.balance)||0;
 
-if(type==="Dr"){
-newBalance-=Number(amount);
-}
-
-if(type==="Cr"){
-newBalance+=Number(amount);
-}
+if(type==="Dr") newBalance-=Number(amount);
+if(type==="Cr") newBalance+=Number(amount);
 
 await updateDoc(doc(db,"accounts",acc.id),{
 balance:newBalance
@@ -362,8 +366,8 @@ balance:newBalance
 
 acc.balance=newBalance;
 
-calculateBalances();
 render();
+calculateBalances();
 
 }
 
@@ -468,13 +472,9 @@ accountTable.innerHTML+=`
 <td>${a.balance.toFixed(2)}</td>
 <td>
 
-<button onclick="editAccount('${a.id}','${a.name}')">
-Edit
-</button>
+<button onclick="editAccount('${a.id}','${a.name}')">Edit</button>
 
-<button onclick="deleteAccount('${a.id}')">
-Delete
-</button>
+<button onclick="deleteAccount('${a.id}')">Delete</button>
 
 </td>
 </tr>
@@ -499,33 +499,9 @@ render();
 
 });
 
-onSnapshot(deletedCol,snap=>{
-
-deletedEntries=[];
-
-snap.forEach(d=>{
-deletedEntries.push(d.data());
-});
-
-});
-
-onSnapshot(editedCol,snap=>{
-
-editedEntries=[];
-
-snap.forEach(d=>{
-editedEntries.push(d.data());
-});
-
-});
-
 function render(){
 
 tableBody.innerHTML="";
-
-if(viewMode==="entries"){
-
-viewTitle.innerText="Entries";
 
 entries.forEach(e=>{
 
@@ -547,13 +523,8 @@ tableBody.innerHTML+=`
 
 <td>
 
-<button onclick="editEntry('${e.id}')">
-Edit
-</button>
-
-<button onclick="deleteEntry('${e.id}')">
-Delete
-</button>
+<button onclick="editEntry('${e.id}')">Edit</button>
+<button onclick="deleteEntry('${e.id}')">Delete</button>
 
 </td>
 
@@ -569,84 +540,10 @@ calculateBalances();
 
 }
 
-if(viewMode==="deleted"){
-
-viewTitle.innerText="Deleted Entries";
-
-deletedEntries.forEach(d=>{
-
-if(d.date===filterDate.value){
-
-tableBody.innerHTML+=`
-
-<tr>
-
-<td>${d.name}</td>
-<td>${d.purpose}</td>
-<td>${d.accountName||""}</td>
-
-<td>${d.type==="Dr"?d.amount:""}</td>
-<td>${d.type==="Cr"?d.amount:""}</td>
-
-<td>${d.date}</td>
-<td>${d.note||""}</td>
-
-<td></td>
-
-</tr>
-
-`;
-
-}
-
-});
-
-}
-
-if(viewMode==="edited"){
-
-viewTitle.innerText="Edited Entries";
-
-editedEntries.forEach(e=>{
-
-if(e.date===filterDate.value){
-
-tableBody.innerHTML+=`
-
-<tr>
-
-<td>${e.name}</td>
-<td>Before ${e.before}</td>
-<td>${e.accountName||""}</td>
-
-<td></td>
-
-<td>After ${e.after}</td>
-
-<td>${e.date}</td>
-
-<td></td>
-
-<td></td>
-
-</tr>
-
-`;
-
-}
-
-});
-
-}
-
-}
-
 window.deleteEntry=async(id)=>{
 
 const ref=doc(db,"entries",id);
-
 const snap=await getDoc(ref);
-
 const data=snap.data();
 
 await addDoc(deletedCol,data);
@@ -664,13 +561,10 @@ await deleteDoc(ref);
 window.editEntry=async(id)=>{
 
 const ref=doc(db,"entries",id);
-
 const snap=await getDoc(ref);
-
 const old=snap.data();
 
 let newAmt=prompt("New Amount",old.amount);
-
 if(!newAmt)return;
 
 await updateAccountBalance(
@@ -685,176 +579,19 @@ old.type,
 newAmt
 );
 
-await addDoc(editedCol,{
-name:old.name,
-before:old.amount,
-after:newAmt,
-date:old.date
-});
-
 await updateDoc(ref,{
 amount:Number(newAmt)||0
 });
 
 };
 
-window.editAccount=async(id,name)=>{
-
-let pass=prompt("Enter Password");
-
-if(pass!==PASSWORD){
-alert("Wrong Password");
-return;
-}
-
-let newName=prompt("New Name",name);
-
-if(!newName)return;
-
-await updateDoc(doc(db,"accounts",id),{
-name:newName
-});
-
-};
-
-window.deleteAccount=async(id)=>{
-
-let pass=prompt("Enter Password");
-
-if(pass!==PASSWORD){
-alert("Wrong Password");
-return;
-}
-
-await deleteDoc(doc(db,"accounts",id));
-
-};
-
 todayBtn.onclick=()=>{
-viewMode="entries";
 filterDate.value=today();
-render();
-};
-
-showDeletedBtn.onclick=()=>{
-viewMode="deleted";
-render();
-};
-
-showEditedBtn.onclick=()=>{
-viewMode="edited";
 render();
 };
 
 filterDate.onchange=()=>{
 render();
-};
-
-ssBtn.onclick=async()=>{
-
-let html=`
-
-<h2>OFFICE DAYBOOK</h2>
-
-<p>Date ${filterDate.value}</p>
-
-<p>Opening Balance ${openingBalanceEl.innerText}</p>
-
-<h4>Account Balances</h4>
-
-<table border="1" style="width:100%;border-collapse:collapse;">
-
-<tr>
-<th>Account</th>
-<th>Balance</th>
-</tr>
-
-`;
-
-accounts.forEach(a=>{
-html+=`
-<tr>
-<td>${a.name}</td>
-<td>${a.balance.toFixed(2)}</td>
-</tr>
-`;
-});
-
-html+=`
-
-</table>
-
-<h4>Entries</h4>
-
-<table border="1" style="width:100%;border-collapse:collapse;">
-
-<tr>
-
-<th>Name</th>
-<th>Purpose</th>
-<th>Account</th>
-<th>Debit</th>
-<th>Credit</th>
-<th>Date</th>
-
-</tr>
-
-`;
-
-entries.forEach(e=>{
-
-if(e.date===filterDate.value){
-
-html+=`
-
-<tr>
-
-<td>${e.name}</td>
-<td>${e.purpose}</td>
-<td>${e.accountName}</td>
-
-<td>${e.type==="Dr"?e.amount:""}</td>
-<td>${e.type==="Cr"?e.amount:""}</td>
-
-<td>${e.date}</td>
-
-</tr>
-
-`;
-
-}
-
-});
-
-html+=`
-
-</table>
-
-<p>Closing Balance ${closingBalanceEl.innerText}</p>
-
-`;
-
-let div=document.createElement("div");
-
-div.style.background="#fff";
-div.style.padding="20px";
-
-div.innerHTML=html;
-
-document.body.appendChild(div);
-
-const canvas=await html2canvas(div,{scale:2});
-
-const link=document.createElement("a");
-
-link.download="daybook.png";
-
-link.href=canvas.toDataURL();
-
-link.click();
-
-document.body.removeChild(div);
-
 };
 
 </script>
