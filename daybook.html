@@ -346,7 +346,7 @@ const acc=accounts.find(a=>a.name===accountName);
 
 if(!acc)return;
 
-let newBalance=acc.balance;
+let newBalance=Number(acc.balance)||0;
 
 if(type==="Dr"){
 newBalance-=Number(amount);
@@ -359,6 +359,11 @@ newBalance+=Number(amount);
 await updateDoc(doc(db,"accounts",acc.id),{
 balance:newBalance
 });
+
+acc.balance=newBalance;
+
+calculateBalances();
+render();
 
 }
 
