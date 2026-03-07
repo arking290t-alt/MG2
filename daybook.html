@@ -53,6 +53,7 @@ background:#0d6efd;
 color:white;
 cursor:pointer;
 font-size:13px;
+margin-right: 5px;
 }
 
 button:hover{
@@ -171,10 +172,11 @@ To
 <button id="showDeletedBtn">Deleted</button>
 <button id="showEditedBtn">Edited</button>
 <button id="ssBtn">SS</button>
+<button id="toggleBalanceBtn" style="background:#6c757d;">Show Balance</button>
 
 <div class="balance-row">
 Opening Balance (Start of Day): 
-<span id="openingBalance">0.00</span>
+<span id="openingBalance">********</span>
 </div>
 
 </div>
@@ -206,7 +208,7 @@ Opening Balance (Start of Day):
 
 <div class="balance-row">
 Closing Balance (Current): 
-<span id="closingBalance">0.00</span>
+<span id="closingBalance">********</span>
 </div>
 
 </div>
@@ -241,6 +243,8 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
+const BALANCE_PIN = "816400"; // Secret PIN for viewing balances
+let balancesVisible = false; // Visibility state
 
 function today(){
 return new Date().toISOString().split("T")[0];
@@ -283,6 +287,7 @@ const todayBtn=document.getElementById("todayBtn");
 const showDeletedBtn=document.getElementById("showDeletedBtn");
 const showEditedBtn=document.getElementById("showEditedBtn");
 const ssBtn=document.getElementById("ssBtn");
+const toggleBalanceBtn = document.getElementById("toggleBalanceBtn");
 
 const tableBody=document.getElementById("tableBody");
 const openingBalanceEl=document.getElementById("openingBalance");
@@ -292,23 +297,45 @@ const viewTitle=document.getElementById("viewTitle");
 date.value=today();
 filterDate.value=today();
 
-entryMode.onchange=()=>{
+// --- NEW TOGGLE BALANCE LOGIC ---
+toggleBalanceBtn.onclick = () => {
+    if (!balancesVisible) {
+        let pin = prompt("Enter PIN to show balances:");
+        if (pin === BALANCE_PIN) {
+            balancesVisible = true;
+            toggleBalanceBtn.innerText = "Hide Balance";
+            toggleBalanceBtn.style.background = "#198754";
+            renderAll(); 
+        } else {
+            alert("Incorrect PIN");
+        }
+    } else {
+        balancesVisible = false;
+        toggleBalanceBtn.innerText = "Show Balance";
+        toggleBalanceBtn.style.background = "#6c757d";
+        renderAll();
+    }
+};
 
+function renderAll() {
+    renderAccounts();
+    render();
+    calculateBalances();
+}
+
+entryMode.onchange=()=>{
 if(entryMode.value==="transfer"){
 normalFields.style.display="none";
 transferFields.style.display="block";
 }
-
 else{
 normalFields.style.display="block";
 transferFields.style.display="none";
 }
-
 };
 
 
 function calculateBalances(){
-
 let totalCurrentAssets = 0;
 accounts.forEach(a => {
     totalCurrentAssets += Number(a.balance) || 0;
@@ -325,18 +352,14 @@ entries.forEach(e => {
 });
 
 let netChangeToday = selectedDayCr - selectedDayDr;
-
-// Opening Balance calculation (Current - Today's net movement)
 let openingBalance = totalCurrentAssets - netChangeToday;
 
-openingBalanceEl.innerText = openingBalance.toFixed(2);
-closingBalanceEl.innerText = totalCurrentAssets.toFixed(2);
-
+openingBalanceEl.innerText = balancesVisible ? openingBalance.toFixed(2) : "********";
+closingBalanceEl.innerText = balancesVisible ? totalCurrentAssets.toFixed(2) : "********";
 }
 
 
 async function updateAccountBalance(accName, actionType, actionAmount){
-
 const acc = accounts.find(a => a.name === accName);
 if(!acc) return;
 
@@ -347,33 +370,25 @@ let final = (actionType === "Dr") ? (current - change) : (current + change);
 await updateDoc(doc(db, "accounts", acc.id), {
     balance: final
 });
-
 }
 
 
 addAccountBtn.onclick=async()=>{
-
 if(!accountName.value||!accountAmount.value)return;
-
 await addDoc(accountsCol,{
 name:accountName.value,
 balance:Number(accountAmount.value)||0
 });
-
 accountName.value="";
 accountAmount.value="";
-
 };
 
 
 addEntryBtn.onclick=async()=>{
-
 if(!amount.value) return;
-
 let amt = Number(amount.value) || 0;
 
 if(entryMode.value === "normal"){
-
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:purpose.value,
@@ -383,18 +398,13 @@ if(entryMode.value === "normal"){
         date:date.value,
         note:note.value
     });
-
     await updateAccountBalance(accountSelect.value, type.value, amt);
-
 }
-
 else{
-
     if(fromAccount.value === toAccount.value){
         alert("Accounts cannot be same");
         return;
     }
-
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer to " + toAccount.value,
@@ -404,7 +414,6 @@ else{
         date:date.value,
         note:note.value
     });
-
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer from " + fromAccount.value,
@@ -414,306 +423,198 @@ else{
         date:date.value,
         note:note.value
     });
-
     await updateAccountBalance(fromAccount.value, "Dr", amt);
     await updateAccountBalance(toAccount.value, "Cr", amt);
-
 }
-
 entryName.value="";
 purpose.value="";
 amount.value="";
 note.value="";
-
 };
 
 
 onSnapshot(accountsCol,snap=>{
-
 accounts=[];
+snap.forEach(d=>{
+accounts.push({...d.data(),id:d.id});
+});
+renderAccounts();
+calculateBalances();
+});
 
+function renderAccounts() {
 accountTable.innerHTML="";
 accountSelect.innerHTML="";
 fromAccount.innerHTML="";
 toAccount.innerHTML="";
 
-snap.forEach(d=>{
-accounts.push({...d.data(),id:d.id});
-});
-
 accounts.forEach(a=>{
-
 accountSelect.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 fromAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 toAccount.innerHTML+=`<option value="${a.name}">${a.name}</option>`;
 
 accountTable.innerHTML+=`
-
 <tr>
 <td>${a.name}</td>
-<td>${(Number(a.balance) || 0).toFixed(2)}</td>
+<td>${balancesVisible ? (Number(a.balance) || 0).toFixed(2) : "********"}</td>
 <td>
-
-<button onclick="editAccount('${a.id}','${a.balance}')">
-Edit
-</button>
-
-<button onclick="deleteAccount('${a.id}')">
-Delete
-</button>
-
+<button onclick="editAccount('${a.id}','${a.balance}')">Edit</button>
+<button onclick="deleteAccount('${a.id}')">Delete</button>
 </td>
 </tr>
-
 `;
-
 });
-
-calculateBalances();
-
-});
+}
 
 
 onSnapshot(entriesCol,snap=>{
-
 entries=[];
-
 snap.forEach(d=>{
 entries.push({...d.data(),id:d.id});
 });
-
 render();
-
 });
 
 
 onSnapshot(deletedCol,snap=>{
-
 deletedEntries=[];
-
 snap.forEach(d=>{
 deletedEntries.push(d.data());
 });
-
 });
 
 
 onSnapshot(editedCol,snap=>{
-
 editedEntries=[];
-
 snap.forEach(d=>{
 editedEntries.push(d.data());
 });
-
 });
 
 
 function render(){
-
 tableBody.innerHTML="";
-
 if(viewMode==="entries"){
-
 viewTitle.innerText="Entries";
-
 entries.forEach(e=>{
-
 if(e.date===filterDate.value){
-
 tableBody.innerHTML+=`
-
 <tr>
-
 <td>${e.name}</td>
 <td>${e.purpose}</td>
 <td>${e.accountName}</td>
-
 <td>${e.type==="Dr"?e.amount:""}</td>
 <td>${e.type==="Cr"?e.amount:""}</td>
-
 <td>${e.date}</td>
 <td>${e.note}</td>
-
 <td>
-
-<button onclick="editEntry('${e.id}')">
-Edit
-</button>
-
-<button onclick="deleteEntry('${e.id}')">
-Delete
-</button>
-
+<button onclick="editEntry('${e.id}')">Edit</button>
+<button onclick="deleteEntry('${e.id}')">Delete</button>
 </td>
-
 </tr>
-
 `;
-
 }
-
 });
-
 calculateBalances();
-
 }
 
 if(viewMode==="deleted"){
-
 viewTitle.innerText="Deleted Entries";
-
 deletedEntries.forEach(d=>{
-
 if(d.date===filterDate.value){
-
 tableBody.innerHTML+=`
-
 <tr>
-
 <td>${d.name}</td>
 <td>${d.purpose}</td>
 <td>${d.accountName||""}</td>
-
 <td>${d.type==="Dr"?d.amount:""}</td>
 <td>${d.type==="Cr"?d.amount:""}</td>
-
 <td>${d.date}</td>
 <td>${d.note||""}</td>
-
 <td></td>
-
 </tr>
-
 `;
-
 }
-
 });
-
 }
 
 if(viewMode==="edited"){
-
 viewTitle.innerText="Edited Entries";
-
 editedEntries.forEach(e=>{
-
 if(e.date===filterDate.value){
-
 tableBody.innerHTML+=`
-
 <tr>
-
 <td>${e.name}</td>
 <td>Before ${e.before}</td>
 <td>${e.accountName||""}</td>
-
 <td></td>
-
 <td>After ${e.after}</td>
-
 <td>${e.date}</td>
-
 <td></td>
-
 <td></td>
-
 </tr>
-
 `;
-
 }
-
 });
-
 }
-
 }
 
 
 window.deleteEntry=async(id)=>{
-
 const ref=doc(db,"entries",id);
-
 const snap=await getDoc(ref);
-
 const data=snap.data();
-
 await addDoc(deletedCol,data);
-
 await updateAccountBalance(
     data.accountName,
     data.type === "Dr" ? "Cr" : "Dr",
     data.amount
 );
-
 await deleteDoc(ref);
-
 };
 
 
 window.editEntry=async(id)=>{
-
 const ref=doc(db,"entries",id);
-
 const snap=await getDoc(ref);
-
 const old=snap.data();
-
 let newAmt=prompt("New Amount",old.amount);
-
 if(!newAmt)return;
-
 await updateAccountBalance(old.accountName, old.type === "Dr" ? "Cr" : "Dr", old.amount);
 await updateAccountBalance(old.accountName, old.type, newAmt);
-
 await addDoc(editedCol,{
 name:old.name,
 before:old.amount,
 after:newAmt,
 date:old.date
 });
-
 await updateDoc(ref,{
 amount:Number(newAmt)||0
 });
-
 };
 
 
-// --- FIXED EDIT ACCOUNT FUNCTION (EDITS AMOUNT NOW) ---
 window.editAccount=async(id, currentBalance)=>{
-
 let pass=prompt("Enter Password to Edit Amount");
-
 if(pass!==PASSWORD){
 alert("Wrong Password");
 return;
 }
-
 let newBalance=prompt("Enter New Balance for this Account", currentBalance);
-
 if(newBalance === null || newBalance === "" || isNaN(newBalance)) return;
-
 await updateDoc(doc(db,"accounts",id),{
 balance: Number(newBalance)
 });
-
 };
 
 
 window.deleteAccount=async(id)=>{
-
 let pass=prompt("Enter Password to Delete Account");
-
 if(pass!==PASSWORD){
 alert("Wrong Password");
 return;
 }
-
 await deleteDoc(doc(db,"accounts",id));
-
 };
 
 
@@ -739,110 +640,72 @@ render();
 
 
 ssBtn.onclick=async()=>{
-
 let html=`
-
 <h2>OFFICE DAYBOOK</h2>
-
 <p>Date ${filterDate.value}</p>
-
-<p>Opening Balance ${openingBalanceEl.innerText}</p>
-
+<p>Opening Balance ${balancesVisible ? openingBalanceEl.innerText : "********"}</p>
 <h4>Account Balances</h4>
-
 <table border="1" style="width:100%;border-collapse:collapse;">
-
 <tr>
 <th>Account</th>
 <th>Balance</th>
 </tr>
-
 `;
 
 accounts.forEach(a=>{
 html+=`
 <tr>
 <td>${a.name}</td>
-<td>${(Number(a.balance) || 0).toFixed(2)}</td>
+<td>${balancesVisible ? (Number(a.balance) || 0).toFixed(2) : "********"}</td>
 </tr>
 `;
 });
 
 html+=`
-
 </table>
-
 <h4>Entries</h4>
-
 <table border="1" style="width:100%;border-collapse:collapse;">
-
 <tr>
-
 <th>Name</th>
 <th>Purpose</th>
 <th>Account</th>
 <th>Debit</th>
 <th>Credit</th>
 <th>Date</th>
-
 </tr>
-
 `;
 
 entries.forEach(e=>{
-
 if(e.date===filterDate.value){
-
 html+=`
-
 <tr>
-
 <td>${e.name}</td>
 <td>${e.purpose}</td>
 <td>${e.accountName}</td>
-
 <td>${e.type==="Dr"?e.amount:""}</td>
 <td>${e.type==="Cr"?e.amount:""}</td>
-
 <td>${e.date}</td>
-
 </tr>
-
 `;
-
 }
-
 });
 
 html+=`
-
 </table>
-
-<p>Closing Balance ${closingBalanceEl.innerText}</p>
-
+<p>Closing Balance ${balancesVisible ? closingBalanceEl.innerText : "********"}</p>
 `;
 
 let div=document.createElement("div");
-
 div.style.background="#fff";
 div.style.padding="20px";
-
 div.innerHTML=html;
-
 document.body.appendChild(div);
-
 const canvas=await html2canvas(div,{scale:2});
-
 const link=document.createElement("a");
-
 link.download="daybook.png";
-
 link.href=canvas.toDataURL();
-
 link.click();
-
 document.body.removeChild(div);
-
 };
 
 </script>
