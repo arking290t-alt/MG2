@@ -336,26 +336,36 @@ transferFields.style.display="none";
 
 
 function calculateBalances(){
-let totalCurrentAssets = 0;
-accounts.forEach(a => {
-    totalCurrentAssets += Number(a.balance) || 0;
-});
+    const targetDate = filterDate.value;
+    
+    // 1. Calculate Grand Total Assets RIGHT NOW across all accounts
+    let totalAssetsNow = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
 
-let selectedDayDr = 0;
-let selectedDayCr = 0;
+    // 2. Adjust for transactions that happened AFTER the selected date
+    let netChangeSinceTarget = 0;
+    entries.forEach(e => {
+        if (e.date > targetDate) {
+            if (e.type === "Cr") netChangeSinceTarget += Number(e.amount);
+            if (e.type === "Dr") netChangeSinceTarget -= Number(e.amount);
+        }
+    });
 
-entries.forEach(e => {
-    if(e.date === filterDate.value){
-        if(e.type === "Dr") selectedDayDr += Number(e.amount) || 0;
-        if(e.type === "Cr") selectedDayCr += Number(e.amount) || 0;
-    }
-});
+    // Closing balance for the end of the selected day
+    let closingForDay = totalAssetsNow - netChangeSinceTarget;
 
-let netChangeToday = selectedDayCr - selectedDayDr;
-let openingBalance = totalCurrentAssets - netChangeToday;
+    // 3. Subtract transactions from the selected day itself to find Opening balance
+    let netChangeOnDay = 0;
+    entries.forEach(e => {
+        if (e.date === targetDate) {
+            if (e.type === "Cr") netChangeOnDay += Number(e.amount);
+            if (e.type === "Dr") netChangeOnDay -= Number(e.amount);
+        }
+    });
 
-openingBalanceEl.innerText = balancesVisible ? openingBalance.toFixed(2) : "********";
-closingBalanceEl.innerText = balancesVisible ? totalCurrentAssets.toFixed(2) : "********";
+    let openingForDay = closingForDay - netChangeOnDay;
+
+    openingBalanceEl.innerText = balancesVisible ? openingForDay.toFixed(2) : "********";
+    closingBalanceEl.innerText = balancesVisible ? closingForDay.toFixed(2) : "********";
 }
 
 
@@ -405,6 +415,7 @@ else{
         alert("Accounts cannot be same");
         return;
     }
+    // Record Debit from 'From' Account
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer to " + toAccount.value,
@@ -414,6 +425,7 @@ else{
         date:date.value,
         note:note.value
     });
+    // Record Credit to 'To' Account
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer from " + fromAccount.value,
@@ -423,6 +435,7 @@ else{
         date:date.value,
         note:note.value
     });
+    // Update actual balances
     await updateAccountBalance(fromAccount.value, "Dr", amt);
     await updateAccountBalance(toAccount.value, "Cr", amt);
 }
@@ -561,6 +574,7 @@ tableBody.innerHTML+=`
 
 
 window.deleteEntry=async(id)=>{
+if(!confirm("Warning: Are you sure you want to delete this entry? This will reverse the amount from the account balance.")) return;
 const ref=doc(db,"entries",id);
 const snap=await getDoc(ref);
 const data=snap.data();
@@ -614,6 +628,7 @@ if(pass!==PASSWORD){
 alert("Wrong Password");
 return;
 }
+if(!confirm("Are you sure you want to delete this account? This cannot be undone.")) return;
 await deleteDoc(doc(db,"accounts",id));
 };
 
