@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reel Usage Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #020812 0%, #061428 60%, #020c1a 100%);
+      color: #c8dff5;
+      font-family: 'Rajdhani', sans-serif;
+      padding: 32px 16px 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HEADER */
+    .header { text-align: center; margin-bottom: 28px; }
+    .header h1 {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: clamp(28px, 6vw, 52px);
+      color: #38bfff;
+      letter-spacing: 4px;
+      text-shadow: 0 0 30px rgba(56,191,255,0.45), 0 0 60px rgba(56,191,255,0.2);
+      line-height: 1;
+    }
+    .header p {
+      font-size: 11px;
+      letter-spacing: 6px;
+      color: #1a4a6a;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    /* CARD */
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(56,191,255,0.04);
+      border: 1px solid rgba(56,191,255,0.12);
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      letter-spacing: 3px;
+      color: #38bfff;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    /* INPUTS */
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .input-label { font-size: 10px; letter-spacing: 3px; color: #1a6a9a; margin-bottom: 5px; text-transform: uppercase; }
+    .input-field {
+      width: 100%;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(56,191,255,0.15);
+      border-radius: 10px;
+      padding: 11px 12px;
+      color: #38bfff;
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-field:focus {
+      border-color: rgba(56,191,255,0.5);
+      box-shadow: 0 0 0 3px rgba(56,191,255,0.08);
+    }
+
+    /* UNIT BUTTONS */
+    .unit-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .unit-btn {
+      flex: 1; padding: 8px;
+      background: rgba(0,0,0,0.3);
+      color: #1a6a9a;
+      border: 1px solid rgba(56,191,255,0.1);
+      border-radius: 8px;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .unit-btn.active {
+      background: #38bfff;
+      color: #020812;
+      border-color: #38bfff;
+      box-shadow: 0 0 12px rgba(56,191,255,0.3);
+    }
+
+    /* LIVE HOLLOW BOX */
+    .hollow-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      background: rgba(56,191,255,0.05);
+      border: 1px solid rgba(56,191,255,0.2);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .hollow-item { text-align: center; }
+    .hollow-item-label { font-size: 9px; letter-spacing: 2px; color: #1a4a6a; margin-bottom: 3px; }
+    .hollow-item-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #38bfff;
+    }
+    .hollow-item-val.invalid { color: #ff6060; }
+    .hollow-item-unit { font-size: 9px; color: #1a4a6a; }
+
+    /* ERROR */
+    .error-box {
+      background: rgba(255,80,80,0.08);
+      border: 1px solid rgba(255,80,80,0.25);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: #ff8080;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* CALC BUTTON */
+    .calc-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #38bfff, #0080cc);
+      border: none;
+      border-radius: 12px;
+      font-family: 'Orbitron', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #020812;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(56,191,255,0.25);
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .calc-btn:hover { box-shadow: 0 6px 28px rgba(56,191,255,0.4); }
+    .calc-btn:active { transform: scale(0.98); }
+
+    /* RING SELECTOR */
+    .ring-hint {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: #1a6a9a;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .ring-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    .ring-btn {
+      padding: 10px 4px;
+      background: rgba(0,0,0,0.3);
+      border: 2px solid rgba(56,191,255,0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      transition: all 0.15s;
+    }
+    .ring-btn .ring-dot { width: 12px; height: 12px; border-radius: 50%; background: #0a1e30; transition: background 0.15s; }
+    .ring-btn .ring-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; color: #1a4a6a; transition: color 0.15s; }
+    .ring-btn.on .ring-label { color: #fff; }
+
+    .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .small-btn {
+      font-size: 11px; padding: 4px 10px;
+      border-radius: 6px; cursor: pointer;
+      font-family: 'Rajdhani', sans-serif; letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .small-btn.all { background: rgba(56,191,255,0.1); border: 1px solid rgba(56,191,255,0.3); color: #38bfff; }
+    .small-btn.clear { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #4a7a9a; }
+
+    /* CANVAS */
+    canvas { border-radius: 14px; display: block; margin: 0 auto; }
+
+    /* LEGEND */
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #4a7a9a; }
+
+    /* SUMMARY */
+    .summary-grid {
+      width: 100%; max-width: 480px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .summary-item {
+      background: rgba(56,191,255,0.03);
+      border: 1px solid rgba(56,191,255,0.08);
+      border-radius: 14px; padding: 12px 8px; text-align: center;
+    }
+    .summary-label { font-size: 9px; letter-spacing: 2px; color: #1a4a6a; margin-bottom: 5px; }
+    .summary-val { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: #38bfff; }
+    .summary-unit { font-size: 10px; color: #0a3a5a; margin-top: 2px; }
+
+    /* TABLE */
+    .table-grid { display: grid; grid-template-columns: 56px 1fr 1fr; }
+    .th { font-size: 9px; letter-spacing: 2px; color: #0a3a5a; padding: 0 8px 10px; border-bottom: 1px solid rgba(56,191,255,0.08); text-transform: uppercase; }
+    .td { padding: 10px 8px; border-bottom: 1px solid rgba(56,191,255,0.04); display: flex; align-items: center; gap: 7px; }
+    .td.no-border { border-bottom: none; }
+    .td-val { font-family: 'Orbitron', monospace; font-size: 13px; }
+    .td-val.blue { color: #38bfff; }
+    .td-val.cyan { color: #00e5ff; }
+    .pct-label { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; color: #c8dff5; }
+
+    .table-note {
+      margin-top: 16px; padding: 11px 14px;
+      background: rgba(0,0,0,0.35); border-radius: 10px;
+      font-size: 12px; color: #0a3a5a; line-height: 1.9;
+    }
+    .table-note .accent-blue { color: #38bfff; }
+    .table-note .accent-cyan { color: #00e5ff; }
+    .table-note .accent-white { color: #fff; }
+
+    /* HIDDEN */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>REEL USAGE</h1>
+    <p>OUTER → 10% · · · 100% → CORE</p>
+  </div>
+
+  <!-- DIMENSIONS CARD -->
+  <div class="card">
+    <div class="card-title">Dimensions</div>
+    <div class="input-grid">
+      <div>
+        <div class="input-label">Radius</div>
+        <input class="input-field" id="inp-radius" type="number" placeholder="0.00" oninput="onInputChange()" />
+      </div>
+      <div>
+        <div class="input-label">Diameter</div>
+        <input class="input-field" id="inp-diameter" type="number" placeholder="0.00" oninput="onInputChange()" />
+      </div>
+    </div>
+
+    <div class="unit-row">
+      <button class="unit-btn active" id="unit-in" onclick="setUnit('in')">IN</button>
+      <button class="unit-btn" id="unit-cm" onclick="setUnit('cm')">CM</button>
+      <button class="unit-btn" id="unit-mm" onclick="setUnit('mm')">MM</button>
+    </div>
+
+    <div class="hollow-box hidden" id="hollow-box">
+      <div class="hollow-item">
+        <div class="hollow-item-label">Radius</div>
+        <div class="hollow-item-val" id="hb-radius">—</div>
+        <div class="hollow-item-unit" id="hb-unit1"></div>
+      </div>
+      <div class="hollow-item">
+        <div class="hollow-item-label">Diameter</div>
+        <div class="hollow-item-val" id="hb-diameter">—</div>
+        <div class="hollow-item-unit" id="hb-unit2"></div>
+      </div>
+      <div class="hollow-item">
+        <div class="hollow-item-label">Hollow</div>
+        <div class="hollow-item-val" id="hb-hollow">—</div>
+        <div class="hollow-item-unit" id="hb-unit3"></div>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <button class="calc-btn" onclick="calculate()">CALCULATE</button>
+  </div>
+
+  <!-- RING SELECTOR CARD -->
+  <div class="card">
+    <div class="top-row">
+      <div class="card-title" style="margin-bottom:0">Select Rings</div>
+      <div style="display:flex;gap:8px">
+        <button class="small-btn all" onclick="selectAll()">ALL</button>
+        <button class="small-btn clear" onclick="clearAll()">CLEAR</button>
+      </div>
+    </div>
+    <div class="ring-hint">
+      <div class="dot" id="hint-dot-10"></div>
+      <span>10% = outermost</span>
+      <span style="color:#0a2a3a;margin:0 4px">→</span>
+      <div class="dot" id="hint-dot-100"></div>
+      <span>100% = near core</span>
+    </div>
+    <div class="ring-grid" id="ring-grid"></div>
+  </div>
+
+  <!-- RESULTS (hidden until calculated) -->
+  <div id="results" class="hidden">
+
+    <!-- VISUAL CARD -->
+    <div class="card">
+      <div class="card-title">Visual Cross-Section</div>
+      <canvas id="reel-canvas"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="summary-label">Outer Radius</div>
+        <div class="summary-val" id="sum-outer">—</div>
+        <div class="summary-unit" id="sum-unit1"></div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Core Radius</div>
+        <div class="summary-val" id="sum-inner">—</div>
+        <div class="summary-unit" id="sum-unit2"></div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Hollow</div>
+        <div class="summary-val" id="sum-hollow">—</div>
+        <div class="summary-unit" id="sum-unit3"></div>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="card">
+      <div class="card-title">Usage Table</div>
+      <div class="table-grid" id="table-head">
+        <div class="th">%</div>
+        <div class="th" id="th-radius">RADIUS</div>
+        <div class="th">FROM OUTER</div>
+      </div>
+      <div class="table-grid" id="table-body"></div>
+      <div class="table-note" id="table-note"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────
+    const RING_COLORS = {
+      10:  '#001a66',
+      20:  '#002db3',
+      30:  '#0047ff',
+      40:  '#0080ff',
+      50:  '#00aaff',
+      60:  '#00c8ff',
+      70:  '#00e0ff',
+      80:  '#38f0ff',
+      90:  '#80f8ff',
+      100: '#c8ffff',
+    };
+
+    let currentUnit = 'in';
+    let selectedPcts = new Set([10,20,30,40,50,60,70,80,90,100]);
+    let currentResult = null;
+
+    // ── Init ring buttons ──────────────────────────────
+    function buildRingGrid() {
+      const grid = document.getElementById('ring-grid');
+      grid.innerHTML = '';
+      [10,20,30,40,50,60,70,80,90,100].forEach(pct => {
+        const btn = document.createElement('button');
+        btn.className = 'ring-btn' + (selectedPcts.has(pct) ? ' on' : '');
+        btn.id = 'ring-btn-' + pct;
+        btn.innerHTML = `
+          <div class="ring-dot" style="background:${selectedPcts.has(pct) ? RING_COLORS[pct] : '#0a1e30'}"></div>
+          <span class="ring-label">${pct}%</span>
+        `;
+        btn.style.borderColor = selectedPcts.has(pct) ? RING_COLORS[pct] : 'rgba(56,191,255,0.1)';
+        btn.style.background = selectedPcts.has(pct) ? RING_COLORS[pct] + '33' : 'rgba(0,0,0,0.3)';
+        btn.onclick = () => togglePct(pct);
+        grid.appendChild(btn);
+      });
+
+      // hint dots
+      document.getElementById('hint-dot-10').style.background = RING_COLORS[10];
+      document.getElementById('hint-dot-100').style.background = RING_COLORS[100];
+    }
+
+    function togglePct(pct) {
+      if (selectedPcts.has(pct)) {
+        if (selectedPcts.size > 1) selectedPcts.delete(pct);
+      } else {
+        selectedPcts.add(pct);
+      }
+      buildRingGrid();
+      if (currentResult) drawCanvas();
+      if (currentResult) buildTable();
+      if (currentResult) buildLegend();
+    }
+
+    function selectAll() {
+      selectedPcts = new Set([10,20,30,40,50,60,70,80,90,100]);
+      buildRingGrid();
+      if (currentResult) { drawCanvas(); buildTable(); buildLegend(); }
+    }
+
+    function clearAll() {
+      selectedPcts = new Set([100]);
+      buildRingGrid();
+      if (currentResult) { drawCanvas(); buildTable(); buildLegend(); }
+    }
+
+    // ── Unit ───────────────────────────────────────────
+    function setUnit(u) {
+      currentUnit = u;
+      ['in','cm','mm'].forEach(x => {
+        document.getElementById('unit-' + x).classList.toggle('active', x === u);
+      });
+      onInputChange();
+      if (currentResult) {
+        document.getElementById('th-radius').textContent = 'RADIUS (' + u + ')';
+        buildSummary();
+        buildTable();
+        buildNote();
+      }
+    }
+
+    // ── Live hollow preview ────────────────────────────
+    function onInputChange() {
+      currentResult = null;
+      document.getElementById('results').classList.add('hidden');
+      const r = parseFloat(document.getElementById('inp-radius').value);
+      const d = parseFloat(document.getElementById('inp-diameter').value);
+      const box = document.getElementById('hollow-box');
+      if (!isNaN(r) && !isNaN(d) && r > 0 && d > 0) {
+        const h = d - 2 * r;
+        box.classList.remove('hidden');
+        document.getElementById('hb-radius').textContent = r.toFixed(2);
+        document.getElementById('hb-diameter').textContent = d.toFixed(2);
+        const hEl = document.getElementById('hb-hollow');
+        hEl.textContent = h > 0 ? h.toFixed(2) : '❌';
+        hEl.className = 'hollow-item-val' + (h <= 0 ? ' invalid' : '');
+        ['hb-unit1','hb-unit2','hb-unit3'].forEach(id => document.getElementById(id).textContent = h > 0 ? currentUnit : '');
+      } else {
+        box.classList.add('hidden');
+      }
+      document.getElementById('error-box').style.display = 'none';
+    }
+
+    // ── Math ───────────────────────────────────────────
+    function radiusAtPercent(innerR, outerR, pct) {
+      const f = pct / 100;
+      return Math.sqrt(outerR * outerR - f * (outerR * outerR - innerR * innerR));
+    }
+
+    // ── Calculate ──────────────────────────────────────
+    function calculate() {
+      const r = parseFloat(document.getElementById('inp-radius').value);
+      const d = parseFloat(document.getElementById('inp-diameter').value);
+      const errEl = document.getElementById('error-box');
+
+      const showErr = (msg) => { errEl.textContent = '⚠ ' + msg; errEl.style.display = 'block'; };
+
+      if (isNaN(r) || isNaN(d)) { showErr('Enter valid numbers.'); return; }
+      if (r <= 0 || d <= 0)     { showErr('Values must be positive.'); return; }
+      const hollowVal = d - 2 * r;
+      if (hollowVal <= 0) { showErr('Hollow = ' + d + ' − 2×' + r + ' = ' + hollowVal.toFixed(3) + '. Must be > 0.'); return; }
+
+      errEl.style.display = 'none';
+      const innerR = hollowVal / 2;
+      const outerR = d / 2;
+      const rows = [10,20,30,40,50,60,70,80,90,100].map(pct => {
+        const rv = radiusAtPercent(innerR, outerR, pct);
+        return { pct, radiusVal: rv, fromOuter: outerR - rv };
+      });
+      currentResult = { r, d, hollowVal, innerR, outerR, rows };
+
+      document.getElementById('results').classList.remove('hidden');
+      document.getElementById('th-radius').textContent = 'RADIUS (' + currentUnit + ')';
+      buildSummary();
+      buildTable();
+      buildNote();
+      drawCanvas();
+      buildLegend();
+    }
+
+    // ── Summary boxes ──────────────────────────────────
+    function buildSummary() {
+      const { outerR, innerR, hollowVal } = currentResult;
+      document.getElementById('sum-outer').textContent  = outerR.toFixed(3);
+      document.getElementById('sum-inner').textContent  = innerR.toFixed(3);
+      document.getElementById('sum-hollow').textContent = hollowVal.toFixed(3);
+      ['sum-unit1','sum-unit2','sum-unit3'].forEach(id => document.getElementById(id).textContent = currentUnit);
+    }
+
+    // ── Table ──────────────────────────────────────────
+    function buildTable() {
+      const body = document.getElementById('table-body');
+      body.innerHTML = '';
+      const filtered = currentResult.rows.filter(row => selectedPcts.has(row.pct));
+      filtered.forEach((row, i) => {
+        const isLast = i === filtered.length - 1;
+        const borderStyle = isLast ? 'border-bottom:none' : '';
+
+        // % cell
+        const tdA = document.createElement('div');
+        tdA.className = 'td' + (isLast ? ' no-border' : '');
+        tdA.innerHTML = `<div class="dot" style="background:${RING_COLORS[row.pct]}"></div><span class="pct-label">${row.pct}%</span>`;
+
+        // radius cell
+        const tdB = document.createElement('div');
+        tdB.className = 'td' + (isLast ? ' no-border' : '');
+        tdB.innerHTML = `<span class="td-val blue">${row.radiusVal.toFixed(4)}</span>`;
+
+        // fromOuter cell
+        const tdC = document.createElement('div');
+        tdC.className = 'td' + (isLast ? ' no-border' : '');
+        tdC.innerHTML = `<span class="td-val cyan">−${row.fromOuter.toFixed(4)}</span>`;
+
+        body.appendChild(tdA);
+        body.appendChild(tdB);
+        body.appendChild(tdC);
+      });
+    }
+
+    // ── Table note ─────────────────────────────────────
+    function buildNote() {
+      const { d, r, hollowVal } = currentResult;
+      document.getElementById('table-note').innerHTML =
+        `<span class="accent-blue">RADIUS</span> — distance from center at that usage mark<br>
+         <span class="accent-cyan">FROM OUTER</span> — how far inward from the outer edge<br>
+         <span style="color:#38bfff">HOLLOW</span> = ${d} − 2×${r} = <strong class="accent-white">${hollowVal.toFixed(3)} ${currentUnit}</strong>`;
+    }
+
+    // ── Legend ─────────────────────────────────────────
+    function buildLegend() {
+      const leg = document.getElementById('legend');
+      leg.innerHTML = '';
+      [...selectedPcts].sort((a,b) => a-b).forEach(pct => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<div class="dot" style="background:${RING_COLORS[pct]}"></div>${pct}%`;
+        leg.appendChild(item);
+      });
+    }
+
+    // ── Canvas ─────────────────────────────────────────
+    function drawCanvas() {
+      const { innerR, outerR } = currentResult;
+      const canvas = document.getElementById('reel-canvas');
+      const DPR = window.devicePixelRatio || 2;
+      const SIZE = 300;
+      canvas.width = SIZE * DPR;
+      canvas.height = SIZE * DPR;
+      canvas.style.width = SIZE + 'px';
+      canvas.style.height = SIZE + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(DPR, DPR);
+
+      const cx = SIZE / 2, cy = SIZE / 2;
+      const scale = (SIZE / 2 - 24) / outerR;
+
+      // Background
+      ctx.fillStyle = '#020812';
+      ctx.fillRect(0, 0, SIZE, SIZE);
+
+      // Base material
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR * scale, 0, Math.PI * 2);
+      ctx.fillStyle = '#0a1e35';
+      ctx.fill();
+
+      // Draw rings outermost (10%) to innermost (100%)
+      const sortedAsc = [...selectedPcts].sort((a, b) => a - b);
+      sortedAsc.forEach(pct => {
+        const r = radiusAtPercent(innerR, outerR, pct) * scale;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = RING_COLORS[pct];
+        ctx.fill();
+      });
+
+      // Hollow core
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR * scale, 0, Math.PI * 2);
+      ctx.fillStyle = '#020812';
+      ctx.fill();
+
+      // Hollow hatch
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR * scale, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.strokeStyle = 'rgba(56,191,255,0.1)';
+      ctx.lineWidth = 1;
+      for (let i = -SIZE; i < SIZE * 2; i += 10) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i - SIZE, SIZE); ctx.stroke();
+      }
+      ctx.restore();
+
+      // Outer border
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(56,191,255,0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Inner border
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(56,191,255,0.25)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Ring boundary lines + labels
+      sortedAsc.forEach((pct, idx) => {
+        const r = radiusAtPercent(innerR, outerR, pct) * scale;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        const outerBoundary = idx === 0 ? outerR * scale : radiusAtPercent(innerR, outerR, sortedAsc[idx - 1]) * scale;
+        const midR = (r + outerBoundary) / 2;
+        const angle = -Math.PI / 2 + idx * 0.22;
+        const lx = cx + Math.cos(angle) * midR;
+        const ly = cy + Math.sin(angle) * midR;
+
+        if (midR > innerR * scale + 8) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(0,10,30,0.8)';
+          ctx.beginPath();
+          ctx.roundRect(lx - 14, ly - 9, 28, 18, 4);
+          ctx.fill();
+          ctx.font = 'bold 10px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(pct + '%', lx, ly);
+          ctx.restore();
+        }
+      });
+
+      // Radius dimension line
+      const lineY = cy + outerR * scale * 0.72;
+      ctx.strokeStyle = 'rgba(56,191,255,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx, lineY); ctx.lineTo(cx + outerR * scale, lineY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, lineY - 5); ctx.lineTo(cx, lineY + 5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + outerR * scale, lineY - 5); ctx.lineTo(cx + outerR * scale, lineY + 5); ctx.stroke();
+      ctx.font = '700 11px sans-serif';
+      ctx.fillStyle = '#38bfff';
+      ctx.textAlign = 'center';
+      ctx.fillText('R = ' + outerR.toFixed(2) + ' ' + currentUnit, cx + outerR * scale * 0.5, lineY - 12);
+
+      // Center dot
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#38bfff'; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#020812'; ctx.fill();
+    }
+
+    // ── Bootstrap ──────────────────────────────────────
+    buildRingGrid();
+  </script>
+</body>
+</html>
