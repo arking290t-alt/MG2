@@ -227,9 +227,11 @@ updateDoc,
 deleteDoc,
 doc,
 onSnapshot,
-getDoc
+getDoc,
+query,
+where,
+getDocs
 }
-
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig={
@@ -300,59 +302,46 @@ filterDate.value=today();
 // --- BALANCE TOGGLE ---
 
 toggleBalanceBtn.onclick = () => {
-
-if (!balancesVisible) {
-
-let pin = prompt("Enter PIN to show balances:");
-
-if (pin === BALANCE_PIN) {
-balancesVisible = true;
-toggleBalanceBtn.innerText = "Hide Balance";
-toggleBalanceBtn.style.background = "#198754";
-renderAll();
-} else {
-alert("Incorrect PIN");
-}
-
-} else {
-
-balancesVisible = false;
-toggleBalanceBtn.innerText = "Show Balance";
-toggleBalanceBtn.style.background = "#6c757d";
-renderAll();
-
-}
-
+  if (!balancesVisible) {
+    let pin = prompt("Enter PIN to show balances:");
+    if (pin === BALANCE_PIN) {
+      balancesVisible = true;
+      toggleBalanceBtn.innerText = "Hide Balance";
+      toggleBalanceBtn.style.background = "#198754";
+      renderAll();
+    } else {
+      alert("Incorrect PIN");
+    }
+  } else {
+    balancesVisible = false;
+    toggleBalanceBtn.innerText = "Show Balance";
+    toggleBalanceBtn.style.background = "#6c757d";
+    renderAll();
+  }
 };
 
 function renderAll() {
-renderAccounts();
-render();
-calculateBalances();
+  renderAccounts();
+  render();
+  calculateBalances();
 }
 
 entryMode.onchange = () => {
-
-if(entryMode.value==="transfer"){
-normalFields.style.display="none";
-transferFields.style.display="block";
-}else{
-normalFields.style.display="block";
-transferFields.style.display="none";
-}
-
+  if(entryMode.value==="transfer"){
+    normalFields.style.display="none";
+    transferFields.style.display="block";
+  }else{
+    normalFields.style.display="block";
+    transferFields.style.display="none";
+  }
 };
-
 
 // ─────────────────────────────────────────────────────────────────
 // HISTORICAL BALANCE CALCULATION
-// Logic: Start from current real balance of each account,
-// then UNDO all entries that happened AFTER the target date
-// to get the balance as it was at end of that date.
+// Start from current real balance, undo all entries AFTER targetDate
 // ─────────────────────────────────────────────────────────────────
 
 function getHistoricalBalanceForAccount(accName, targetDate) {
-
   const acc = accounts.find(a => a.name === accName);
   if (!acc) return 0;
 
@@ -361,8 +350,8 @@ function getHistoricalBalanceForAccount(accName, targetDate) {
   // Undo all entries strictly after the target date
   entries.forEach(e => {
     if (e.accountName === accName && e.date > targetDate) {
-      if (e.type === "Dr") balance += Number(e.amount); // undo debit = add back
-      if (e.type === "Cr") balance -= Number(e.amount); // undo credit = subtract
+      if (e.type === "Dr") balance += Number(e.amount); // undo debit
+      if (e.type === "Cr") balance -= Number(e.amount); // undo credit
     }
   });
 
@@ -375,19 +364,16 @@ function getTotalHistoricalBalance(targetDate) {
   }, 0);
 }
 
-
-// BALANCE CALCULATION (Opening & Closing for selected date)
+// OPENING & CLOSING BALANCE for selected date
 
 function calculateBalances(){
-
   const targetDate = filterDate.value;
 
-  // Closing balance = sum of all account balances at END of targetDate
+  // Closing = sum of all accounts at END of targetDate
   let closingBalance = getTotalHistoricalBalance(targetDate);
 
-  // Opening balance = closing minus the net change that happened ON that day
+  // Opening = closing minus net change that happened ON that day
   let netChangeOnDay = 0;
-
   entries.forEach(e => {
     if (e.date === targetDate) {
       if (e.type === "Cr") netChangeOnDay += Number(e.amount);
@@ -399,14 +385,11 @@ function calculateBalances(){
 
   openingBalanceEl.innerText = balancesVisible ? openingBalance.toFixed(2) : "********";
   closingBalanceEl.innerText = balancesVisible ? closingBalance.toFixed(2) : "********";
-
 }
 
-
-// ACCOUNT BALANCE UPDATE (always updates real/current balance)
+// ACCOUNT BALANCE UPDATE (updates real/current balance in Firestore)
 
 async function updateAccountBalance(accName, actionType, actionAmount){
-
   const acc = accounts.find(a => a.name === accName);
   if (!acc) return;
 
@@ -414,119 +397,119 @@ async function updateAccountBalance(accName, actionType, actionAmount){
   let change = Number(actionAmount) || 0;
   let final = (actionType === "Dr") ? (current - change) : (current + change);
 
-  await updateDoc(doc(db, "accounts", acc.id), {
-    balance: final
-  });
-
+  await updateDoc(doc(db, "accounts", acc.id), { balance: final });
 }
-
 
 // ADD ACCOUNT
 
 addAccountBtn.onclick = async()=>{
-
-if(!accountName.value || !accountAmount.value) return;
-
-await addDoc(accountsCol,{
-name:accountName.value,
-balance:Number(accountAmount.value)||0
-});
-
-accountName.value="";
-accountAmount.value="";
-
+  if(!accountName.value || !accountAmount.value) return;
+  await addDoc(accountsCol,{
+    name:accountName.value,
+    balance:Number(accountAmount.value)||0
+  });
+  accountName.value="";
+  accountAmount.value="";
 };
-
 
 // ADD ENTRY
 
 addEntryBtn.onclick = async()=>{
+  if(!amount.value) return;
+  let amt = Number(amount.value)||0;
 
-if(!amount.value) return;
+  if(entryMode.value==="normal"){
 
-let amt = Number(amount.value)||0;
+    await addDoc(entriesCol,{
+      name:entryName.value,
+      purpose:purpose.value,
+      amount:amt,
+      accountName:accountSelect.value,
+      type:type.value,
+      date:date.value,
+      note:note.value,
+      transferGroup: null  // not a transfer
+    });
 
-if(entryMode.value==="normal"){
+    await updateAccountBalance(accountSelect.value, type.value, amt);
 
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:purpose.value,
-amount:amt,
-accountName:accountSelect.value,
-type:type.value,
-date:date.value,
-note:note.value
-});
+  } else {
 
-await updateAccountBalance(accountSelect.value,type.value,amt);
+    if(fromAccount.value===toAccount.value){
+      alert("Accounts cannot be same");
+      return;
+    }
 
-}
+    // Generate a unique group ID so we can find both legs later
+    const groupId = Date.now().toString();
 
-else{
+    const fromAcc = fromAccount.value;
+    const toAcc = toAccount.value;
 
-if(fromAccount.value===toAccount.value){
-alert("Accounts cannot be same");
-return;
-}
+    await addDoc(entriesCol,{
+      name:entryName.value,
+      purpose:"Transfer to "+toAcc,
+      amount:amt,
+      accountName:fromAcc,
+      type:"Dr",
+      date:date.value,
+      note:note.value,
+      transferGroup: groupId,   // ← link both legs
+      transferPair: toAcc
+    });
 
-const fromAcc = fromAccount.value;
-const toAcc = toAccount.value;
+    await addDoc(entriesCol,{
+      name:entryName.value,
+      purpose:"Transfer from "+fromAcc,
+      amount:amt,
+      accountName:toAcc,
+      type:"Cr",
+      date:date.value,
+      note:note.value,
+      transferGroup: groupId,   // ← same group ID
+      transferPair: fromAcc
+    });
 
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer to "+toAcc,
-amount:amt,
-accountName:fromAcc,
-type:"Dr",
-date:date.value,
-note:note.value
-});
+    await updateAccountBalance(fromAcc,"Dr",amt);
+    await updateAccountBalance(toAcc,"Cr",amt);
+  }
 
-await addDoc(entriesCol,{
-name:entryName.value,
-purpose:"Transfer from "+fromAcc,
-amount:amt,
-accountName:toAcc,
-type:"Cr",
-date:date.value,
-note:note.value
-});
-
-await updateAccountBalance(fromAcc,"Dr",amt);
-await updateAccountBalance(toAcc,"Cr",amt);
-
-}
-
-entryName.value="";
-purpose.value="";
-amount.value="";
-note.value="";
-
+  entryName.value="";
+  purpose.value="";
+  amount.value="";
+  note.value="";
 };
-
 
 // FIREBASE SNAPSHOTS
 
 onSnapshot(accountsCol,snap=>{
-
-accounts=[];
-
-snap.forEach(d=>{
-accounts.push({...d.data(),id:d.id});
+  accounts=[];
+  snap.forEach(d=>{ accounts.push({...d.data(),id:d.id}); });
+  renderAccounts();
+  calculateBalances();
 });
 
-renderAccounts();
-calculateBalances();
-
+onSnapshot(entriesCol,snap=>{
+  entries=[];
+  snap.forEach(d=>{ entries.push({...d.data(),id:d.id}); });
+  render();
+  renderAccounts();
+  calculateBalances();
 });
 
+onSnapshot(deletedCol,snap=>{
+  deletedEntries=[];
+  snap.forEach(d=>{ deletedEntries.push(d.data()); });
+});
 
-// ─────────────────────────────────────────────────────────────────
+onSnapshot(editedCol,snap=>{
+  editedEntries=[];
+  snap.forEach(d=>{ editedEntries.push(d.data()); });
+});
+
 // RENDER ACCOUNTS — shows HISTORICAL balance for selected date
-// ─────────────────────────────────────────────────────────────────
 
 function renderAccounts(){
-
   accountTable.innerHTML="";
   accountSelect.innerHTML="";
   fromAccount.innerHTML="";
@@ -535,12 +518,10 @@ function renderAccounts(){
   const targetDate = filterDate.value;
 
   accounts.forEach(a=>{
-
     accountSelect.innerHTML += `<option value="${a.name}">${a.name}</option>`;
     fromAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
     toAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
 
-    // Get the balance as it was at the END of the selected date
     const historicalBal = getHistoricalBalanceForAccount(a.name, targetDate);
     const displayBal = balancesVisible ? historicalBal.toFixed(2) : "********";
 
@@ -554,260 +535,217 @@ function renderAccounts(){
     </td>
     </tr>
     `;
-
   });
-
 }
-
-
-onSnapshot(entriesCol,snap=>{
-
-entries=[];
-
-snap.forEach(d=>{
-entries.push({...d.data(),id:d.id});
-});
-
-render();
-renderAccounts(); // re-render accounts so historical balances update too
-calculateBalances();
-
-});
-
-
-onSnapshot(deletedCol,snap=>{
-
-deletedEntries=[];
-
-snap.forEach(d=>{
-deletedEntries.push(d.data());
-});
-
-});
-
-
-onSnapshot(editedCol,snap=>{
-
-editedEntries=[];
-
-snap.forEach(d=>{
-editedEntries.push(d.data());
-});
-
-});
-
 
 // RENDER TABLE
 
 function render(){
+  tableBody.innerHTML="";
 
-tableBody.innerHTML="";
+  if(viewMode==="entries"){
+    viewTitle.innerText="Entries";
 
-if(viewMode==="entries"){
+    entries.forEach(e=>{
+      if(e.date===filterDate.value){
+        tableBody.innerHTML += `
+        <tr>
+        <td>${e.name}</td>
+        <td>${e.purpose}</td>
+        <td>${e.accountName}</td>
+        <td>${e.type==="Dr"?e.amount:""}</td>
+        <td>${e.type==="Cr"?e.amount:""}</td>
+        <td>${e.date}</td>
+        <td>${e.note}</td>
+        <td>
+        <button onclick="editEntry('${e.id}')">Edit</button>
+        <button onclick="deleteEntry('${e.id}')">Delete</button>
+        </td>
+        </tr>
+        `;
+      }
+    });
 
-viewTitle.innerText="Entries";
+    calculateBalances();
+  }
 
-entries.forEach(e=>{
+  if(viewMode==="deleted"){
+    viewTitle.innerText="Deleted Entries";
 
-if(e.date===filterDate.value){
+    deletedEntries.forEach(d=>{
+      if(d.date===filterDate.value){
+        tableBody.innerHTML += `
+        <tr>
+        <td>${d.name}</td>
+        <td>${d.purpose}</td>
+        <td>${d.accountName||""}</td>
+        <td>${d.type==="Dr"?d.amount:""}</td>
+        <td>${d.type==="Cr"?d.amount:""}</td>
+        <td>${d.date}</td>
+        <td>${d.note||""}</td>
+        <td></td>
+        </tr>
+        `;
+      }
+    });
+  }
 
-tableBody.innerHTML += `
-<tr>
-<td>${e.name}</td>
-<td>${e.purpose}</td>
-<td>${e.accountName}</td>
-<td>${e.type==="Dr"?e.amount:""}</td>
-<td>${e.type==="Cr"?e.amount:""}</td>
-<td>${e.date}</td>
-<td>${e.note}</td>
-<td>
-<button onclick="editEntry('${e.id}')">Edit</button>
-<button onclick="deleteEntry('${e.id}')">Delete</button>
-</td>
-</tr>
-`;
+  if(viewMode==="edited"){
+    viewTitle.innerText="Edited Entries";
 
+    editedEntries.forEach(e=>{
+      if(e.date===filterDate.value){
+        tableBody.innerHTML += `
+        <tr>
+        <td>${e.name}</td>
+        <td>Before ${e.before}</td>
+        <td>${e.accountName||""}</td>
+        <td></td>
+        <td>After ${e.after}</td>
+        <td>${e.date}</td>
+        <td></td>
+        <td></td>
+        </tr>
+        `;
+      }
+    });
+  }
 }
 
-});
-
-calculateBalances();
-
-}
-
-
-if(viewMode==="deleted"){
-
-viewTitle.innerText="Deleted Entries";
-
-deletedEntries.forEach(d=>{
-
-if(d.date===filterDate.value){
-
-tableBody.innerHTML += `
-<tr>
-<td>${d.name}</td>
-<td>${d.purpose}</td>
-<td>${d.accountName||""}</td>
-<td>${d.type==="Dr"?d.amount:""}</td>
-<td>${d.type==="Cr"?d.amount:""}</td>
-<td>${d.date}</td>
-<td>${d.note||""}</td>
-<td></td>
-</tr>
-`;
-
-}
-
-});
-
-}
-
-
-if(viewMode==="edited"){
-
-viewTitle.innerText="Edited Entries";
-
-editedEntries.forEach(e=>{
-
-if(e.date===filterDate.value){
-
-tableBody.innerHTML += `
-<tr>
-<td>${e.name}</td>
-<td>Before ${e.before}</td>
-<td>${e.accountName||""}</td>
-<td></td>
-<td>After ${e.after}</td>
-<td>${e.date}</td>
-<td></td>
-<td></td>
-</tr>
-`;
-
-}
-
-});
-
-}
-
-}
-
-
-// DELETE ENTRY
+// ─────────────────────────────────────────────────────────────────
+// DELETE ENTRY — handles both normal and inter-account transfer
+// ─────────────────────────────────────────────────────────────────
 
 window.deleteEntry = async(id)=>{
 
-if(!confirm("Warning: delete entry?")) return;
+  if(!confirm("Warning: delete this entry?")) return;
 
-const ref = doc(db,"entries",id);
-const snap = await getDoc(ref);
-const data = snap.data();
+  const ref = doc(db,"entries",id);
+  const snap = await getDoc(ref);
+  const data = snap.data();
 
-await addDoc(deletedCol,data);
+  // Check if this entry is part of a transfer group
+  if(data.transferGroup){
 
-await updateAccountBalance(
-data.accountName,
-data.type==="Dr" ? "Cr":"Dr",
-data.amount
-);
+    // Find the OTHER leg of the transfer (same groupId, different id)
+    const partnerEntries = entries.filter(
+      e => e.transferGroup === data.transferGroup && e.id !== id
+    );
 
-await deleteDoc(ref);
+    // Save both legs to deleted log
+    await addDoc(deletedCol, data);
 
+    // Reverse THIS entry's balance effect
+    const reverseType = data.type === "Dr" ? "Cr" : "Dr";
+    await updateAccountBalance(data.accountName, reverseType, data.amount);
+
+    // Delete THIS entry
+    await deleteDoc(ref);
+
+    // Now handle each partner leg
+    for(const partner of partnerEntries){
+      await addDoc(deletedCol, partner);
+
+      // Reverse partner's balance effect
+      const partnerReverseType = partner.type === "Dr" ? "Cr" : "Dr";
+      await updateAccountBalance(partner.accountName, partnerReverseType, partner.amount);
+
+      // Delete partner entry
+      await deleteDoc(doc(db,"entries", partner.id));
+    }
+
+    alert("Transfer deleted: both legs removed and balances reversed.");
+
+  } else {
+
+    // Normal single entry delete
+    await addDoc(deletedCol, data);
+
+    // Reverse the balance effect
+    const reverseType = data.type === "Dr" ? "Cr" : "Dr";
+    await updateAccountBalance(data.accountName, reverseType, data.amount);
+
+    await deleteDoc(ref);
+  }
 };
-
 
 // EDIT ENTRY
 
 window.editEntry = async(id)=>{
+  const ref = doc(db,"entries",id);
+  const snap = await getDoc(ref);
+  const old = snap.data();
 
-const ref = doc(db,"entries",id);
-const snap = await getDoc(ref);
-const old = snap.data();
+  let newAmt = prompt("New Amount",old.amount);
+  if(!newAmt) return;
 
-let newAmt = prompt("New Amount",old.amount);
-if(!newAmt) return;
+  // Reverse old amount, apply new amount
+  await updateAccountBalance(old.accountName, old.type==="Dr"?"Cr":"Dr", old.amount);
+  await updateAccountBalance(old.accountName, old.type, newAmt);
 
-await updateAccountBalance(old.accountName,old.type==="Dr"?"Cr":"Dr",old.amount);
-await updateAccountBalance(old.accountName,old.type,newAmt);
+  await addDoc(editedCol,{
+    name:old.name,
+    before:old.amount,
+    after:newAmt,
+    date:old.date,
+    accountName:old.accountName
+  });
 
-await addDoc(editedCol,{
-name:old.name,
-before:old.amount,
-after:newAmt,
-date:old.date
-});
-
-await updateDoc(ref,{
-amount:Number(newAmt)||0
-});
-
+  await updateDoc(ref,{ amount:Number(newAmt)||0 });
 };
-
 
 // ACCOUNT EDIT
 
 window.editAccount = async(id,currentBalance)=>{
-
-let pass = prompt("Enter Password");
-
-if(pass!==PASSWORD){
-alert("Wrong Password");
-return;
-}
-
-let newBalance = prompt("New Balance",currentBalance);
-if(!newBalance || isNaN(newBalance)) return;
-
-await updateDoc(doc(db,"accounts",id),{
-balance:Number(newBalance)
-});
-
+  let pass = prompt("Enter Password");
+  if(pass!==PASSWORD){ alert("Wrong Password"); return; }
+  let newBalance = prompt("New Balance",currentBalance);
+  if(!newBalance || isNaN(newBalance)) return;
+  await updateDoc(doc(db,"accounts",id),{ balance:Number(newBalance) });
 };
-
 
 // ACCOUNT DELETE
 
 window.deleteAccount = async(id)=>{
-
-let pass = prompt("Enter Password");
-
-if(pass!==PASSWORD){
-alert("Wrong Password");
-return;
-}
-
-if(!confirm("Delete account?")) return;
-
-await deleteDoc(doc(db,"accounts",id));
-
+  let pass = prompt("Enter Password");
+  if(pass!==PASSWORD){ alert("Wrong Password"); return; }
+  if(!confirm("Delete account?")) return;
+  await deleteDoc(doc(db,"accounts",id));
 };
-
 
 // BUTTONS
 
 todayBtn.onclick = ()=>{
-viewMode="entries";
-filterDate.value=today();
-render();
-renderAccounts();
-calculateBalances();
+  viewMode="entries";
+  filterDate.value=today();
+  render();
+  renderAccounts();
+  calculateBalances();
 };
 
 showDeletedBtn.onclick = ()=>{
-viewMode="deleted";
-render();
+  viewMode="deleted";
+  render();
 };
 
 showEditedBtn.onclick = ()=>{
-viewMode="edited";
-render();
+  viewMode="edited";
+  render();
 };
 
 filterDate.onchange = ()=>{
-render();
-renderAccounts();   // ← re-render accounts with historical balances on date change
-calculateBalances();
+  render();
+  renderAccounts();
+  calculateBalances();
+};
+
+ssBtn.onclick = ()=>{
+  html2canvas(document.querySelector(".container")).then(canvas=>{
+    const a = document.createElement("a");
+    a.download = "daybook-"+filterDate.value+".png";
+    a.href = canvas.toDataURL();
+    a.click();
+  });
 };
 
 </script>
