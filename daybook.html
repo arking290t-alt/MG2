@@ -297,7 +297,7 @@ const viewTitle=document.getElementById("viewTitle");
 date.value=today();
 filterDate.value=today();
 
-// --- NEW TOGGLE BALANCE LOGIC ---
+// --- TOGGLE BALANCE LOGIC ---
 toggleBalanceBtn.onclick = () => {
     if (!balancesVisible) {
         let pin = prompt("Enter PIN to show balances:");
@@ -338,22 +338,21 @@ transferFields.style.display="none";
 function calculateBalances(){
     const targetDate = filterDate.value;
     
-    // 1. Calculate Grand Total Assets RIGHT NOW across all accounts
+    // Total assets now
     let totalAssetsNow = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
 
-    // 2. Adjust for transactions that happened AFTER the selected date
-    let netChangeSinceTarget = 0;
+    // Filter entries AFTER the selected date to rewind
+    let netChangeAfter = 0;
     entries.forEach(e => {
         if (e.date > targetDate) {
-            if (e.type === "Cr") netChangeSinceTarget += Number(e.amount);
-            if (e.type === "Dr") netChangeSinceTarget -= Number(e.amount);
+            if (e.type === "Cr") netChangeAfter += Number(e.amount);
+            if (e.type === "Dr") netChangeAfter -= Number(e.amount);
         }
     });
 
-    // Closing balance for the end of the selected day
-    let closingForDay = totalAssetsNow - netChangeSinceTarget;
+    let closingForDay = totalAssetsNow - netChangeAfter;
 
-    // 3. Subtract transactions from the selected day itself to find Opening balance
+    // Filter entries ON the selected date
     let netChangeOnDay = 0;
     entries.forEach(e => {
         if (e.date === targetDate) {
@@ -370,16 +369,18 @@ function calculateBalances(){
 
 
 async function updateAccountBalance(accName, actionType, actionAmount){
-const acc = accounts.find(a => a.name === accName);
-if(!acc) return;
+    const acc = accounts.find(a => a.name === accName);
+    if(!acc) return;
 
-let current = Number(acc.balance) || 0;
-let change = Number(actionAmount) || 0;
-let final = (actionType === "Dr") ? (current - change) : (current + change);
+    let current = Number(acc.balance) || 0;
+    let change = Number(actionAmount) || 0;
+    
+    // Dr reduces balance, Cr increases balance
+    let final = (actionType === "Dr") ? (current - change) : (current + change);
 
-await updateDoc(doc(db, "accounts", acc.id), {
-    balance: final
-});
+    await updateDoc(doc(db, "accounts", acc.id), {
+        balance: final
+    });
 }
 
 
@@ -408,6 +409,7 @@ if(entryMode.value === "normal"){
         date:date.value,
         note:note.value
     });
+    // Normal update
     await updateAccountBalance(accountSelect.value, type.value, amt);
 }
 else{
@@ -415,7 +417,7 @@ else{
         alert("Accounts cannot be same");
         return;
     }
-    // Record Debit from 'From' Account
+    // Record Leg 1: Debit from 'From' Account
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer to " + toAccount.value,
@@ -425,7 +427,7 @@ else{
         date:date.value,
         note:note.value
     });
-    // Record Credit to 'To' Account
+    // Record Leg 2: Credit to 'To' Account
     await addDoc(entriesCol,{
         name:entryName.value,
         purpose:"Transfer from " + fromAccount.value,
@@ -435,7 +437,7 @@ else{
         date:date.value,
         note:note.value
     });
-    // Update actual balances
+    // Update both balances
     await updateAccountBalance(fromAccount.value, "Dr", amt);
     await updateAccountBalance(toAccount.value, "Cr", amt);
 }
@@ -574,17 +576,21 @@ tableBody.innerHTML+=`
 
 
 window.deleteEntry=async(id)=>{
-if(!confirm("Warning: Are you sure you want to delete this entry? This will reverse the amount from the account balance.")) return;
-const ref=doc(db,"entries",id);
-const snap=await getDoc(ref);
-const data=snap.data();
-await addDoc(deletedCol,data);
-await updateAccountBalance(
-    data.accountName,
-    data.type === "Dr" ? "Cr" : "Dr",
-    data.amount
-);
-await deleteDoc(ref);
+    if(!confirm("Are you sure you want to delete this entry? The account balance will be reversed.")) return;
+    const ref=doc(db,"entries",id);
+    const snap=await getDoc(ref);
+    if(!snap.exists()) return;
+    const data=snap.data();
+    
+    await addDoc(deletedCol,data);
+    
+    // To reverse a delete: 
+    // If it was a Dr (Debit/Subtraction), we must now ADD it back (Credit).
+    // If it was a Cr (Credit/Addition), we must now SUBTRACT it (Debit).
+    const reverseType = (data.type === "Dr") ? "Cr" : "Dr";
+    
+    await updateAccountBalance(data.accountName, reverseType, data.amount);
+    await deleteDoc(ref);
 };
 
 
@@ -593,15 +599,23 @@ const ref=doc(db,"entries",id);
 const snap=await getDoc(ref);
 const old=snap.data();
 let newAmt=prompt("New Amount",old.amount);
-if(!newAmt)return;
-await updateAccountBalance(old.accountName, old.type === "Dr" ? "Cr" : "Dr", old.amount);
+if(!newAmt || isNaN(newAmt)) return;
+
+// Reverse old impact first
+const reverseType = (old.type === "Dr") ? "Cr" : "Dr";
+await updateAccountBalance(old.accountName, reverseType, old.amount);
+
+// Apply new impact
 await updateAccountBalance(old.accountName, old.type, newAmt);
+
 await addDoc(editedCol,{
 name:old.name,
 before:old.amount,
 after:newAmt,
-date:old.date
+date:old.date,
+accountName: old.accountName
 });
+
 await updateDoc(ref,{
 amount:Number(newAmt)||0
 });
@@ -628,7 +642,7 @@ if(pass!==PASSWORD){
 alert("Wrong Password");
 return;
 }
-if(!confirm("Are you sure you want to delete this account? This cannot be undone.")) return;
+if(!confirm("Warning: Deleting an account will NOT delete its entries but will remove the balance record. Proceed?")) return;
 await deleteDoc(doc(db,"accounts",id));
 };
 
