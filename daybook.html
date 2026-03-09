@@ -207,7 +207,7 @@ Opening Balance (Start of Day):
 </table>
 
 <div class="balance-row">
-Closing Balance (Current): 
+Closing Balance (End of Day): 
 <span id="closingBalance">********</span>
 </div>
 
@@ -239,7 +239,6 @@ projectId:"mg-manager-3ab66"
 };
 
 const app=initializeApp(firebaseConfig);
-
 const db=getFirestore(app);
 
 const PASSWORD="BNPRATHAM@8056079200";
@@ -297,7 +296,8 @@ const viewTitle=document.getElementById("viewTitle");
 
 date.value=today();
 filterDate.value=today();
-  // --- BALANCE TOGGLE ---
+
+// --- BALANCE TOGGLE ---
 
 toggleBalanceBtn.onclick = () => {
 
@@ -344,66 +344,79 @@ transferFields.style.display="none";
 };
 
 
-// BALANCE CALCULATION
+// ─────────────────────────────────────────────────────────────────
+// HISTORICAL BALANCE CALCULATION
+// Logic: Start from current real balance of each account,
+// then UNDO all entries that happened AFTER the target date
+// to get the balance as it was at end of that date.
+// ─────────────────────────────────────────────────────────────────
+
+function getHistoricalBalanceForAccount(accName, targetDate) {
+
+  const acc = accounts.find(a => a.name === accName);
+  if (!acc) return 0;
+
+  let balance = Number(acc.balance) || 0;
+
+  // Undo all entries strictly after the target date
+  entries.forEach(e => {
+    if (e.accountName === accName && e.date > targetDate) {
+      if (e.type === "Dr") balance += Number(e.amount); // undo debit = add back
+      if (e.type === "Cr") balance -= Number(e.amount); // undo credit = subtract
+    }
+  });
+
+  return balance;
+}
+
+function getTotalHistoricalBalance(targetDate) {
+  return accounts.reduce((sum, a) => {
+    return sum + getHistoricalBalanceForAccount(a.name, targetDate);
+  }, 0);
+}
+
+
+// BALANCE CALCULATION (Opening & Closing for selected date)
 
 function calculateBalances(){
 
-const targetDate = filterDate.value;
+  const targetDate = filterDate.value;
 
-let totalAssetsNow = accounts.reduce((sum,a)=>sum+(Number(a.balance)||0),0);
+  // Closing balance = sum of all account balances at END of targetDate
+  let closingBalance = getTotalHistoricalBalance(targetDate);
 
-let netChangeSinceTarget = 0;
+  // Opening balance = closing minus the net change that happened ON that day
+  let netChangeOnDay = 0;
 
-entries.forEach(e=>{
+  entries.forEach(e => {
+    if (e.date === targetDate) {
+      if (e.type === "Cr") netChangeOnDay += Number(e.amount);
+      if (e.type === "Dr") netChangeOnDay -= Number(e.amount);
+    }
+  });
 
-if(e.date>targetDate){
+  let openingBalance = closingBalance - netChangeOnDay;
 
-if(e.type==="Cr") netChangeSinceTarget += Number(e.amount);
-if(e.type==="Dr") netChangeSinceTarget -= Number(e.amount);
-
-}
-
-});
-
-let closingForDay = totalAssetsNow - netChangeSinceTarget;
-
-let netChangeOnDay = 0;
-
-entries.forEach(e=>{
-
-if(e.date===targetDate){
-
-if(e.type==="Cr") netChangeOnDay += Number(e.amount);
-if(e.type==="Dr") netChangeOnDay -= Number(e.amount);
-
-}
-
-});
-
-let openingForDay = closingForDay - netChangeOnDay;
-
-openingBalanceEl.innerText = balancesVisible ? openingForDay.toFixed(2) : "********";
-closingBalanceEl.innerText = balancesVisible ? closingForDay.toFixed(2) : "********";
+  openingBalanceEl.innerText = balancesVisible ? openingBalance.toFixed(2) : "********";
+  closingBalanceEl.innerText = balancesVisible ? closingBalance.toFixed(2) : "********";
 
 }
 
 
-// ACCOUNT BALANCE UPDATE
+// ACCOUNT BALANCE UPDATE (always updates real/current balance)
 
-async function updateAccountBalance(accName,actionType,actionAmount){
+async function updateAccountBalance(accName, actionType, actionAmount){
 
-const acc = accounts.find(a=>a.name===accName);
+  const acc = accounts.find(a => a.name === accName);
+  if (!acc) return;
 
-if(!acc) return;
+  let current = Number(acc.balance) || 0;
+  let change = Number(actionAmount) || 0;
+  let final = (actionType === "Dr") ? (current - change) : (current + change);
 
-let current = Number(acc.balance)||0;
-let change = Number(actionAmount)||0;
-
-let final = (actionType==="Dr") ? (current-change):(current+change);
-
-await updateDoc(doc(db,"accounts",acc.id),{
-balance: final
-});
+  await updateDoc(doc(db, "accounts", acc.id), {
+    balance: final
+  });
 
 }
 
@@ -425,7 +438,7 @@ accountAmount.value="";
 };
 
 
-// ADD ENTRY (TRANSFER FIXED)
+// ADD ENTRY
 
 addEntryBtn.onclick = async()=>{
 
@@ -456,12 +469,8 @@ alert("Accounts cannot be same");
 return;
 }
 
-/* FIXED TRANSFER */
-
 const fromAcc = fromAccount.value;
 const toAcc = toAccount.value;
-
-/* debit from source */
 
 await addDoc(entriesCol,{
 name:entryName.value,
@@ -473,8 +482,6 @@ date:date.value,
 note:note.value
 });
 
-/* credit to destination */
-
 await addDoc(entriesCol,{
 name:entryName.value,
 purpose:"Transfer from "+fromAcc,
@@ -484,8 +491,6 @@ type:"Cr",
 date:date.value,
 note:note.value
 });
-
-/* update balances */
 
 await updateAccountBalance(fromAcc,"Dr",amt);
 await updateAccountBalance(toAcc,"Cr",amt);
@@ -516,31 +521,41 @@ calculateBalances();
 });
 
 
+// ─────────────────────────────────────────────────────────────────
+// RENDER ACCOUNTS — shows HISTORICAL balance for selected date
+// ─────────────────────────────────────────────────────────────────
+
 function renderAccounts(){
 
-accountTable.innerHTML="";
-accountSelect.innerHTML="";
-fromAccount.innerHTML="";
-toAccount.innerHTML="";
+  accountTable.innerHTML="";
+  accountSelect.innerHTML="";
+  fromAccount.innerHTML="";
+  toAccount.innerHTML="";
 
-accounts.forEach(a=>{
+  const targetDate = filterDate.value;
 
-accountSelect.innerHTML += `<option value="${a.name}">${a.name}</option>`;
-fromAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
-toAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
+  accounts.forEach(a=>{
 
-accountTable.innerHTML += `
-<tr>
-<td>${a.name}</td>
-<td>${balancesVisible ? (Number(a.balance)||0).toFixed(2) : "********"}</td>
-<td>
-<button onclick="editAccount('${a.id}','${a.balance}')">Edit</button>
-<button onclick="deleteAccount('${a.id}')">Delete</button>
-</td>
-</tr>
-`;
+    accountSelect.innerHTML += `<option value="${a.name}">${a.name}</option>`;
+    fromAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
+    toAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
 
-});
+    // Get the balance as it was at the END of the selected date
+    const historicalBal = getHistoricalBalanceForAccount(a.name, targetDate);
+    const displayBal = balancesVisible ? historicalBal.toFixed(2) : "********";
+
+    accountTable.innerHTML += `
+    <tr>
+    <td>${a.name}</td>
+    <td>${displayBal}</td>
+    <td>
+    <button onclick="editAccount('${a.id}','${a.balance}')">Edit</button>
+    <button onclick="deleteAccount('${a.id}')">Delete</button>
+    </td>
+    </tr>
+    `;
+
+  });
 
 }
 
@@ -554,6 +569,8 @@ entries.push({...d.data(),id:d.id});
 });
 
 render();
+renderAccounts(); // re-render accounts so historical balances update too
+calculateBalances();
 
 });
 
@@ -684,9 +701,7 @@ window.deleteEntry = async(id)=>{
 if(!confirm("Warning: delete entry?")) return;
 
 const ref = doc(db,"entries",id);
-
 const snap = await getDoc(ref);
-
 const data = snap.data();
 
 await addDoc(deletedCol,data);
@@ -707,17 +722,13 @@ await deleteDoc(ref);
 window.editEntry = async(id)=>{
 
 const ref = doc(db,"entries",id);
-
 const snap = await getDoc(ref);
-
 const old = snap.data();
 
 let newAmt = prompt("New Amount",old.amount);
-
 if(!newAmt) return;
 
 await updateAccountBalance(old.accountName,old.type==="Dr"?"Cr":"Dr",old.amount);
-
 await updateAccountBalance(old.accountName,old.type,newAmt);
 
 await addDoc(editedCol,{
@@ -746,7 +757,6 @@ return;
 }
 
 let newBalance = prompt("New Balance",currentBalance);
-
 if(!newBalance || isNaN(newBalance)) return;
 
 await updateDoc(doc(db,"accounts",id),{
@@ -780,6 +790,8 @@ todayBtn.onclick = ()=>{
 viewMode="entries";
 filterDate.value=today();
 render();
+renderAccounts();
+calculateBalances();
 };
 
 showDeletedBtn.onclick = ()=>{
@@ -794,6 +806,8 @@ render();
 
 filterDate.onchange = ()=>{
 render();
+renderAccounts();   // ← re-render accounts with historical balances on date change
+calculateBalances();
 };
 
 </script>
