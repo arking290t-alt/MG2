@@ -337,6 +337,24 @@ entryMode.onchange = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// HELPER: rebuild a <select> while preserving the current selection
+// ─────────────────────────────────────────────────────────────────
+function rebuildSelect(selectEl, accountsList) {
+  const previousValue = selectEl.value; // save what user had chosen
+  selectEl.innerHTML = "";
+  accountsList.forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.name;
+    opt.textContent = a.name;
+    selectEl.appendChild(opt);
+  });
+  // restore previous selection if it still exists
+  if (previousValue && [...selectEl.options].some(o => o.value === previousValue)) {
+    selectEl.value = previousValue;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // HISTORICAL BALANCE CALCULATION
 // Start from current real balance, undo all entries AFTER targetDate
 // ─────────────────────────────────────────────────────────────────
@@ -420,18 +438,22 @@ addEntryBtn.onclick = async()=>{
 
   if(entryMode.value==="normal"){
 
+    // ✅ FIX: Read the selected account at the moment the button is clicked
+    const selectedAccount = accountSelect.value;
+    const selectedType = type.value;
+
     await addDoc(entriesCol,{
       name:entryName.value,
       purpose:purpose.value,
       amount:amt,
-      accountName:accountSelect.value,
-      type:type.value,
+      accountName:selectedAccount,
+      type:selectedType,
       date:date.value,
       note:note.value,
-      transferGroup: null  // not a transfer
+      transferGroup: null
     });
 
-    await updateAccountBalance(accountSelect.value, type.value, amt);
+    await updateAccountBalance(selectedAccount, selectedType, amt);
 
   } else {
 
@@ -440,11 +462,12 @@ addEntryBtn.onclick = async()=>{
       return;
     }
 
-    // Generate a unique group ID so we can find both legs later
-    const groupId = Date.now().toString();
-
+    // ✅ FIX: Read selected accounts at click time
     const fromAcc = fromAccount.value;
     const toAcc = toAccount.value;
+
+    // Generate a unique group ID so we can find both legs later
+    const groupId = Date.now().toString();
 
     await addDoc(entriesCol,{
       name:entryName.value,
@@ -454,7 +477,7 @@ addEntryBtn.onclick = async()=>{
       type:"Dr",
       date:date.value,
       note:note.value,
-      transferGroup: groupId,   // ← link both legs
+      transferGroup: groupId,
       transferPair: toAcc
     });
 
@@ -466,7 +489,7 @@ addEntryBtn.onclick = async()=>{
       type:"Cr",
       date:date.value,
       note:note.value,
-      transferGroup: groupId,   // ← same group ID
+      transferGroup: groupId,
       transferPair: fromAcc
     });
 
@@ -493,7 +516,8 @@ onSnapshot(entriesCol,snap=>{
   entries=[];
   snap.forEach(d=>{ entries.push({...d.data(),id:d.id}); });
   render();
-  renderAccounts();
+  // ✅ FIX: Only update the accounts TABLE (balances display), NOT the dropdowns
+  renderAccountsTableOnly();
   calculateBalances();
 });
 
@@ -507,21 +531,15 @@ onSnapshot(editedCol,snap=>{
   snap.forEach(d=>{ editedEntries.push(d.data()); });
 });
 
-// RENDER ACCOUNTS — shows HISTORICAL balance for selected date
-
-function renderAccounts(){
+// ─────────────────────────────────────────────────────────────────
+// RENDER ACCOUNTS TABLE ONLY (does NOT touch the dropdowns)
+// Called when entries change — so dropdown selection is preserved
+// ─────────────────────────────────────────────────────────────────
+function renderAccountsTableOnly(){
   accountTable.innerHTML="";
-  accountSelect.innerHTML="";
-  fromAccount.innerHTML="";
-  toAccount.innerHTML="";
-
   const targetDate = filterDate.value;
 
   accounts.forEach(a=>{
-    accountSelect.innerHTML += `<option value="${a.name}">${a.name}</option>`;
-    fromAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
-    toAccount.innerHTML += `<option value="${a.name}">${a.name}</option>`;
-
     const historicalBal = getHistoricalBalanceForAccount(a.name, targetDate);
     const displayBal = balancesVisible ? historicalBal.toFixed(2) : "********";
 
@@ -536,6 +554,19 @@ function renderAccounts(){
     </tr>
     `;
   });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER ACCOUNTS — rebuilds table AND dropdowns (preserving selection)
+// Called only when the accounts list itself changes
+// ─────────────────────────────────────────────────────────────────
+function renderAccounts(){
+  // ✅ FIX: Use rebuildSelect to preserve user's chosen dropdown value
+  rebuildSelect(accountSelect, accounts);
+  rebuildSelect(fromAccount, accounts);
+  rebuildSelect(toAccount, accounts);
+
+  renderAccountsTableOnly();
 }
 
 // RENDER TABLE
@@ -624,33 +655,25 @@ window.deleteEntry = async(id)=>{
   const snap = await getDoc(ref);
   const data = snap.data();
 
-  // Check if this entry is part of a transfer group
   if(data.transferGroup){
 
-    // Find the OTHER leg of the transfer (same groupId, different id)
     const partnerEntries = entries.filter(
       e => e.transferGroup === data.transferGroup && e.id !== id
     );
 
-    // Save both legs to deleted log
     await addDoc(deletedCol, data);
 
-    // Reverse THIS entry's balance effect
     const reverseType = data.type === "Dr" ? "Cr" : "Dr";
     await updateAccountBalance(data.accountName, reverseType, data.amount);
 
-    // Delete THIS entry
     await deleteDoc(ref);
 
-    // Now handle each partner leg
     for(const partner of partnerEntries){
       await addDoc(deletedCol, partner);
 
-      // Reverse partner's balance effect
       const partnerReverseType = partner.type === "Dr" ? "Cr" : "Dr";
       await updateAccountBalance(partner.accountName, partnerReverseType, partner.amount);
 
-      // Delete partner entry
       await deleteDoc(doc(db,"entries", partner.id));
     }
 
@@ -658,10 +681,8 @@ window.deleteEntry = async(id)=>{
 
   } else {
 
-    // Normal single entry delete
     await addDoc(deletedCol, data);
 
-    // Reverse the balance effect
     const reverseType = data.type === "Dr" ? "Cr" : "Dr";
     await updateAccountBalance(data.accountName, reverseType, data.amount);
 
@@ -679,7 +700,6 @@ window.editEntry = async(id)=>{
   let newAmt = prompt("New Amount",old.amount);
   if(!newAmt) return;
 
-  // Reverse old amount, apply new amount
   await updateAccountBalance(old.accountName, old.type==="Dr"?"Cr":"Dr", old.amount);
   await updateAccountBalance(old.accountName, old.type, newAmt);
 
@@ -719,7 +739,7 @@ todayBtn.onclick = ()=>{
   viewMode="entries";
   filterDate.value=today();
   render();
-  renderAccounts();
+  renderAccountsTableOnly();
   calculateBalances();
 };
 
@@ -735,7 +755,7 @@ showEditedBtn.onclick = ()=>{
 
 filterDate.onchange = ()=>{
   render();
-  renderAccounts();
+  renderAccountsTableOnly();
   calculateBalances();
 };
 
@@ -743,7 +763,6 @@ ssBtn.onclick = ()=>{
 
   const targetDate = filterDate.value;
 
-  // ── Build opening & closing balance values ──
   let closingBalance = getTotalHistoricalBalance(targetDate);
   let netChangeOnDay = 0;
   entries.forEach(e => {
@@ -754,9 +773,8 @@ ssBtn.onclick = ()=>{
   });
   let openingBalance = closingBalance - netChangeOnDay;
 
-  const hide = !balancesVisible; // if balances are hidden, mask them in SS too
+  const hide = !balancesVisible;
 
-  // ── Build the SS div ──
   const ssDiv = document.createElement("div");
   ssDiv.style.cssText = `
     position:fixed; top:-9999px; left:-9999px;
@@ -766,7 +784,6 @@ ssBtn.onclick = ()=>{
     border:1px solid #ddd;
   `;
 
-  // Header
   ssDiv.innerHTML = `
     <div style="text-align:center;margin-bottom:18px;">
       <div style="font-size:22px;font-weight:700;letter-spacing:1px;">OFFICE DAYBOOK</div>
