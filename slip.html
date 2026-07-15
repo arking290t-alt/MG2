@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
-  <!-- Modern Firebase v10 Modular SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set, onValue, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -21,9 +20,9 @@
       measurementId: "G-05HW0KSN38"
     };
 
-    // Initialize Firebase Services
+    // Initialize Firebase Services with Explicit Database URL targeting
     const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+    const database = getDatabase(app, "https://mg-manager-3ab66-default-rtdb.firebaseio.com");
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
@@ -42,7 +41,7 @@
       document.getElementById('landingMenu').style.display = 'none';
       document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
       document.getElementById(workspaceId).style.display = 'block';
-      window.scrollTo(0, 0); // Reset scroll to top
+      window.scrollTo(0, 0); 
     }
 
     window.showLandingMenu = function() {
@@ -72,7 +71,6 @@
           
           set(newSlipRef, targetSlip)
             .then(() => {
-              // Reset values instead of hard form structural reload
               document.getElementById('name').value = '';
               document.getElementById('item').value = '';
               document.getElementById('description').value = '';
@@ -81,7 +79,10 @@
               
               alert('Saved successfully!');
             })
-            .catch(err => alert('Sync Issue: ' + err.message));
+            .catch(err => {
+              console.error(err);
+              alert('Database Error: ' + err.message);
+            });
         });
       }
     });
@@ -101,6 +102,8 @@
         
         renderRecentFeed(cachedSlipsArray.slice(0, 5));
         renderViewTabFeed(cachedSlipsArray);
+      }, (error) => {
+        console.error("Listener dynamic sync failed: ", error);
       });
     }
 
@@ -137,7 +140,6 @@
       `;
     }
 
-    // Attach search and modal helpers globally
     window.filterAllSlips = function() {
       const term = document.getElementById('searchBar').value.toLowerCase().trim();
       if(!term) {
@@ -216,7 +218,6 @@
   </script>
 
   <style>
-    /* Premium Futuristic Dark Theme Variable Set */
     :root {
       --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
       --panel-bg: rgba(17, 24, 39, 0.95);
@@ -248,9 +249,8 @@
       padding-bottom: 80px;
     }
 
-    /* --- LANDING MENU --- */
     .menu-selection {
-      display: block; /* Removed CSS Grid */
+      display: block;
       margin-top: 20px;
     }
     
@@ -285,7 +285,6 @@
       line-height: 1.5;
     }
 
-    /* --- WORKSPACES --- */
     .workspace-panel {
       display: none;
       background: var(--panel-bg);
@@ -322,7 +321,6 @@
       font-size: 13px;
     }
 
-    /* --- FORM LAYOUT: SOLID VERTICAL STACK --- */
     .form-group {
       display: block;
       margin-bottom: 20px;
@@ -377,7 +375,6 @@
       margin-top: 25px;
     }
 
-    /* --- SLIPS LIST --- */
     .section-title {
       margin-top: 35px;
       font-size: 14px;
@@ -437,7 +434,6 @@
       text-align: center;
     }
 
-    /* --- MODAL --- */
     #preview-modal {
       display: none;
       position: fixed;
@@ -481,7 +477,6 @@
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
-    /* Print styling rules */
     #print-area { display: none; }
 
     @media print {
@@ -516,7 +511,6 @@
 
   <div class="main-container">
     
-    <!-- FIRST SCREEN: MAIN MENU OPTIONS -->
     <div id="landingMenu" class="menu-selection">
       <div class="option-card" onclick="openWorkspace('createWorkspace')">
         <h2>Create Slip</h2>
@@ -528,7 +522,6 @@
       </div>
     </div>
 
-    <!-- WORKSPACE PANEL: CREATE SLIP -->
     <div id="createWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Create New Slip</h1>
@@ -568,7 +561,6 @@
       <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
     </div>
 
-    <!-- WORKSPACE PANEL: VIEW SLIPS -->
     <div id="viewWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Search & View Logs</h1>
@@ -586,7 +578,6 @@
 
   </div>
 
-  <!-- GLASS-PREVIEW OVERLAY MODAL -->
   <div id="preview-modal">
     <div class="modal-body">
       <h3 style="margin-top:0; color: #ffffff; font-size: 18px; font-weight: 700;">Print Setup</h3>
