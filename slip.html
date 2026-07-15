@@ -27,31 +27,15 @@
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
 
-    // Load initial listeners and set input default date
+    // SINGLE Unified App Startup Initializer
     document.addEventListener("DOMContentLoaded", () => {
+      // 1. Set Default Date
       const dateEl = document.getElementById('date');
       if (dateEl) {
         dateEl.value = new Date().toISOString().split('T')[0];
       }
-      initDatabaseListeners();
-    });
 
-    // Make navigation functions globally accessible from modular script
-    window.openWorkspace = function(workspaceId) {
-      document.getElementById('landingMenu').style.display = 'none';
-      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
-      document.getElementById(workspaceId).style.display = 'block';
-      window.scrollTo(0, 0); 
-    }
-
-    window.showLandingMenu = function() {
-      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
-      document.getElementById('landingMenu').style.display = 'block';
-      window.scrollTo(0, 0);
-    }
-
-    // Capture Submit Action
-    document.addEventListener("DOMContentLoaded", () => {
+      // 2. Safely Bind Form Submission
       const form = document.getElementById('slipForm');
       if (form) {
         form.addEventListener('submit', function(e) {
@@ -72,6 +56,7 @@
             
             set(newSlipRef, targetSlip)
               .then(() => {
+                // Reset inputs
                 document.getElementById('name').value = '';
                 document.getElementById('item').value = '';
                 document.getElementById('description').value = '';
@@ -81,15 +66,43 @@
                 alert('Saved successfully!');
               })
               .catch(err => {
-                console.error(err);
-                alert('Firebase Write Failed: ' + err.message + '\nCode: ' + err.code);
+                console.error("Firebase write error: ", err);
+                alert('Firebase Write Failed: ' + err.message);
               });
           } catch (catchErr) {
+            console.error("Firebase setup error: ", catchErr);
             alert('Execution Error: ' + catchErr.message);
           }
         });
+      } else {
+        console.error("Could not find element with ID 'slipForm'");
       }
+
+      // 3. Close preview modal on background click
+      const modal = document.getElementById('preview-modal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) closePrintModal();
+        });
+      }
+
+      // 4. Kickoff Database Dynamic Stream Listener
+      initDatabaseListeners();
     });
+
+    // Make navigation functions globally accessible from modular script
+    window.openWorkspace = function(workspaceId) {
+      document.getElementById('landingMenu').style.display = 'none';
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById(workspaceId).style.display = 'block';
+      window.scrollTo(0, 0); 
+    }
+
+    window.showLandingMenu = function() {
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById('landingMenu').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
 
     // Real-time Database Stream
     function initDatabaseListeners() {
@@ -112,7 +125,7 @@
           alert("Database Read Error: " + error.message);
         });
       } catch (err) {
-        console.error(err);
+        console.error("Listener registration failed: ", err);
       }
     }
 
@@ -199,14 +212,15 @@
         printArea.innerHTML += `
           <div class="print-slip">
             <div>
-              <div class="slip-header">RECEIPT SLIP</div>
-              <div class="slip-row"><span class="slip-label">Date:</span>${selectedActiveSlipForPrint.date}</div>
-              <div class="slip-row"><span class="slip-label">Name:</span>${selectedActiveSlipForPrint.name}</div>
-              <div class="slip-row"><span class="slip-label">Item:</span>${selectedActiveSlipForPrint.item}</div>
-              <div class="slip-row"><span class="slip-label">Description:</span>${selectedActiveSlipForPrint.description || 'N/A'}</div>
+              <div class="print-header">RECEIPT SLIP</div>
+              <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
+              <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
+              <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
+              <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
             </div>
-            <div class="slip-row" style="border-top: 2px solid #000; padding-top: 8px; font-size: 16px; font-weight: bold;">
-              <span class="slip-label">Total Amount:</span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}
+            <div class="print-row total-row">
+              <span class="print-label">Total Amount:</span>
+              <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
             </div>
           </div>
         `;
@@ -215,15 +229,6 @@
       window.print();
       closePrintModal();
     }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const modal = document.getElementById('preview-modal');
-      if (modal) {
-        modal.addEventListener('click', function(e) {
-          if(e.target === this) closePrintModal();
-        });
-      }
-    });
   </script>
 
   <style>
@@ -467,6 +472,13 @@
       box-sizing: border-box;
     }
 
+    .modal-preview-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
     .modal-buttons {
       display: flex;
       gap: 10px;
@@ -488,30 +500,75 @@
 
     #print-area { display: none; }
 
+    /* Print System Layout & Styling Setup */
+    @page {
+      size: A4 portrait;
+      margin: 1.5cm;
+    }
+
     @media print {
-      body * { visibility: hidden; }
-      #print-area, #print-area * { visibility: visible; }
+      body * { 
+        visibility: hidden; 
+      }
+      
+      #print-area, #print-area * { 
+        visibility: visible; 
+      }
+      
       #print-area {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 15px;
+        grid-auto-rows: minmax(280px, auto);
+        gap: 20px;
         position: absolute;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
+        left: 0; 
+        top: 0;
+        width: 100%; 
         box-sizing: border-box;
-        padding: 15px;
+        background: #ffffff !important;
       }
+      
       .print-slip {
-        border: 2px dashed #444;
-        padding: 25px;
+        border: 2px dashed #000000 !important;
+        border-radius: 8px;
+        padding: 20px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        background: #fff;
-        height: 100%;
-        color: #000;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+      
+      .print-header {
+        text-align: center;
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: 1px;
+        border-bottom: 1.5px solid #000000;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+      }
+
+      .print-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        margin-bottom: 8px;
+        color: #000000 !important;
+      }
+
+      .print-label {
+        font-weight: 700;
+      }
+
+      .print-slip .total-row {
+        border-top: 2px solid #000000;
+        padding-top: 10px;
+        margin-top: 15px;
+        font-size: 15px;
+        font-weight: 800;
       }
     }
   </style>
@@ -588,21 +645,4 @@
   </div>
 
   <div id="preview-modal">
-    <div class="modal-body">
-      <h3 style="margin-top:0; color: #ffffff; font-size: 18px; font-weight: 700;">Print Setup</h3>
-      <div id="mini-preview-card"></div>
-      <div class="form-group">
-        <label for="modalCopies">Number of Copies:</label>
-        <input type="number" id="modalCopies" min="1" max="4" value="1">
-      </div>
-      <div class="modal-buttons">
-        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Confirm & Print</button>
-        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="print-area"></div>
-
-</body>
-</html>
+ 
