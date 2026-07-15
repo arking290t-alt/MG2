@@ -432,7 +432,7 @@
       document.getElementById('landingMenu').style.display = 'grid';
     }
 
-    // Capture Submit Action
+    // Capture Submit Action (Fixed to prevent workspace reset navigation jumps)
     document.getElementById('slipForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -447,8 +447,13 @@
 
       database.ref('slips').push().set(targetSlip)
         .then(() => {
-          document.getElementById('slipForm').reset();
+          // Manually reset values instead of calling structural form.reset()
+          document.getElementById('name').value = '';
+          document.getElementById('item').value = '';
+          document.getElementById('description').value = '';
+          document.getElementById('amount').value = '';
           document.getElementById('date').value = new Date().toISOString().split('T')[0];
+          
           alert('Saved successfully!');
         })
         .catch(err => alert('Sync Issue: ' + err.message));
@@ -481,6 +486,7 @@
       target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
     }
 
+    style="text-transform: capitalize;"
     function generateSlipMarkupRow(item) {
       const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
       return `
@@ -565,4 +571,3 @@
   </script>
 </body>
 </html>
-
