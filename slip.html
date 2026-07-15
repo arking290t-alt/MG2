@@ -1,114 +1,280 @@
+Here is the redesigned slip.html. The interface has been completely overhauled with a modern, professional look featuring a premium **Deep Navy Blue and Soft Ice Bloom** aesthetic. It includes smooth transitions, glowing input focus states, modern card layouts, and an polished dark backdrop for the modal print preview.
+### slip.html
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Slip</title>
+  <title>Slip Management System</title>
   
-  <!-- Firebase App and Database SDKs (v9/v10 Compat Library for easy integration) -->
+  <!-- Firebase App and Database SDKs (v9/v10 Compat Library) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <style>
-    /* Global Styles */
+    /* Modern Theme & Typography Variables */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4ecf5 100%);
+      --panel-bg: #ffffff;
+      --primary-blue: #1a4f7c;
+      --accent-bloom: #3a86c8;
+      --accent-bloom-light: #eef5fc;
+      --text-dark: #2c3e50;
+      --text-muted: #7f8c8d;
+      --border-color: #dbe3eb;
+      --radius: 12px;
+      --shadow-sm: 0 2px 8px rgba(26, 79, 124, 0.05);
+      --shadow-md: 0 10px 30px rgba(26, 79, 124, 0.08);
+      --success-green: #2ecc71;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f6f9;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
       margin: 0;
-      padding: 20px;
-      color: #333;
+      padding: 40px 20px;
+      color: var(--text-dark);
+      min-height: 100vh;
+      box-sizing: border-box;
     }
-    .container {
-      max-width: 600px;
-      background: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+    .main-container {
+      max-width: 850px;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
       margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.8);
     }
-    h2 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 2px solid #ecf0f1;
-      padding-bottom: 10px;
+    
+    /* Modern Navigation Tabs */
+    .tabs {
+      display: flex;
+      background: var(--accent-bloom-light);
+      padding: 6px;
+      border-radius: var(--radius);
+      margin-bottom: 30px;
+      gap: 5px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      border-radius: calc(var(--radius) - 4px);
+      cursor: pointer;
+      color: var(--primary-blue);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tab-btn:hover {
+      background: rgba(58, 134, 200, 0.1);
+    }
+    .tab-btn.active {
+      background: var(--primary-blue);
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Elegant Forms & Inputs */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .full-width {
+      grid-column: span 2;
     }
     label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       font-weight: 600;
+      font-size: 14px;
+      color: var(--primary-blue);
+      letter-spacing: 0.3px;
     }
     input, textarea {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
       box-sizing: border-box;
       font-size: 14px;
+      background: #fafbfc;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
     }
-    textarea {
-      resize: vertical;
-      height: 80px;
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-bloom);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(58, 134, 200, 0.15);
     }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    button {
-      flex: 1;
-      padding: 12px;
+    textarea { height: 90px; resize: vertical; }
+    
+    button.btn-action {
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-bloom) 100%);
+      color: white;
+      padding: 14px 24px;
       font-size: 16px;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
-      transition: background 0.2s;
+      font-weight: 600;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(26, 79, 124, 0.2);
+      transition: all 0.2s ease;
     }
-    .btn-submit {
-      background-color: #2ecc71;
-      color: white;
+    button.btn-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(26, 79, 124, 0.3);
     }
-    .btn-submit:hover { background-color: #27ae60; }
-    .btn-print {
-      background-color: #3498db;
-      color: white;
+    button.btn-action:active {
+      transform: translateY(1px);
     }
-    .btn-print:hover { background-color: #2980b9; }
 
-    /* --- PRINT LAYOUT --- */
-    /* Hidden on screen by default */
-    #print-area {
-      display: none;
+    /* Micro-Designed Lists & Dynamic Panels */
+    .section-title {
+      margin-top: 40px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent-bloom-light);
     }
+    .slip-list {
+      margin-top: 20px;
+      display: grid;
+      gap: 12px;
+    }
+    .slip-item {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 18px 22px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+    .slip-item:hover {
+      border-color: var(--accent-bloom);
+      transform: scale(1.005);
+      box-shadow: 0 4px 12px rgba(26, 79, 124, 0.06);
+    }
+    .slip-info p {
+      margin: 4px 0;
+    }
+    .slip-title-line {
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 15px;
+    }
+    .slip-meta-line {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .btn-print-small {
+      background-color: var(--accent-bloom-light);
+      color: var(--primary-blue);
+      border: 1px solid rgba(58, 134, 200, 0.2);
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .btn-print-small:hover {
+      background: var(--primary-blue);
+      color: #ffffff;
+      border-color: var(--primary-blue);
+    }
+
+    /* Print Preview Glassmorphism Modal */
+    #preview-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(26, 79, 124, 0.4);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-body {
+      background: white;
+      padding: 30px;
+      border-radius: var(--radius);
+      max-width: 90%;
+      width: 480px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      animation: modalSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s ease;
+    }
+    .btn-confirm { background: var(--primary-blue); color: white; }
+    .btn-confirm:hover { background: #133a5c; }
+    .btn-cancel { background: #f2f4f7; color: var(--text-dark); }
+    .btn-cancel:hover { background: #e4e8ed; }
+
+    /* --- PRINT LAYOUT STYLING --- */
+    #print-area { display: none; }
 
     @media print {
-      /* Hide everything else on the screen */
-      body * {
-        visibility: hidden;
-      }
-      #print-area, #print-area * {
-        visibility: visible;
-      }
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
       #print-area {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 columns */
-        grid-template-rows: 1fr 1fr;    /* 2 rows */
-        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 15px;
         position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
         box-sizing: border-box;
-        padding: 10px;
+        padding: 15px;
       }
-      /* Each cell is exactly 1/4 of the A4 page */
       .print-slip {
-        border: 2px dashed #333;
-        padding: 20px;
+        border: 2px dashed #444;
+        padding: 25px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
@@ -118,64 +284,100 @@
       }
       .slip-header {
         text-align: center;
-        border-bottom: 1px solid #000;
-        padding-bottom: 5px;
-        margin-bottom: 10px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
         font-weight: bold;
-        font-size: 18px;
+        font-size: 20px;
+        letter-spacing: 1px;
       }
-      .slip-row {
-        margin-bottom: 8px;
-        font-size: 14px;
-      }
-      .slip-label {
-        font-weight: bold;
-      }
+      .slip-row { margin-bottom: 10px; font-size: 14px; }
+      .slip-label { font-weight: bold; display: inline-block; width: 95px; }
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>Create New Slip</h2>
-    <form id="slipForm">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" required placeholder="Enter name">
-      </div>
-      <div class="form-group">
-        <label for="item">Item</label>
-        <input type="text" id="item" required placeholder="Item name">
-      </div>
-      <div class="form-group">
-        <label for="description">Description</label>
-        <textarea id="description" placeholder="Enter description details"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="amount">Amount</label>
-        <input type="number" id="amount" step="0.01" required placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label for="date">Date</label>
-        <input type="date" id="date" required>
-      </div>
-      <div class="form-group">
-        <label for="copies">Number of Copies to Print</label>
-        <input type="number" id="copies" min="1" max="4" value="1" required>
-      </div>
+  <div class="main-container">
+    <!-- Modern Navigation Menu -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('create-tab')">Create Slip</button>
+      <button class="tab-btn" onclick="switchTab('view-tab')">View Slips</button>
+    </div>
 
-      <div class="btn-group">
-        <button type="submit" class="btn-submit">Save to Database</button>
-        <button type="button" id="printBtn" class="btn-print">Print Slip</button>
+    <!-- CREATE SLIP PANEL VIEW -->
+    <div id="create-tab" class="tab-content active">
+      <form id="slipForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" required placeholder="Customer or company name">
+          </div>
+          <div class="form-group">
+            <label for="item">Item</label>
+            <input type="text" id="item" required placeholder="Product or item title">
+          </div>
+          <div class="form-group full-width">
+            <label for="description">Description</label>
+            <textarea id="description" placeholder="Provide extra specifications or context detail..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" step="0.01" required placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-action">Save to Database</button>
+      </form>
+
+      <div class="section-title">Recent 5 Slips</div>
+      <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
+    </div>
+
+    <!-- VIEW & SEARCH SLIP PANEL VIEW -->
+    <div id="view-tab" class="tab-content">
+      <div class="form-group">
+        <label for="searchBar">Dynamic Search Filter</label>
+        <input type="text" id="searchBar" placeholder="Type name or item description keyword to filter..." oninput="filterAllSlips()">
       </div>
-    </form>
+      
+      <div class="section-title">All Registered Logs</div>
+      <div id="allSlipsContainer" class="slip-list">Awaiting connection sync...</div>
+    </div>
   </div>
 
-  <!-- Dynamic container used strictly for the A4 grid print view -->
+  <!-- MODERN GLASS-PREVIEW OVERLAY MODAL -->
+  <div id="preview-modal">
+    <div class="modal-body">
+      <h3 style="margin-top:0; color: var(--primary-blue); font-size: 18px;">Print Setup & Page Preview</h3>
+      
+      <!-- Live Miniature Preview Sheet Card -->
+      <div id="mini-preview-card" style="border: 1px dashed var(--accent-bloom); padding: 20px; background: var(--accent-bloom-light); border-radius: 8px; margin: 20px 0; font-size: 13px; line-height: 1.5;">
+      </div>
+
+      <div class="form-group">
+        <label for="modalCopies">Number of Layout Copies (1 to 4 max):</label>
+        <input type="number" id="modalCopies" min="1" max="4" value="1">
+        <p style="font-size: 12px; color: var(--text-muted); margin: 6px 0 0 0;">
+          * 1 copy = 1/4 of A4 sheet. 2 copies = 1/2 of A4 sheet coverage.
+        </p>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Confirm & Print</button>
+        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target hidden container for layout conversion calculations -->
   <div id="print-area"></div>
 
   <script>
-    // 1. REPLACE THIS WITH YOUR PROJECT'S FIREBASE CONFIGURATION
+    // 1. PLACE YOUR SECURE FIREBASE CONFIGURATION CODES HERE
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
@@ -186,18 +388,30 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
+    // Instantiate Database
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Set today's date automatically as default value
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    let cachedSlipsArray = [];
+    let selectedActiveSlipForPrint = null;
 
-    // 2. Save Data to Firebase Realtime Database
+    // Set Date Value natively
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    initDatabaseListeners();
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // Capture Submit Action
     document.getElementById('slipForm').addEventListener('submit', function(e) {
       e.preventDefault();
-
-      const slipData = {
+      
+      const targetSlip = {
         name: document.getElementById('name').value,
         item: document.getElementById('item').value,
         description: document.getElementById('description').value,
@@ -206,51 +420,120 @@
         timestamp: Date.now()
       };
 
-      // Saves data into a unique node under 'slips'
-      database.ref('slips').push().set(slipData)
+      database.ref('slips').push().set(targetSlip)
         .then(() => {
-          alert('Slip details successfully saved to Firebase!');
+          document.getElementById('slipForm').reset();
+          document.getElementById('date').value = new Date().toISOString().split('T')[0];
         })
-        .catch((error) => {
-          console.error("Error saving to Firebase: ", error);
-          alert('Failed to save data. Please check your Firebase configuration setup.');
-        });
+        .catch(err => alert('Sync Issue: ' + err.message));
     });
 
-    // 3. Generate Print Grid Dynamically
-    document.getElementById('printBtn').addEventListener('click', function() {
-      const name = document.getElementById('name').value || 'N/A';
-      const item = document.getElementById('item').value || 'N/A';
-      const description = document.getElementById('description').value || 'N/A';
-      const amount = document.getElementById('amount').value || '0.00';
-      const date = document.getElementById('date').value || 'N/A';
-      const copies = parseInt(document.getElementById('copies').value) || 1;
+    // Handle incoming database events
+    function initDatabaseListeners() {
+      database.ref('slips').orderByChild('timestamp').on('value', snapshot => {
+        const records = [];
+        snapshot.forEach(child => {
+          records.push({ id: child.key, ...child.val() });
+        });
+        
+        cachedSlipsArray = [...records].reverse();
+        
+        renderRecentFeed(cachedSlipsArray.slice(0, 5));
+        renderViewTabFeed(cachedSlipsArray);
+      });
+    }
 
+    function renderRecentFeed(items) {
+      const target = document.getElementById('recentSlipsContainer');
+      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No slips generated yet.</p>"; return; }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
+    }
+
+    function renderViewTabFeed(items) {
+      const target = document.getElementById('allSlipsContainer');
+      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No records found matching description.</p>"; return; }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
+    }
+
+    function generateSlipMarkupRow(item) {
+      const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
+      return `
+        <div class="slip-item">
+          <div class="slip-info">
+            <div class="slip-title-line">${item.name} <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">— ${item.item}</span></div>
+            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong>$${parseFloat(item.amount).toFixed(2)}</strong></div>
+          </div>
+          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
+        </div>
+      `;
+    }
+
+    function filterAllSlips() {
+      const term = document.getElementById('searchBar').value.toLowerCase().trim();
+      if(!term) {
+        renderViewTabFeed(cachedSlipsArray);
+        return;
+      }
+      const filtered = cachedSlipsArray.filter(x => 
+        x.name.toLowerCase().includes(term) || 
+        x.item.toLowerCase().includes(term)
+      );
+      renderViewTabFeed(filtered);
+    }
+
+    // Modal Operations Elements
+    function openPrintModal(serializedItemStr) {
+      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
+      selectedActiveSlipForPrint = slipObj;
+
+      const previewCard = document.getElementById('mini-preview-card');
+      previewCard.innerHTML = `
+        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--primary-blue); border-bottom:1px solid rgba(58,134,200,0.2); padding-bottom:6px; margin-bottom:10px;">RECEIPT PREVIEW</div>
+        <div><strong>Date:</strong> ${slipObj.date}</div>
+        <div><strong>Name:</strong> ${slipObj.name}</div>
+        <div><strong>Item:</strong> ${slipObj.item}</div>
+        <div><strong>Desc:</strong> ${slipObj.description || 'N/A'}</div>
+        <div style="margin-top:10px; padding-top:6px; border-top:1px dashed rgba(58,134,200,0.2); font-weight:700; font-size: 14px; color: var(--primary-blue);">Amount: $${parseFloat(slipObj.amount).toFixed(2)}</div>
+      `;
+
+      document.getElementById('modalCopies').value = 1;
+      document.getElementById('preview-modal').style.display = 'flex';
+    }
+
+    function closePrintModal() {
+      document.getElementById('preview-modal').style.display = 'none';
+      selectedActiveSlipForPrint = null;
+    }
+
+    function executeSystemPrint() {
+      if(!selectedActiveSlipForPrint) return;
+
+      const copiesCount = parseInt(document.getElementById('modalCopies').value) || 1;
       const printArea = document.getElementById('print-area');
-      printArea.innerHTML = ''; // Clear previous elements
+      printArea.innerHTML = ''; 
 
-      // Generate the slip templates based on the requested number of copies
-      for (let i = 0; i < copies; i++) {
-        const slipHTML = `
+      for (let i = 0; i < copiesCount; i++) {
+        printArea.innerHTML += `
           <div class="print-slip">
             <div>
               <div class="slip-header">RECEIPT SLIP</div>
-              <div class="slip-row"><span class="slip-label">Date:</span> ${date}</div>
-              <div class="slip-row"><span class="slip-label">Name:</span> ${name}</div>
-              <div class="slip-row"><span class="slip-label">Item:</span> ${item}</div>
-              <div class="slip-row"><span class="slip-label">Description:</span> ${description}</div>
+              <div class="slip-row"><span class="slip-label">Date:</span>${selectedActiveSlipForPrint.date}</div>
+              <div class="slip-row"><span class="slip-label">Name:</span>${selectedActiveSlipForPrint.name}</div>
+              <div class="slip-row"><span class="slip-label">Item:</span>${selectedActiveSlipForPrint.item}</div>
+              <div class="slip-row"><span class="slip-label">Description:</span>${selectedActiveSlipForPrint.description || 'N/A'}</div>
             </div>
-            <div class="slip-row" style="border-top: 1px solid #333; padding-top: 5px; font-size: 16px;">
-              <span class="slip-label">Total Amount:</span> $${parseFloat(amount).toFixed(2)}
+            <div class="slip-row" style="border-top: 2px solid #000; padding-top: 8px; font-size: 16px; font-weight: bold;">
+              <span class="slip-label">Total Amount:</span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}
             </div>
           </div>
         `;
-        printArea.innerHTML += slipHTML;
       }
 
-      // Trigger standard browser system print window
       window.print();
-    });
+      closePrintModal();
+    }
   </script>
 </body>
 </html>
+
+```
