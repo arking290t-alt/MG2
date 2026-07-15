@@ -66,45 +66,54 @@
             timestamp: Date.now()
           };
 
-          const slipsRef = ref(database, 'slips');
-          const newSlipRef = push(slipsRef);
-          
-          set(newSlipRef, targetSlip)
-            .then(() => {
-              document.getElementById('name').value = '';
-              document.getElementById('item').value = '';
-              document.getElementById('description').value = '';
-              document.getElementById('amount').value = '';
-              document.getElementById('date').value = new Date().toISOString().split('T')[0];
-              
-              alert('Saved successfully!');
-            })
-            .catch(err => {
-              console.error(err);
-              alert('Database Error: ' + err.message);
-            });
+          try {
+            const slipsRef = ref(database, 'slips');
+            const newSlipRef = push(slipsRef);
+            
+            set(newSlipRef, targetSlip)
+              .then(() => {
+                document.getElementById('name').value = '';
+                document.getElementById('item').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                
+                alert('Saved successfully!');
+              })
+              .catch(err => {
+                console.error(err);
+                alert('Firebase Write Failed: ' + err.message + '\nCode: ' + err.code);
+              });
+          } catch (catchErr) {
+            alert('Execution Error: ' + catchErr.message);
+          }
         });
       }
     });
 
     // Real-time Database Stream
     function initDatabaseListeners() {
-      const slipsRef = ref(database, 'slips');
-      const sortedQuery = query(slipsRef, orderByChild('timestamp'));
+      try {
+        const slipsRef = ref(database, 'slips');
+        const sortedQuery = query(slipsRef, orderByChild('timestamp'));
 
-      onValue(sortedQuery, (snapshot) => {
-        const records = [];
-        snapshot.forEach((childSnapshot) => {
-          records.push({ id: childSnapshot.key, ...childSnapshot.val() });
+        onValue(sortedQuery, (snapshot) => {
+          const records = [];
+          snapshot.forEach((childSnapshot) => {
+            records.push({ id: childSnapshot.key, ...childSnapshot.val() });
+          });
+          
+          cachedSlipsArray = [...records].reverse();
+          
+          renderRecentFeed(cachedSlipsArray.slice(0, 5));
+          renderViewTabFeed(cachedSlipsArray);
+        }, (error) => {
+          console.error("Listener dynamic sync failed: ", error);
+          alert("Database Read Error: " + error.message);
         });
-        
-        cachedSlipsArray = [...records].reverse();
-        
-        renderRecentFeed(cachedSlipsArray.slice(0, 5));
-        renderViewTabFeed(cachedSlipsArray);
-      }, (error) => {
-        console.error("Listener dynamic sync failed: ", error);
-      });
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     function renderRecentFeed(items) {
