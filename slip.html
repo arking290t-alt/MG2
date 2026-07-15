@@ -1,6 +1,3 @@
-Here is the redesigned slip.html. The interface has been completely overhauled with a modern, professional look featuring a premium **Deep Navy Blue and Soft Ice Bloom** aesthetic. It includes smooth transitions, glowing input focus states, modern card layouts, and an polished dark backdrop for the modal print preview.
-### slip.html
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +23,6 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       --radius: 12px;
       --shadow-sm: 0 2px 8px rgba(26, 79, 124, 0.05);
       --shadow-md: 0 10px 30px rgba(26, 79, 124, 0.08);
-      --success-green: #2ecc71;
     }
 
     body {
@@ -41,54 +37,92 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
 
     .main-container {
       max-width: 850px;
+      margin: 0 auto;
+    }
+
+    /* --- LANDING MENU OPTIONS --- */
+    .menu-selection {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 10vh;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .option-card {
+      background: var(--panel-bg);
+      padding: 50px 30px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .option-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent-bloom);
+      box-shadow: 0 15px 35px rgba(26, 79, 124, 0.15);
+    }
+
+    .option-card h2 {
+      color: var(--primary-blue);
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .option-card p {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin: 0;
+    }
+
+    /* --- PANEL CONTAINER WORKSPACES --- */
+    .workspace-panel {
+      display: none;
       background: var(--panel-bg);
       padding: 35px;
       border-radius: var(--radius);
       box-shadow: var(--shadow-md);
-      margin: 0 auto;
       border: 1px solid rgba(255, 255, 255, 0.8);
-    }
-    
-    /* Modern Navigation Tabs */
-    .tabs {
-      display: flex;
-      background: var(--accent-bloom-light);
-      padding: 6px;
-      border-radius: var(--radius);
-      margin-bottom: 30px;
-      gap: 5px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      background: transparent;
-      border: none;
-      border-radius: calc(var(--radius) - 4px);
-      cursor: pointer;
-      color: var(--primary-blue);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .tab-btn:hover {
-      background: rgba(58, 134, 200, 0.1);
-    }
-    .tab-btn.active {
-      background: var(--primary-blue);
-      color: white;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .tab-content {
-      display: none;
       animation: fadeIn 0.4s ease;
     }
-    .tab-content.active {
-      display: block;
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--accent-bloom-light);
+      padding-bottom: 15px;
+    }
+
+    .panel-header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--primary-blue);
+    }
+
+    .btn-back {
+      background: var(--accent-bloom-light);
+      color: var(--primary-blue);
+      border: 1px solid rgba(58, 134, 200, 0.2);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-back:hover {
+      background: var(--primary-blue);
+      color: white;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -98,20 +132,17 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .full-width {
-      grid-column: span 2;
-    }
+    .form-group { margin-bottom: 20px; }
+    .full-width { grid-column: span 2; }
+    
     label {
       display: block;
       margin-bottom: 8px;
       font-weight: 600;
       font-size: 14px;
       color: var(--primary-blue);
-      letter-spacing: 0.3px;
     }
+    
     input, textarea {
       width: 100%;
       padding: 12px 16px;
@@ -148,9 +179,6 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(26, 79, 124, 0.3);
     }
-    button.btn-action:active {
-      transform: translateY(1px);
-    }
 
     /* Micro-Designed Lists & Dynamic Panels */
     .section-title {
@@ -179,21 +207,10 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
     }
     .slip-item:hover {
       border-color: var(--accent-bloom);
-      transform: scale(1.005);
-      box-shadow: 0 4px 12px rgba(26, 79, 124, 0.06);
     }
-    .slip-info p {
-      margin: 4px 0;
-    }
-    .slip-title-line {
-      font-weight: 600;
-      color: var(--text-dark);
-      font-size: 15px;
-    }
-    .slip-meta-line {
-      color: var(--text-muted);
-      font-size: 13px;
-    }
+    .slip-title-line { font-weight: 600; font-size: 15px; }
+    .slip-meta-line { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+    
     .btn-print-small {
       background-color: var(--accent-bloom-light);
       color: var(--primary-blue);
@@ -207,8 +224,7 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
     }
     .btn-print-small:hover {
       background: var(--primary-blue);
-      color: #ffffff;
-      border-color: var(--primary-blue);
+      color: white;
     }
 
     /* Print Preview Glassmorphism Modal */
@@ -229,11 +245,6 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       max-width: 90%;
       width: 480px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-      animation: modalSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    @keyframes modalSlide {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
     }
     .modal-buttons {
       display: flex;
@@ -248,12 +259,9 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      transition: background 0.2s ease;
     }
     .btn-confirm { background: var(--primary-blue); color: white; }
-    .btn-confirm:hover { background: #133a5c; }
     .btn-cancel { background: #f2f4f7; color: var(--text-dark); }
-    .btn-cancel:hover { background: #e4e8ed; }
 
     /* --- PRINT LAYOUT STYLING --- */
     #print-area { display: none; }
@@ -289,7 +297,6 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
         margin-bottom: 15px;
         font-weight: bold;
         font-size: 20px;
-        letter-spacing: 1px;
       }
       .slip-row { margin-bottom: 10px; font-size: 14px; }
       .slip-label { font-weight: bold; display: inline-block; width: 95px; }
@@ -299,14 +306,26 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
 <body>
 
   <div class="main-container">
-    <!-- Modern Navigation Menu -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('create-tab')">Create Slip</button>
-      <button class="tab-btn" onclick="switchTab('view-tab')">View Slips</button>
+    
+    <!-- FIRST SCREEN: MAIN MENU OPTIONS -->
+    <div id="landingMenu" class="menu-selection">
+      <div class="option-card" onclick="openWorkspace('createWorkspace')">
+        <h2>Create Slip</h2>
+        <p>Log a new slip entry directly to the database</p>
+      </div>
+      <div class="option-card" onclick="openWorkspace('viewWorkspace')">
+        <h2>View Slips</h2>
+        <p>Search, review, and print recorded slips</p>
+      </div>
     </div>
 
-    <!-- CREATE SLIP PANEL VIEW -->
-    <div id="create-tab" class="tab-content active">
+    <!-- WORKSPACE PANEL: CREATE SLIP -->
+    <div id="createWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Create New Slip</h1>
+        <button class="btn-back" onclick="showLandingMenu()">← Main Menu</button>
+      </div>
+      
       <form id="slipForm">
         <div class="form-grid">
           <div class="form-group">
@@ -337,8 +356,13 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
     </div>
 
-    <!-- VIEW & SEARCH SLIP PANEL VIEW -->
-    <div id="view-tab" class="tab-content">
+    <!-- WORKSPACE PANEL: VIEW SLIPS -->
+    <div id="viewWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Search & View Logs</h1>
+        <button class="btn-back" onclick="showLandingMenu()">← Main Menu</button>
+      </div>
+
       <div class="form-group">
         <label for="searchBar">Dynamic Search Filter</label>
         <input type="text" id="searchBar" placeholder="Type name or item description keyword to filter..." oninput="filterAllSlips()">
@@ -347,16 +371,15 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       <div class="section-title">All Registered Logs</div>
       <div id="allSlipsContainer" class="slip-list">Awaiting connection sync...</div>
     </div>
+
   </div>
 
-  <!-- MODERN GLASS-PREVIEW OVERLAY MODAL -->
+  <!-- GLASS-PREVIEW OVERLAY MODAL -->
   <div id="preview-modal">
     <div class="modal-body">
       <h3 style="margin-top:0; color: var(--primary-blue); font-size: 18px;">Print Setup & Page Preview</h3>
       
-      <!-- Live Miniature Preview Sheet Card -->
-      <div id="mini-preview-card" style="border: 1px dashed var(--accent-bloom); padding: 20px; background: var(--accent-bloom-light); border-radius: 8px; margin: 20px 0; font-size: 13px; line-height: 1.5;">
-      </div>
+      <div id="mini-preview-card" style="border: 1px dashed var(--accent-bloom); padding: 20px; background: var(--accent-bloom-light); border-radius: 8px; margin: 20px 0; font-size: 13px; line-height: 1.5;"></div>
 
       <div class="form-group">
         <label for="modalCopies">Number of Layout Copies (1 to 4 max):</label>
@@ -373,11 +396,10 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
     </div>
   </div>
 
-  <!-- Target hidden container for layout conversion calculations -->
   <div id="print-area"></div>
 
   <script>
-    // 1. PLACE YOUR SECURE FIREBASE CONFIGURATION CODES HERE
+    // PLACE YOUR FIREBASE CONFIGURATION OBJECT HERE
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
@@ -395,16 +417,19 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
 
-    // Set Date Value natively
     document.getElementById('date').value = new Date().toISOString().split('T')[0];
     initDatabaseListeners();
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(tabId).classList.add('active');
-      event.currentTarget.classList.add('active');
+    // Navigation Controllers
+    function openWorkspace(workspaceId) {
+      document.getElementById('landingMenu').style.display = 'none';
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById(workspaceId).style.display = 'block';
+    }
+
+    function showLandingMenu() {
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById('landingMenu').style.display = 'grid';
     }
 
     // Capture Submit Action
@@ -424,6 +449,7 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
         .then(() => {
           document.getElementById('slipForm').reset();
           document.getElementById('date').value = new Date().toISOString().split('T')[0];
+          alert('Saved successfully!');
         })
         .catch(err => alert('Sync Issue: ' + err.message));
     });
@@ -451,7 +477,7 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
 
     function renderViewTabFeed(items) {
       const target = document.getElementById('allSlipsContainer');
-      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No records found matching description.</p>"; return; }
+      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No records found.</p>"; return; }
       target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
     }
 
@@ -481,7 +507,7 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       renderViewTabFeed(filtered);
     }
 
-    // Modal Operations Elements
+    // Modal Operations
     function openPrintModal(serializedItemStr) {
       const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
       selectedActiveSlipForPrint = slipObj;
@@ -499,6 +525,10 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
       document.getElementById('modalCopies').value = 1;
       document.getElementById('preview-modal').style.display = 'flex';
     }
+
+    document.getElementById('preview-modal').addEventListener('click', function(e) {
+      if(e.target === this) closePrintModal();
+    });
 
     function closePrintModal() {
       document.getElementById('preview-modal').style.display = 'none';
@@ -536,4 +566,3 @@ Here is the redesigned slip.html. The interface has been completely overhauled w
 </body>
 </html>
 
-```
