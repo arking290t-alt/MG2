@@ -5,9 +5,186 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management System</title>
   
-  <!-- Firebase App and Database SDKs (v9/v10 Compat Library) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Your exact Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
+      authDomain: "mg-manager-3ab66.firebaseapp.com",
+      projectId: "mg-manager-3ab66",
+      storageBucket: "mg-manager-3ab66.firebasestorage.app",
+      messagingSenderId: "330667005987",
+      appId: "1:330667005987:web:95de27b6259ace9fc6b996",
+      measurementId: "G-05HW0KSN38"
+    };
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    let cachedSlipsArray = [];
+    let selectedActiveSlipForPrint = null;
+
+    // Set Date Value natively to today
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    initDatabaseListeners();
+
+    // Make navigation functions globally accessible from modular script
+    window.openWorkspace = function(workspaceId) {
+      document.getElementById('landingMenu').style.display = 'none';
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById(workspaceId).style.display = 'block';
+    }
+
+    window.showLandingMenu = function() {
+      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
+      document.getElementById('landingMenu').style.display = 'grid';
+    }
+
+    // Capture Submit Action
+    document.getElementById('slipForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const targetSlip = {
+        name: document.getElementById('name').value,
+        item: document.getElementById('item').value,
+        description: document.getElementById('description').value,
+        amount: document.getElementById('amount').value,
+        date: document.getElementById('date').value,
+        timestamp: Date.now()
+      };
+
+      const slipsRef = ref(database, 'slips');
+      const newSlipRef = push(slipsRef);
+      
+      set(newSlipRef, targetSlip)
+        .then(() => {
+          // Reset form fields individually to keep workspace active
+          document.getElementById('name').value = '';
+          document.getElementById('item').value = '';
+          document.getElementById('description').value = '';
+          document.getElementById('amount').value = '';
+          document.getElementById('date').value = new Date().toISOString().split('T')[0];
+          
+          alert('Saved successfully!');
+        })
+        .catch(err => alert('Sync Issue: ' + err.message));
+    });
+
+    // Real-time Database Stream
+    function initDatabaseListeners() {
+      const slipsRef = ref(database, 'slips');
+      const sortedQuery = query(slipsRef, orderByChild('timestamp'));
+
+      onValue(sortedQuery, (snapshot) => {
+        const records = [];
+        snapshot.forEach((childSnapshot) => {
+          records.push({ id: childSnapshot.key, ...childSnapshot.val() });
+        });
+        
+        cachedSlipsArray = [...records].reverse();
+        
+        renderRecentFeed(cachedSlipsArray.slice(0, 5));
+        renderViewTabFeed(cachedSlipsArray);
+      });
+    }
+
+    function renderRecentFeed(items) {
+      const target = document.getElementById('recentSlipsContainer');
+      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No slips generated yet.</p>"; return; }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
+    }
+
+    function renderViewTabFeed(items) {
+      const target = document.getElementById('allSlipsContainer');
+      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No records found.</p>"; return; }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
+    }
+
+    function generateSlipMarkupRow(item) {
+      const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
+      return `
+        <div class="slip-item">
+          <div class="slip-info">
+            <div class="slip-title-line">${item.name} <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">— ${item.item}</span></div>
+            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong>$${parseFloat(item.amount).toFixed(2)}</strong></div>
+          </div>
+          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
+        </div>
+      `;
+    }
+
+    // Attach functions to window so inline onclick handlers can access them
+    window.filterAllSlips = function() {
+      const term = document.getElementById('searchBar').value.toLowerCase().trim();
+      if(!term) {
+        renderViewTabFeed(cachedSlipsArray);
+        return;
+      }
+      const filtered = cachedSlipsArray.filter(x => 
+        x.name.toLowerCase().includes(term) || 
+        x.item.toLowerCase().includes(term)
+      );
+      renderViewTabFeed(filtered);
+    }
+
+    window.openPrintModal = function(serializedItemStr) {
+      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
+      selectedActiveSlipForPrint = slipObj;
+
+      const previewCard = document.getElementById('mini-preview-card');
+      previewCard.innerHTML = `
+        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--primary-blue); border-bottom:1px solid rgba(58,134,200,0.2); padding-bottom:6px; margin-bottom:10px;">RECEIPT PREVIEW</div>
+        <div><strong>Date:</strong> ${slipObj.date}</div>
+        <div><strong>Name:</strong> ${slipObj.name}</div>
+        <div><strong>Item:</strong> ${slipObj.item}</div>
+        <div><strong>Desc:</strong> ${slipObj.description || 'N/A'}</div>
+        <div style="margin-top:10px; padding-top:6px; border-top:1px dashed rgba(58,134,200,0.2); font-weight:700; font-size: 14px; color: var(--primary-blue);">Amount: $${parseFloat(slipObj.amount).toFixed(2)}</div>
+      `;
+
+      document.getElementById('modalCopies').value = 1;
+      document.getElementById('preview-modal').style.display = 'flex';
+    }
+
+    window.closePrintModal = function() {
+      document.getElementById('preview-modal').style.display = 'none';
+      selectedActiveSlipForPrint = null;
+    }
+
+    window.executeSystemPrint = function() {
+      if(!selectedActiveSlipForPrint) return;
+
+      const copiesCount = parseInt(document.getElementById('modalCopies').value) || 1;
+      const printArea = document.getElementById('print-area');
+      printArea.innerHTML = ''; 
+
+      for (let i = 0; i < copiesCount; i++) {
+        printArea.innerHTML += `
+          <div class="print-slip">
+            <div>
+              <div class="slip-header">RECEIPT SLIP</div>
+              <div class="slip-row"><span class="slip-label">Date:</span>${selectedActiveSlipForPrint.date}</div>
+              <div class="slip-row"><span class="slip-label">Name:</span>${selectedActiveSlipForPrint.name}</div>
+              <div class="slip-row"><span class="slip-label">Item:</span>${selectedActiveSlipForPrint.item}</div>
+              <div class="slip-row"><span class="slip-label">Description:</span>${selectedActiveSlipForPrint.description || 'N/A'}</div>
+            </div>
+            <div class="slip-row" style="border-top: 2px solid #000; padding-top: 8px; font-size: 16px; font-weight: bold;">
+              <span class="slip-label">Total Amount:</span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}
+            </div>
+          </div>
+        `;
+      }
+
+      window.print();
+      closePrintModal();
+    }
+
+    document.getElementById('preview-modal').addEventListener('click', function(e) {
+      if(e.target === this) closePrintModal();
+    });
+  </script>
 
   <style>
     /* Modern Theme & Typography Variables */
@@ -180,7 +357,7 @@
       box-shadow: 0 6px 16px rgba(26, 79, 124, 0.3);
     }
 
-    /* Micro-Designed Lists & Dynamic Panels */
+    /* Lists & Panels */
     .section-title {
       margin-top: 40px;
       font-size: 18px;
@@ -227,7 +404,7 @@
       color: white;
     }
 
-    /* Print Preview Glassmorphism Modal */
+    /* Print Preview Modal */
     #preview-modal {
       display: none;
       position: fixed;
@@ -307,7 +484,6 @@
 
   <div class="main-container">
     
-    <!-- FIRST SCREEN: MAIN MENU OPTIONS -->
     <div id="landingMenu" class="menu-selection">
       <div class="option-card" onclick="openWorkspace('createWorkspace')">
         <h2>Create Slip</h2>
@@ -319,7 +495,6 @@
       </div>
     </div>
 
-    <!-- WORKSPACE PANEL: CREATE SLIP -->
     <div id="createWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Create New Slip</h1>
@@ -356,7 +531,6 @@
       <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
     </div>
 
-    <!-- WORKSPACE PANEL: VIEW SLIPS -->
     <div id="viewWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Search & View Logs</h1>
@@ -374,7 +548,6 @@
 
   </div>
 
-  <!-- GLASS-PREVIEW OVERLAY MODAL -->
   <div id="preview-modal">
     <div class="modal-body">
       <h3 style="margin-top:0; color: var(--primary-blue); font-size: 18px;">Print Setup & Page Preview</h3>
@@ -398,176 +571,5 @@
 
   <div id="print-area"></div>
 
-  <script>
-    // PLACE YOUR FIREBASE CONFIGURATION OBJECT HERE
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      databaseURL: "YOUR_DATABASE_URL",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    // Instantiate Database
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    let cachedSlipsArray = [];
-    let selectedActiveSlipForPrint = null;
-
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
-    initDatabaseListeners();
-
-    // Navigation Controllers
-    function openWorkspace(workspaceId) {
-      document.getElementById('landingMenu').style.display = 'none';
-      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
-      document.getElementById(workspaceId).style.display = 'block';
-    }
-
-    function showLandingMenu() {
-      document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
-      document.getElementById('landingMenu').style.display = 'grid';
-    }
-
-    // Capture Submit Action (Fixed to prevent workspace reset navigation jumps)
-    document.getElementById('slipForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const targetSlip = {
-        name: document.getElementById('name').value,
-        item: document.getElementById('item').value,
-        description: document.getElementById('description').value,
-        amount: document.getElementById('amount').value,
-        date: document.getElementById('date').value,
-        timestamp: Date.now()
-      };
-
-      database.ref('slips').push().set(targetSlip)
-        .then(() => {
-          // Manually reset values instead of calling structural form.reset()
-          document.getElementById('name').value = '';
-          document.getElementById('item').value = '';
-          document.getElementById('description').value = '';
-          document.getElementById('amount').value = '';
-          document.getElementById('date').value = new Date().toISOString().split('T')[0];
-          
-          alert('Saved successfully!');
-        })
-        .catch(err => alert('Sync Issue: ' + err.message));
-    });
-
-    // Handle incoming database events
-    function initDatabaseListeners() {
-      database.ref('slips').orderByChild('timestamp').on('value', snapshot => {
-        const records = [];
-        snapshot.forEach(child => {
-          records.push({ id: child.key, ...child.val() });
-        });
-        
-        cachedSlipsArray = [...records].reverse();
-        
-        renderRecentFeed(cachedSlipsArray.slice(0, 5));
-        renderViewTabFeed(cachedSlipsArray);
-      });
-    }
-
-    function renderRecentFeed(items) {
-      const target = document.getElementById('recentSlipsContainer');
-      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No slips generated yet.</p>"; return; }
-      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
-    }
-
-    function renderViewTabFeed(items) {
-      const target = document.getElementById('allSlipsContainer');
-      if(items.length === 0) { target.innerHTML = "<p style='color:var(--text-muted); font-size:14px;'>No records found.</p>"; return; }
-      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
-    }
-
-    style="text-transform: capitalize;"
-    function generateSlipMarkupRow(item) {
-      const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
-      return `
-        <div class="slip-item">
-          <div class="slip-info">
-            <div class="slip-title-line">${item.name} <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">— ${item.item}</span></div>
-            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong>$${parseFloat(item.amount).toFixed(2)}</strong></div>
-          </div>
-          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
-        </div>
-      `;
-    }
-
-    function filterAllSlips() {
-      const term = document.getElementById('searchBar').value.toLowerCase().trim();
-      if(!term) {
-        renderViewTabFeed(cachedSlipsArray);
-        return;
-      }
-      const filtered = cachedSlipsArray.filter(x => 
-        x.name.toLowerCase().includes(term) || 
-        x.item.toLowerCase().includes(term)
-      );
-      renderViewTabFeed(filtered);
-    }
-
-    // Modal Operations
-    function openPrintModal(serializedItemStr) {
-      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
-      selectedActiveSlipForPrint = slipObj;
-
-      const previewCard = document.getElementById('mini-preview-card');
-      previewCard.innerHTML = `
-        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--primary-blue); border-bottom:1px solid rgba(58,134,200,0.2); padding-bottom:6px; margin-bottom:10px;">RECEIPT PREVIEW</div>
-        <div><strong>Date:</strong> ${slipObj.date}</div>
-        <div><strong>Name:</strong> ${slipObj.name}</div>
-        <div><strong>Item:</strong> ${slipObj.item}</div>
-        <div><strong>Desc:</strong> ${slipObj.description || 'N/A'}</div>
-        <div style="margin-top:10px; padding-top:6px; border-top:1px dashed rgba(58,134,200,0.2); font-weight:700; font-size: 14px; color: var(--primary-blue);">Amount: $${parseFloat(slipObj.amount).toFixed(2)}</div>
-      `;
-
-      document.getElementById('modalCopies').value = 1;
-      document.getElementById('preview-modal').style.display = 'flex';
-    }
-
-    document.getElementById('preview-modal').addEventListener('click', function(e) {
-      if(e.target === this) closePrintModal();
-    });
-
-    function closePrintModal() {
-      document.getElementById('preview-modal').style.display = 'none';
-      selectedActiveSlipForPrint = null;
-    }
-
-    function executeSystemPrint() {
-      if(!selectedActiveSlipForPrint) return;
-
-      const copiesCount = parseInt(document.getElementById('modalCopies').value) || 1;
-      const printArea = document.getElementById('print-area');
-      printArea.innerHTML = ''; 
-
-      for (let i = 0; i < copiesCount; i++) {
-        printArea.innerHTML += `
-          <div class="print-slip">
-            <div>
-              <div class="slip-header">RECEIPT SLIP</div>
-              <div class="slip-row"><span class="slip-label">Date:</span>${selectedActiveSlipForPrint.date}</div>
-              <div class="slip-row"><span class="slip-label">Name:</span>${selectedActiveSlipForPrint.name}</div>
-              <div class="slip-row"><span class="slip-label">Item:</span>${selectedActiveSlipForPrint.item}</div>
-              <div class="slip-row"><span class="slip-label">Description:</span>${selectedActiveSlipForPrint.description || 'N/A'}</div>
-            </div>
-            <div class="slip-row" style="border-top: 2px solid #000; padding-top: 8px; font-size: 16px; font-weight: bold;">
-              <span class="slip-label">Total Amount:</span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}
-            </div>
-          </div>
-        `;
-      }
-
-      window.print();
-      closePrintModal();
-    }
-  </script>
 </body>
 </html>
