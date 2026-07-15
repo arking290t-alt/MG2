@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Slip</title>
+  
+  <!-- Firebase App and Database SDKs (v9/v10 Compat Library for easy integration) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin: 0 auto;
+    }
+    h2 {
+      margin-top: 0;
+      color: #2c3e50;
+      border-bottom: 2px solid #ecf0f1;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .btn-submit {
+      background-color: #2ecc71;
+      color: white;
+    }
+    .btn-submit:hover { background-color: #27ae60; }
+    .btn-print {
+      background-color: #3498db;
+      color: white;
+    }
+    .btn-print:hover { background-color: #2980b9; }
+
+    /* --- PRINT LAYOUT --- */
+    /* Hidden on screen by default */
+    #print-area {
+      display: none;
+    }
+
+    @media print {
+      /* Hide everything else on the screen */
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 columns */
+        grid-template-rows: 1fr 1fr;    /* 2 rows */
+        gap: 10px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+      }
+      /* Each cell is exactly 1/4 of the A4 page */
+      .print-slip {
+        border: 2px dashed #333;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #fff;
+        height: 100%;
+      }
+      .slip-header {
+        text-align: center;
+        border-bottom: 1px solid #000;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        font-weight: bold;
+        font-size: 18px;
+      }
+      .slip-row {
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .slip-label {
+        font-weight: bold;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Create New Slip</h2>
+    <form id="slipForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" required placeholder="Enter name">
+      </div>
+      <div class="form-group">
+        <label for="item">Item</label>
+        <input type="text" id="item" required placeholder="Item name">
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Enter description details"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" step="0.01" required placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="form-group">
+        <label for="copies">Number of Copies to Print</label>
+        <input type="number" id="copies" min="1" max="4" value="1" required>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="btn-submit">Save to Database</button>
+        <button type="button" id="printBtn" class="btn-print">Print Slip</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Dynamic container used strictly for the A4 grid print view -->
+  <div id="print-area"></div>
+
+  <script>
+    // 1. REPLACE THIS WITH YOUR PROJECT'S FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Set today's date automatically as default value
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+    // 2. Save Data to Firebase Realtime Database
+    document.getElementById('slipForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const slipData = {
+        name: document.getElementById('name').value,
+        item: document.getElementById('item').value,
+        description: document.getElementById('description').value,
+        amount: document.getElementById('amount').value,
+        date: document.getElementById('date').value,
+        timestamp: Date.now()
+      };
+
+      // Saves data into a unique node under 'slips'
+      database.ref('slips').push().set(slipData)
+        .then(() => {
+          alert('Slip details successfully saved to Firebase!');
+        })
+        .catch((error) => {
+          console.error("Error saving to Firebase: ", error);
+          alert('Failed to save data. Please check your Firebase configuration setup.');
+        });
+    });
+
+    // 3. Generate Print Grid Dynamically
+    document.getElementById('printBtn').addEventListener('click', function() {
+      const name = document.getElementById('name').value || 'N/A';
+      const item = document.getElementById('item').value || 'N/A';
+      const description = document.getElementById('description').value || 'N/A';
+      const amount = document.getElementById('amount').value || '0.00';
+      const date = document.getElementById('date').value || 'N/A';
+      const copies = parseInt(document.getElementById('copies').value) || 1;
+
+      const printArea = document.getElementById('print-area');
+      printArea.innerHTML = ''; // Clear previous elements
+
+      // Generate the slip templates based on the requested number of copies
+      for (let i = 0; i < copies; i++) {
+        const slipHTML = `
+          <div class="print-slip">
+            <div>
+              <div class="slip-header">RECEIPT SLIP</div>
+              <div class="slip-row"><span class="slip-label">Date:</span> ${date}</div>
+              <div class="slip-row"><span class="slip-label">Name:</span> ${name}</div>
+              <div class="slip-row"><span class="slip-label">Item:</span> ${item}</div>
+              <div class="slip-row"><span class="slip-label">Description:</span> ${description}</div>
+            </div>
+            <div class="slip-row" style="border-top: 1px solid #333; padding-top: 5px; font-size: 16px;">
+              <span class="slip-label">Total Amount:</span> $${parseFloat(amount).toFixed(2)}
+            </div>
+          </div>
+        `;
+        printArea.innerHTML += slipHTML;
+      }
+
+      // Trigger standard browser system print window
+      window.print();
+    });
+  </script>
+</body>
+</html>
