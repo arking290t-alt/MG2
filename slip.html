@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
-  <!-- Imported html2canvas library to convert layout blocks to PNG image files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="module">
@@ -105,7 +104,7 @@
         <div class="slip-item">
           <div class="slip-info">
             <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
-            <div class="slip-meta-line">Date: ${item.date} | Total: <strong class="glow-text">₹${parseFloat(item.amount).toFixed(2)}</strong></div>
+            <div class="slip-meta-line">Date: ${item.date} | Total: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
           <div style="display:flex; gap: 8px; margin-top: 10px;">
             <button class="btn-print-small" onclick='openPrintModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Preview & Print</button>
@@ -149,8 +148,8 @@
     function renderGridOptions() {
       const container = document.getElementById('grid-selector-container');
       container.innerHTML = `
-        <div style="margin-bottom:12px; font-size:12px; color:var(--text-muted); font-weight: 600; text-align: center;">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
-        <div class="a4-preview-grid-vertical">
+        <div style="margin-bottom:10px; font-size:12px; color:var(--text-muted); font-weight: 600;">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
+        <div class="a4-preview-grid">
           <div class="grid-box ${gridSelection[0] ? 'active' : ''}" onclick="toggleGridBox(0)">Box 1 (Top-Left)</div>
           <div class="grid-box ${gridSelection[1] ? 'active' : ''}" onclick="toggleGridBox(1)">Box 2 (Top-Right)</div>
           <div class="grid-box ${gridSelection[2] ? 'active' : ''}" onclick="toggleGridBox(2)">Box 3 (Bottom-Left)</div>
@@ -178,11 +177,15 @@
         if(gridSelection[i]) {
           printArea.innerHTML += `
             <div class="print-slot filled-slot">
-              <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
-              <div class="receipt-minimal-title">${selectedActiveSlipForPrint.name}</div>
-              <div class="receipt-minimal-item">${selectedActiveSlipForPrint.item}</div>
-              <div class="receipt-minimal-desc">${selectedActiveSlipForPrint.description || ''}</div>
-              <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
+              <div class="print-header">RECEIPT SLIP</div>
+              <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
+              <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
+              <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
+              <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
+              <div class="print-row total-row">
+                <span class="print-label">Total Amount:</span>
+                <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+              </div>
             </div>
           `;
         } else {
@@ -194,35 +197,44 @@
       closePrintModal();
     }
 
+    // Dynamic PNG Image Generation and File Sharing API Engine
     window.generatePngAndShare = function(slipObj) {
+      // 1. Temporarily populate a clean hidden container styled for the image receipt look
       const generatorContainer = document.getElementById('share-generator-buffer');
       generatorContainer.innerHTML = `
         <div class="image-receipt-card">
-          <div class="receipt-minimal-date">${slipObj.date}</div>
-          <div class="receipt-minimal-title">${slipObj.name}</div>
-          <div class="receipt-minimal-item">${slipObj.item}</div>
-          <div class="receipt-minimal-desc">${slipObj.description || ''}</div>
-          <div class="receipt-minimal-total">₹${parseFloat(slipObj.amount).toFixed(2)}</div>
+          <div class="receipt-header">RECEIPT INVOICE</div>
+          <div class="receipt-row"><span>Date:</span> <strong>${slipObj.date}</strong></div>
+          <div class="receipt-row"><span>Customer:</span> <strong>${slipObj.name}</strong></div>
+          <div class="receipt-row"><span>Item Name:</span> <strong>${slipObj.item}</strong></div>
+          <div class="receipt-row"><span>Details:</span> <strong>${slipObj.description || 'N/A'}</strong></div>
+          <div class="receipt-total">
+            <span>TOTAL DUE:</span>
+            <span>$${parseFloat(slipObj.amount).toFixed(2)}</span>
+          </div>
         </div>
       `;
       generatorContainer.style.display = 'block';
 
+      // 2. Render container structural layout into a raw blob canvas image object
       html2canvas(generatorContainer.querySelector('.image-receipt-card'), {
-        scale: 2, 
+        scale: 2, // Enhanced high-density display pixel generation
         backgroundColor: '#ffffff'
       }).then(canvas => {
-        generatorContainer.style.display = 'none'; 
+        generatorContainer.style.display = 'none'; // Clear buffer views away
         
         canvas.toBlob(blob => {
           const imageFile = new File([blob], `slip-${slipObj.timestamp}.png`, { type: 'image/png' });
           
+          // Check if system native navigator asset share protocols are available (Mobile phones / Modern tablets)
           if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
             navigator.share({
               files: [imageFile],
-              title: 'Receipt Slip',
-              text: `Receipt for ${slipObj.name}`
+              title: 'Receipt Slip Download',
+              text: `Slip invoice for ${slipObj.name}`
             }).catch(err => console.log('Share canceled or failed', err));
           } else {
+            // Desktop fallback: Instantly trigger an automated background file download link
             const fallbackLink = document.createElement('a');
             fallbackLink.download = `slip-${slipObj.timestamp}.png`;
             fallbackLink.href = canvas.toDataURL('image/png');
@@ -353,20 +365,16 @@
     .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
     .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
 
-    /* Updated Dynamic Vertical Selector Grid Layout */
-    .a4-preview-grid-vertical {
+    .a4-preview-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 130px 130px;
-      gap: 10px;
+      grid-template-rows: 90px 90px;
+      gap: 8px;
       border: 2px solid rgba(255, 255, 255, 0.2);
       background: #1f2937;
-      padding: 10px;
+      padding: 8px;
       border-radius: 8px;
       margin-bottom: 20px;
-      max-width: 220px;
-      margin-left: auto;
-      margin-right: auto;
     }
 
     .grid-box {
@@ -374,14 +382,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: bold;
       color: var(--text-muted);
       cursor: pointer;
       border-radius: 6px;
       transition: all 0.2s;
-      text-align: center;
-      padding: 4px;
     }
 
     .grid-box.active {
@@ -399,7 +405,7 @@
 
     .modal-body {
       background: #111827; border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 20px; border-radius: var(--radius); width: 100%; max-width: 320px;
+      padding: 20px; border-radius: var(--radius); width: 100%; max-width: 400px;
     }
 
     .modal-buttons { display: flex; gap: 10px; }
@@ -413,6 +419,7 @@
 
     #print-area { display: none; }
 
+    /* Hidden Image Rendering Target Styles */
     #share-generator-buffer {
       position: absolute;
       left: -9999px;
@@ -420,55 +427,43 @@
       display: none;
     }
 
-    /* Shared Minimal Design Engine Styles (Clean Data Only) */
     .image-receipt-card {
-      width: 320px;
+      width: 380px;
       background: #ffffff !important;
       color: #000000 !important;
-      padding: 30px 25px;
+      padding: 25px;
       font-family: 'Arial', sans-serif;
+      border: 4px double #000000;
       box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
     }
 
-    .receipt-minimal-date {
-      font-size: 13px;
-      color: #666666;
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-
-    .receipt-minimal-title {
-      font-size: 24px;
-      font-weight: 800;
-      color: #000000;
-      margin-bottom: 6px;
-      line-height: 1.2;
-    }
-
-    .receipt-minimal-item {
-      font-size: 16px;
-      font-weight: 600;
-      color: #222222;
-      margin-bottom: 8px;
-    }
-
-    .receipt-minimal-desc {
-      font-size: 14px;
-      color: #444444;
-      margin-bottom: 25px;
-      line-height: 1.4;
-      white-space: pre-line;
-    }
-
-    .receipt-minimal-total {
-      font-size: 26px;
+    .receipt-header {
+      text-align: center;
+      font-size: 20px;
       font-weight: 900;
-      color: #000000;
-      border-top: 2px solid #000000;
-      padding-top: 12px;
-      margin-top: auto;
+      letter-spacing: 1px;
+      border-bottom: 3px solid #000000;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed #dddddd;
+      padding-bottom: 4px;
+    }
+
+    .receipt-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 900;
+      border-top: 3px solid #000000;
+      padding-top: 10px;
+      margin-top: 20px;
     }
 
     /* ================= VERTICAL 1/4 A4 PRINT SYSTEM ENGINE ================= */
@@ -503,13 +498,32 @@
       .empty-slot { visibility: hidden !important; }
 
       .filled-slot {
-        padding: 20mm 15mm;
+        padding: 15mm;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         background: #ffffff !important;
         color: #000000 !important;
-        font-family: Arial, sans-serif;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+      
+      .print-header {
+        text-align: center; font-weight: 800; font-size: 16px;
+        border-bottom: 2px solid #000000; padding-bottom: 6px; margin-bottom: 20px;
+        color: #000000 !important;
+      }
+
+      .print-row {
+        display: flex !important; justify-content: space-between !important;
+        font-size: 13px; margin-bottom: 10px; color: #000000 !important;
+      }
+
+      .print-label { font-weight: 700; }
+
+      .filled-slot .total-row {
+        border-top: 2px dashed #000000; padding-top: 12px;
+        margin-top: auto; font-size: 15px; font-weight: 800;
+        color: #000000 !important;
       }
     }
   </style>
@@ -523,26 +537,4 @@
         <h2>Create Slip</h2>
         <p>Log a new receipt record seamlessly to the cloud database</p>
       </div>
-      <div class="option-card" onclick="openWorkspace('viewWorkspace')">
-        <h2>View Slips</h2>
-        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 grid printing</p>
-      </div>
-    </div>
-
-    <div id="createWorkspace" class="workspace-panel">
-      <div class="panel-header">
-        <h1>Create New Slip</h1>
-        <button class="btn-back" onclick="showLandingMenu()">Back</button>
-      </div>
-      
-      <form id="slipForm">
-        <div class="form-group"><label for="name">Name</label><input type="text" id="name" required placeholder="Customer Name"></div>
-        <div class="form-group"><label for="item">Item</label><input type="text" id="item" required placeholder="Item Title"></div>
-        <div class="form-group"><label for="description">Description</label><textarea id="description" placeholder="Extra information..."></textarea></div>
-        <div class="form-group"><label for="amount">Amount (₹)</label><input type="number" id="amount" step="0.01" required placeholder="0.00"></div>
-        <div class="form-group"><label for="date">Date</label><input type="date" id="date" required></div>
-        <button type="submit" class="btn-action">Save to Database</button>
-      </form>
-
-      <div class="section-title">Recent 5 Slips</div>
-      <div id="recentSlipsContainer" class="slip-list">Synci
+      <div class="option-card" onclick=
