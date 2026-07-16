@@ -195,19 +195,25 @@
         <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP OPERATIONAL CONTROL</div>
         
         <div id="a6-share-target" class="vertical-a6-render-block">
-          <div class="watermark-text">MANOJ GRAPHICS</div>
+          <div class="watermark-wrapper">
+            <div class="watermark-text">MANOJ GRAPHICS</div>
+          </div>
           
           <div class="a6-inner-wrap">
-            <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${slipObj.name}</div>
-            <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">${slipObj.item}</div>
-            <div style="font-size: 12px; color: #666; font-style: italic; line-height:1.4;">${slipObj.description || ''}</div>
-            <div style="font-size: 11px; color: #888; margin-top: 6px;">${slipObj.date}</div>
+            <div>
+              <div style="font-size: 20px; font-weight: 800; color: #000000; margin-bottom: 8px; line-height: 1.2;">${slipObj.name}</div>
+              <div style="font-size: 16px; font-weight: 700; color: #000000; margin-bottom: 6px;">${slipObj.item}</div>
+              <div style="font-size: 14px; font-weight: 500; color: #000000; line-height:1.5; margin-bottom: 8px;">${slipObj.description || ''}</div>
+            </div>
             
             <div class="a6-spacer-gap"></div>
             
-            <div style="border-top: 1px dashed #000; padding-top: 8px; font-size: 18px; font-weight: 800; display: flex; justify-content: space-between;">
-              <span>Total:</span>
-              <span>₹${parseFloat(slipObj.amount).toFixed(2)}</span>
+            <div style="border-top: 2px solid #000000; padding-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 13px; font-weight: 700; color: #000000; text-align: right;">Date: ${slipObj.date}</div>
+              <div style="font-size: 22px; font-weight: 900; color: #000000; display: flex; justify-content: space-between; align-items: flex-end;">
+                <span>Total:</span>
+                <span>₹${parseFloat(slipObj.amount).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -230,7 +236,8 @@
       html2canvas(targetElement, {
         scale: 3, 
         logging: false,
-        useCORS: true
+        useCORS: true,
+        backgroundColor: "#ffffff"
       }).then(canvas => {
         targetElement.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
         
@@ -245,7 +252,7 @@
           } else {
             const imageBase64 = canvas.toDataURL("image/png");
             const win = window.open();
-            win.document.write('<iframe src="' + imageBase64  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+            win.document.write('<iframe src="' + imageBase64  + '" frameborder="0; border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
             alert("Web Share API not supported on this device/browser context. Image payload opened in new tab. Long press or right-click to copy/save directly to WhatsApp chats!");
           }
         }, 'image/png');
@@ -262,21 +269,25 @@
       for (let i = 0; i < upsCount; i++) {
         printArea.innerHTML += `
           <div class="print-slip-a6-vertical">
-            <div class="watermark-text">MANOJ GRAPHICS</div>
+            <div class="watermark-wrapper">
+              <div class="watermark-text">MANOJ GRAPHICS</div>
+            </div>
             
             <div class="a6-inner-wrap">
               <div>
-                <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${selectedActiveSlipForPrint.name}</div>
-                <div style="font-size: 14px; font-weight: 600; color: #000; margin-bottom: 2px;">${selectedActiveSlipForPrint.item}</div>
-                <div style="font-size: 12px; color: #333; font-style: italic; line-height: 1.4;">${selectedActiveSlipForPrint.description || ''}</div>
-                <div style="font-size: 11px; color: #555; margin-top: 6px;">${selectedActiveSlipForPrint.date}</div>
+                <div style="font-size: 20px; font-weight: 800; color: #000000; margin-bottom: 8px; line-height: 1.2;">${selectedActiveSlipForPrint.name}</div>
+                <div style="font-size: 16px; font-weight: 700; color: #000000; margin-bottom: 6px;">${selectedActiveSlipForPrint.item}</div>
+                <div style="font-size: 14px; font-weight: 500; color: #000000; line-height: 1.5;">${selectedActiveSlipForPrint.description || ''}</div>
               </div>
               
               <div class="a6-spacer-gap"></div>
               
-              <div class="total-row-a6" style="border-top: 1px dashed #000; padding-top: 8px; font-size: 18px; font-weight: 800; display: flex; justify-content: space-between;">
-                <span>Total:</span>
-                <span>₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+              <div class="total-row-a6" style="border-top: 2px solid #000000; padding-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="font-size: 13px; font-weight: 700; color: #000000; text-align: right;">Date: ${selectedActiveSlipForPrint.date}</div>
+                <div style="font-size: 22px; font-weight: 900; color: #000000; display: flex; justify-content: space-between; align-items: flex-end;">
+                  <span>Total:</span>
+                  <span>₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -528,13 +539,13 @@
       width: 100%;
       max-width: 260px;
       height: 368px; 
-      background: #ffffff;
-      color: #000000;
+      background: #ffffff !important;
+      color: #000000 !important;
       margin: 15px auto;
       border-radius: 6px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       box-sizing: border-box;
-      padding: 20px;
+      padding: 24px;
       display: flex;
       flex-direction: column;
       text-align: left;
@@ -603,24 +614,39 @@
 
     #print-area { display: none; }
 
-    /* Global Watermark Layout Core Rule Engine Matrix */
-    .watermark-text {
+    .watermark-wrapper {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 26px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .watermark-text {
+      transform: rotate(-45deg);
+      font-size: 28px;
       font-weight: 900;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      color: rgba(0, 0, 0, 0.06) !important; 
+      color: #e2e2e2 !important; 
       white-space: nowrap;
-      pointer-events: none;
-      z-index: 1; 
       letter-spacing: 2px;
+      opacity: 0.8;
     }
 
     /* Print System Layout & Styling Setup */
     @media print {
+      /* Complete configuration to remove system layout titles like "Slip Management Hub", Page URL, Date on outer margins */
+      @page {
+        size: A4 portrait;
+        margin: 0mm; /* Disables margins to block outer system auto-headers completely */
+      }
+      
       body * { 
         visibility: hidden; 
       }
@@ -654,6 +680,12 @@
         background: #ffffff !important;
         display: flex;
         flex-direction: column;
+      }
+
+      .watermark-text {
+        color: #e5e5e5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
     }
   </style>
