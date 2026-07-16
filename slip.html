@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slip Management Hub</title>
+  <title>Receipt Slip</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -196,7 +196,6 @@
 
     function generateSlipMarkupRow(item) {
       const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
-      // Handle legacy single-item structures safely as fallbacks
       const itemsList = item.items ? item.items : [{ name: item.item, description: item.description || '', price: item.amount }];
       const summaryText = itemsList.map(i => i.name).join(', ');
 
@@ -254,7 +253,6 @@
       filterAllSlips();
     }
 
-    // Helper function to build dynamic multi-item receipt blocks inside templates
     function compileItemsHtml(itemsList) {
       return itemsList.map((itm, idx) => `
         <div style="margin-bottom: 8px; border-bottom: ${idx === itemsList.length - 1 ? 'none' : '1px dotted rgba(0,0,0,0.1)'}; padding-bottom: 6px;">
@@ -278,9 +276,7 @@
         <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP OPERATIONAL CONTROL</div>
         
         <div id="a6-share-target" class="vertical-a6-render-block">
-          <div class="watermark-wrapper">
-            <div class="watermark-text">MANOJ GRAPHICS</div>
-          </div>
+          <div class="watermark-wrapper"></div>
           
           <div class="a6-inner-wrap">
             <div>
@@ -358,9 +354,7 @@
       for (let i = 0; i < upsCount; i++) {
         printArea.innerHTML += `
           <div class="print-slip-a6-vertical">
-            <div class="watermark-wrapper">
-              <div class="watermark-text">MANOJ GRAPHICS</div>
-            </div>
+            <div class="watermark-wrapper"></div>
             
             <div class="a6-inner-wrap">
               <div>
@@ -728,29 +722,21 @@
 
     #print-area { display: none; }
 
+    /* Clean Image Watermark Center Styling */
     .watermark-wrapper {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+      top: 50%;
+      left: 50%;
+      width: 75%;
+      height: 75%;
+      transform: translate(-50%, -50%);
+      background-image: url('watermark.jpg'); /* Make sure to save your image as 'watermark.jpg' in the same folder */
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.12; /* Keep it light enough to let text read perfectly */
       pointer-events: none;
       z-index: 1;
-    }
-
-    .watermark-text {
-      transform: rotate(-45deg);
-      font-size: 28px;
-      font-weight: 900;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      color: #c0c0c0 !important; 
-      white-space: nowrap;
-      letter-spacing: 2px;
-      opacity: 0.85; 
     }
 
     /* Print System Layout & Styling Setup */
@@ -795,8 +781,8 @@
         flex-direction: column;
       }
 
-      .watermark-text {
-        color: #c0c0c0 !important;
+      .watermark-wrapper {
+        background-image: url('watermark.jpg') !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
