@@ -142,7 +142,7 @@
         <div class="slip-item">
           <div class="slip-info">
             <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
-            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
+            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong class="glow-text">₹${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button class="btn-print-small" style="flex: 4;" onclick="openPrintModal('${safeDataJson}')">Preview & Operations</button>
@@ -195,6 +195,8 @@
         <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP OPERATIONAL CONTROL</div>
         
         <div id="a6-share-target" class="vertical-a6-render-block">
+          <div class="watermark-text">MANOJ GRAPHICS</div>
+          
           <div class="a6-inner-wrap">
             <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${slipObj.name}</div>
             <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">${slipObj.item}</div>
@@ -205,7 +207,7 @@
             
             <div style="border-top: 1px dashed #000; padding-top: 8px; font-size: 18px; font-weight: 800; display: flex; justify-content: space-between;">
               <span>Total:</span>
-              <span>$${parseFloat(slipObj.amount).toFixed(2)}</span>
+              <span>₹${parseFloat(slipObj.amount).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -223,18 +225,16 @@
     window.shareSlipToWhatsApp = function() {
       const targetElement = document.getElementById('a6-share-target');
       
-      // Temporary display style update to ensure pixel-perfect rendering dimensions
       targetElement.style.boxShadow = "none";
       
       html2canvas(targetElement, {
-        scale: 3, // High DPI Resolution Scale
+        scale: 3, 
         logging: false,
         useCORS: true
       }).then(canvas => {
         targetElement.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
         
         canvas.toBlob(function(blob) {
-          // Direct Web Share Engine check (Ideal for mobile systems/modern browsers)
           if (navigator.canShare && navigator.canShare({ files: [new File([blob], "slip.png", { type: "image/png" })] })) {
             const file = new File([blob], "slip.png", { type: "image/png" });
             navigator.share({
@@ -243,7 +243,6 @@
               text: 'Clean A6 PNG Export File'
             }).catch(err => console.log("Share aborted or failed", err));
           } else {
-            // Fallback: Generate Base64 Download link alternative & explain fallback routine
             const imageBase64 = canvas.toDataURL("image/png");
             const win = window.open();
             win.document.write('<iframe src="' + imageBase64  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
@@ -260,20 +259,25 @@
       const printArea = document.getElementById('print-area');
       printArea.innerHTML = ''; 
 
-      // Build out imposition grid tracking structure counts across sheet boundaries
       for (let i = 0; i < upsCount; i++) {
         printArea.innerHTML += `
           <div class="print-slip-a6-vertical">
-            <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${selectedActiveSlipForPrint.name}</div>
-            <div style="font-size: 14px; font-weight: 600; color: #000; margin-bottom: 2px;">${selectedActiveSlipForPrint.item}</div>
-            <div style="font-size: 12px; color: #333; font-style: italic; line-height: 1.4;">${selectedActiveSlipForPrint.description || ''}</div>
-            <div style="font-size: 11px; color: #555; margin-top: 6px;">${selectedActiveSlipForPrint.date}</div>
+            <div class="watermark-text">MANOJ GRAPHICS</div>
             
-            <div class="a6-spacer-gap"></div>
-            
-            <div class="total-row-a6">
-              <span>Total:</span>
-              <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+            <div class="a6-inner-wrap">
+              <div>
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${selectedActiveSlipForPrint.name}</div>
+                <div style="font-size: 14px; font-weight: 600; color: #000; margin-bottom: 2px;">${selectedActiveSlipForPrint.item}</div>
+                <div style="font-size: 12px; color: #333; font-style: italic; line-height: 1.4;">${selectedActiveSlipForPrint.description || ''}</div>
+                <div style="font-size: 11px; color: #555; margin-top: 6px;">${selectedActiveSlipForPrint.date}</div>
+              </div>
+              
+              <div class="a6-spacer-gap"></div>
+              
+              <div class="total-row-a6" style="border-top: 1px dashed #000; padding-top: 8px; font-size: 18px; font-weight: 800; display: flex; justify-content: space-between;">
+                <span>Total:</span>
+                <span>₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         `;
@@ -519,9 +523,11 @@
 
     /* Screen Native Vertical A6 Render Mockup Canvas Component */
     .vertical-a6-render-block {
+      position: relative; 
+      overflow: hidden; 
       width: 100%;
       max-width: 260px;
-      height: 368px; /* Correct A6 aspect scaling constraints ratio */
+      height: 368px; 
       background: #ffffff;
       color: #000000;
       margin: 15px auto;
@@ -535,6 +541,8 @@
     }
 
     .a6-inner-wrap {
+      position: relative;
+      z-index: 2; 
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -542,7 +550,7 @@
     }
 
     .a6-spacer-gap {
-      flex-grow: 1; /* Pushes calculations cleanly down separate from details */
+      flex-grow: 1; 
       min-height: 40px; 
     }
 
@@ -590,10 +598,26 @@
     }
 
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
-    .btn-share { background: #25D366; color: #ffffff; } /* Brand Color WhatsApp styling */
+    .btn-share { background: #25D366; color: #ffffff; } 
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
     #print-area { display: none; }
+
+    /* Global Watermark Layout Core Rule Engine Matrix */
+    .watermark-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 26px;
+      font-weight: 900;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: rgba(0, 0, 0, 0.06) !important; 
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1; 
+      letter-spacing: 2px;
+    }
 
     /* Print System Layout & Styling Setup */
     @media print {
@@ -607,8 +631,8 @@
       
       #print-area {
         display: grid;
-        grid-template-columns: repeat(2, 105mm); /* Standard A4 Matrix calculations matching width metrics */
-        grid-auto-rows: 148mm; /* Pure vertical A6 metrics bounds boundary height */
+        grid-template-columns: repeat(2, 105mm); 
+        grid-auto-rows: 148mm; 
         gap: 0px; 
         position: absolute;
         left: 0; 
@@ -620,27 +644,16 @@
       }
       
       .print-slip-a6-vertical {
+        position: relative; 
+        overflow: hidden; 
         width: 105mm;
         height: 148mm;
         border: 1px dashed #000000 !important;
-        padding: 20mm 15mm; /* Enhanced margin layouts for clean space representation */
+        padding: 20mm 15mm; 
         box-sizing: border-box;
+        background: #ffffff !important;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        background: #ffffff !important;
-        color: #000000 !important;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        page-break-inside: avoid;
-      }
-
-      .total-row-a6 {
-        border-top: 1.5px solid #000000;
-        padding-top: 12px;
-        font-size: 18px;
-        font-weight: 800;
-        display: flex;
-        justify-content: space-between;
       }
     }
   </style>
@@ -648,94 +661,91 @@
 <body>
 
   <div class="main-container">
-    
     <div id="landingMenu" class="menu-selection">
-      <div class="option-card" onclick="openWorkspace('createWorkspace')">
-        <h2>Create Slip</h2>
-        <p>Log a new receipt record seamlessly to the cloud database</p>
+      <div class="option-card" onclick="openWorkspace('createPanel')">
+        <h2>Generate Entry Slip</h2>
+        <p>Log financial movements, describe asset payloads and map out structured billing slips.</p>
       </div>
-      <div class="option-card" onclick="openWorkspace('viewWorkspace')">
-        <h2>View Slips</h2>
-        <p>Dynamic keyword search, real-time sync, and multi-copy printing layouts</p>
+      <div class="option-card" onclick="openWorkspace('viewPanel')">
+        <h2>Slip Database Ledger</h2>
+        <p>Review tracked slips, look up client details, execute batch print matrices and share options.</p>
       </div>
     </div>
 
-    <div id="createWorkspace" class="workspace-panel">
+    <div id="createPanel" class="workspace-panel">
       <div class="panel-header">
-        <h1>Create New Slip</h1>
-        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+        <h1>New Slip Generation</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Main Menu</button>
       </div>
       
       <form id="slipForm">
         <div class="form-group">
-          <label for="name">Name</label>
-          <input type="text" id="name" required placeholder="Customer or company name">
+          <label for="name">Account / Party Name</label>
+          <input type="text" id="name" required placeholder="Enter client or account tag">
         </div>
-
         <div class="form-group">
-          <label for="item">Item</label>
-          <input type="text" id="item" required placeholder="Product or item title">
+          <label for="item">Primary Item / Service Description</label>
+          <input type="text" id="item" required placeholder="e.g. Graphic Print, Layout Production">
         </div>
-
         <div class="form-group">
-          <label for="description">Description</label>
-          <textarea id="description" placeholder="Provide extra details..."></textarea>
+          <label for="description">Extended Notes / Context Description</label>
+          <textarea id="description" placeholder="Optional background context parameters..."></textarea>
         </div>
-
         <div class="form-group">
-          <label for="amount">Amount ($)</label>
-          <input type="number" id="amount" step="0.01" required placeholder="0.00">
+          <label for="amount">Net Amount (INR)</label>
+          <input type="number" step="0.01" id="amount" required placeholder="0.00">
         </div>
-
         <div class="form-group">
-          <label for="date">Date</label>
+          <label for="date">Logging Date</label>
           <input type="date" id="date" required>
         </div>
-
-        <button type="submit" class="btn-action">Save to Database</button>
+        
+        <button type="submit" class="btn-action">Commit Slip to Firestore</button>
       </form>
-
-      <div class="section-title">Recent 5 Slips</div>
-      <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
+      
+      <div class="section-title">Recently Logged Stream</div>
+      <div id="recentSlipsContainer" class="slip-list"></div>
     </div>
 
-    <div id="viewWorkspace" class="workspace-panel">
+    <div id="viewPanel" class="workspace-panel">
       <div class="panel-header">
-        <h1>Search & View Logs</h1>
-        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+        <h1>Database Ledger View</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Main Menu</button>
       </div>
-
+      
+      <div class="form-group">
+        <label for="searchBar">Text Filter Lookup</label>
+        <input type="text" id="searchBar" oninput="filterAllSlips()" placeholder="Search by name or item parameter entries...">
+      </div>
+      
       <div class="filter-grid">
-        <div class="form-group">
-          <label for="searchBar">Text Filter</label>
-          <input type="text" id="searchBar" placeholder="Search..." oninput="filterAllSlips()">
-        </div>
-        <div class="form-group">
-          <label for="filterDate">Date Filter</label>
+        <div>
+          <label for="filterDate">Match Exact Log Date</label>
           <input type="date" id="filterDate" onchange="filterAllSlips()">
-          <button class="btn-print-small" style="margin-top: 5px; width: 100%; padding: 6px;" onclick="clearDateFilter()">Clear Date</button>
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+          <button class="btn-back" style="width: 100%; padding: 14px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #ef4444;" onclick="clearDateFilter()">Reset Date Filter</button>
         </div>
       </div>
       
-      <div class="section-title">All Registered Logs</div>
-      <div id="allSlipsContainer" class="slip-list">Awaiting connection sync...</div>
+      <div class="section-title">All Synchronized Structural Slips</div>
+      <div id="allSlipsContainer" class="slip-list"></div>
     </div>
-
   </div>
 
   <div id="preview-modal">
     <div class="modal-body">
       <div id="mini-preview-card"></div>
       
-      <div class="form-group" style="margin-top: 10px;">
-        <label for="modalUps">How many Ups? (e.g. 4 slips on A4)</label>
-        <input type="number" id="modalUps" min="1" max="12" value="4">
+      <div class="form-group" style="margin-top: 15px; text-align: left;">
+        <label for="modalUps">Matrix Imposition Layout Count (Copies per A4 sheet)</label>
+        <input type="number" id="modalUps" min="1" max="8" value="4" style="padding: 8px;">
       </div>
       
       <div class="modal-buttons">
-        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Execute A6 Imposition Print</button>
-        <button class="modal-btn btn-share" onclick="shareSlipToWhatsApp()">Share PNG to WhatsApp</button>
-        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Cancel</button>
+        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Execute Hardware Print Grid</button>
+        <button class="modal-btn btn-share" onclick="shareSlipToWhatsApp()">Share Slip Image to WhatsApp</button>
+        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Dismiss Operational Control</button>
       </div>
     </div>
   </div>
