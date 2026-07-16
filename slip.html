@@ -7,7 +7,6 @@
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    // Switched from Realtime Database to Cloud Firestore SDK modules
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // Your exact Firebase configuration
@@ -21,22 +20,18 @@
       measurementId: "G-05HW0KSN38"
     };
 
-    // Initialize Firebase and target Cloud Firestore directly
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
 
-    // SINGLE Unified App Startup Initializer
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Set Default Date
       const dateEl = document.getElementById('date');
       if (dateEl) {
         dateEl.value = new Date().toISOString().split('T')[0];
       }
 
-      // 2. Safely Bind Form Submission
       const form = document.getElementById('slipForm');
       if (form) {
         form.addEventListener('submit', function(e) {
@@ -52,31 +47,25 @@
           };
 
           try {
-            // Write data to Firestore 'slips' collection
             const slipsCollection = collection(db, 'slips');
             addDoc(slipsCollection, targetSlip)
               .then(() => {
-                // Reset inputs
                 document.getElementById('name').value = '';
                 document.getElementById('item').value = '';
                 document.getElementById('description').value = '';
                 document.getElementById('amount').value = '';
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
-                
                 alert('Saved successfully to Firestore!');
               })
               .catch(err => {
-                console.error("Firestore write error: ", err);
                 alert('Firestore Write Failed: ' + err.message);
               });
           } catch (catchErr) {
-            console.error("Setup error: ", catchErr);
             alert('Execution Error: ' + catchErr.message);
           }
         });
       }
 
-      // 3. Close preview modal on background click
       const modal = document.getElementById('preview-modal');
       if (modal) {
         modal.addEventListener('click', function(e) {
@@ -84,11 +73,9 @@
         });
       }
 
-      // 4. Kickoff Firestore Dynamic Stream Listener
       initDatabaseListeners();
     });
 
-    // Make navigation functions globally accessible from modular script
     window.openWorkspace = function(workspaceId) {
       document.getElementById('landingMenu').style.display = 'none';
       document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
@@ -102,13 +89,11 @@
       window.scrollTo(0, 0);
     }
 
-    // Real-time Firestore Stream
     function initDatabaseListeners() {
       try {
         const slipsCollection = collection(db, 'slips');
         const sortedQuery = query(slipsCollection, orderBy('timestamp', 'desc'));
 
-        // Listens to Firestore changes in real-time
         onSnapshot(sortedQuery, (snapshot) => {
           const records = [];
           snapshot.forEach((doc) => {
@@ -116,15 +101,13 @@
           });
           
           cachedSlipsArray = records;
-          
           renderRecentFeed(cachedSlipsArray.slice(0, 5));
           renderViewTabFeed(cachedSlipsArray);
         }, (error) => {
-          console.error("Firestore dynamic sync failed: ", error);
-          alert("Firestore Read Error: " + error.message);
+          console.error("Firestore sync failed: ", error);
         });
       } catch (err) {
-        console.error("Listener registration failed: ", err);
+        console.error(err);
       }
     }
 
@@ -154,9 +137,9 @@
         <div class="slip-item">
           <div class="slip-info">
             <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
-            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
+            <div class="slip-meta-line">Logged: ${item.date} | Total: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
-          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
+          <button class="btn-print-small" onclick='openPrintModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Preview & Print</button>
         </div>
       `;
     }
@@ -174,18 +157,17 @@
       renderViewTabFeed(filtered);
     }
 
-    window.openPrintModal = function(serializedItemStr) {
-      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
+    window.openPrintModal = function(slipObj) {
       selectedActiveSlipForPrint = slipObj;
 
       const previewCard = document.getElementById('mini-preview-card');
       previewCard.innerHTML = `
-        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP PREVIEW</div>
+        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--primary-cyan); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP PREVIEW</div>
         <div class="modal-preview-row"><strong>Date:</strong> <span>${slipObj.date}</span></div>
         <div class="modal-preview-row"><strong>Name:</strong> <span>${slipObj.name}</span></div>
         <div class="modal-preview-row"><strong>Item:</strong> <span>${slipObj.item}</span></div>
         <div class="modal-preview-row"><strong>Desc:</strong> <span>${slipObj.description || 'N/A'}</span></div>
-        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed rgba(0, 242, 254, 0.2); font-weight:700; font-size: 16px; color: var(--accent-bloom); display: flex; justify-content: space-between;">
+        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed rgba(0, 242, 254, 0.2); font-weight:700; font-size: 16px; color: var(--primary-cyan); display: flex; justify-content: space-between;">
           <span>Total Amount:</span>
           <span class="glow-text">$${parseFloat(slipObj.amount).toFixed(2)}</span>
         </div>
@@ -210,13 +192,11 @@
       for (let i = 0; i < copiesCount; i++) {
         printArea.innerHTML += `
           <div class="print-slip">
-            <div>
-              <div class="print-header">RECEIPT SLIP</div>
-              <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
-              <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
-              <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
-              <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
-            </div>
+            <div class="print-header">RECEIPT SLIP</div>
+            <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
+            <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
+            <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
+            <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
             <div class="print-row total-row">
               <span class="print-label">Total Amount:</span>
               <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
@@ -284,19 +264,8 @@
       box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
     }
 
-    .option-card h2 {
-      color: #ffffff;
-      font-size: 22px;
-      margin: 0 0 10px 0;
-      font-weight: 700;
-    }
-
-    .option-card p {
-      color: var(--text-muted);
-      font-size: 13px;
-      margin: 0;
-      line-height: 1.5;
-    }
+    .option-card h2 { color: #ffffff; font-size: 22px; margin: 0 0 10px 0; font-weight: 700; }
+    .option-card p { color: var(--text-muted); font-size: 13px; margin: 0; line-height: 1.5; }
 
     .workspace-panel {
       display: none;
@@ -316,12 +285,7 @@
       padding-bottom: 15px;
     }
 
-    .panel-header h1 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-      color: #ffffff;
-    }
+    .panel-header h1 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; }
 
     .btn-back {
       background: rgba(255, 255, 255, 0.05);
@@ -334,11 +298,7 @@
       font-size: 13px;
     }
 
-    .form-group {
-      display: block;
-      margin-bottom: 20px;
-      width: 100%;
-    }
+    .form-group { display: block; margin-bottom: 20px; width: 100%; }
     
     label {
       display: block;
@@ -362,16 +322,7 @@
       color: #ffffff;
     }
 
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary-cyan);
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
-
-    textarea { 
-      height: 90px; 
-      resize: none; 
-    }
+    textarea { height: 90px; resize: none; }
     
     button.btn-action {
       display: block;
@@ -399,9 +350,7 @@
       border-bottom: 1px solid var(--border-color);
     }
 
-    .slip-list {
-      margin-top: 15px;
-    }
+    .slip-list { margin-top: 15px; }
 
     .slip-item {
       background: rgba(255, 255, 255, 0.02);
@@ -409,28 +358,15 @@
       padding: 15px;
       border-radius: var(--radius);
       margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    .slip-title-line { 
-      font-weight: 700; 
-      font-size: 15px; 
-      color: #ffffff;
-    }
-
-    .slip-item-name {
-      color: var(--text-muted); 
-      font-size: 13px;
-    }
-
-    .slip-meta-line { 
-      color: var(--text-muted); 
-      font-size: 12px; 
-      margin-top: 5px; 
-    }
-
-    .glow-text {
-      color: var(--primary-cyan);
-    }
+    .slip-title-line { font-weight: 700; font-size: 15px; color: #ffffff; }
+    .slip-item-name { color: var(--text-muted); font-size: 13px; }
+    .slip-meta-line { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
+    .glow-text { color: var(--primary-cyan); }
     
     .btn-print-small {
       display: block;
@@ -457,7 +393,6 @@
       justify-content: center;
       align-items: center;
       padding: 15px;
-      box-sizing: border-box;
     }
 
     .modal-body {
@@ -468,22 +403,11 @@
       width: 100%;
       max-width: 400px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      box-sizing: border-box;
     }
 
-    .modal-preview-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
+    .modal-preview-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    
     .modal-btn {
       flex: 1;
       padding: 12px;
@@ -497,71 +421,69 @@
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
+    /* Staging container hidden during screen navigation views */
     #print-area { display: none; }
 
-    /* Print System Layout & Styling Setup */
+    /* ================= SYSTEM PRINT ENGINE OVERRIDES ================= */
     @media print {
-      body * { 
-        visibility: hidden; 
-      }
-      
-      #print-area, #print-area * { 
-        visibility: visible; 
+      /* Complete isolation of app structure */
+      body, html, .main-container, #preview-modal {
+        display: none !important;
+        visibility: hidden !important;
       }
       
       #print-area {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: minmax(280px, auto);
-        gap: 20px;
+        display: block !important;
+        visibility: visible !important;
         position: absolute;
-        left: 0; 
+        left: 0;
         top: 0;
-        width: 100%; 
-        box-sizing: border-box;
+        width: 100%;
         background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0;
+        margin: 0;
       }
       
       .print-slip {
+        display: block !important;
+        visibility: visible !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
         border: 2px dashed #000000 !important;
-        border-radius: 8px;
         padding: 20px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        margin-bottom: 30px;
         background: #ffffff !important;
         color: #000000 !important;
         font-family: 'Segoe UI', Arial, sans-serif;
+        box-sizing: border-box;
       }
       
       .print-header {
         text-align: center;
         font-weight: 800;
-        font-size: 16px;
-        letter-spacing: 1px;
-        border-bottom: 1.5px solid #000000;
-        padding-bottom: 8px;
+        font-size: 18px;
+        border-bottom: 2px solid #000000;
+        padding-bottom: 5px;
         margin-bottom: 15px;
+        color: #000000 !important;
       }
 
       .print-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 13px;
+        display: flex !important;
+        justify-content: space-between !important;
+        font-size: 14px;
         margin-bottom: 8px;
         color: #000000 !important;
       }
 
-      .print-label {
-        font-weight: 700;
-      }
+      .print-label { font-weight: 700; }
 
       .print-slip .total-row {
-        border-top: 2px solid #000000;
+        border-top: 2px dashed #000000;
         padding-top: 10px;
         margin-top: 15px;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 800;
       }
     }
@@ -642,4 +564,19 @@
     <div class="modal-body">
       <div id="mini-preview-card"></div>
       
-      <div cla
+      <div class="form-group" style="margin-top: 15px;">
+        <label for="modalCopies">Copies to Print</label>
+        <input type="number" id="modalCopies" min="1" value="1">
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Cancel</button>
+        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Print Slips</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-area"></div>
+
+</body>
+</html>
