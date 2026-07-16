@@ -623,4 +623,124 @@
         width: 105mm;
         height: 148mm;
         border: 1px dashed #000000 !important;
-        padding: 20mm 15mm; /* En
+        padding: 20mm 15mm; /* Enhanced margin layouts for clean space representation */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        page-break-inside: avoid;
+      }
+
+      .total-row-a6 {
+        border-top: 1.5px solid #000000;
+        padding-top: 12px;
+        font-size: 18px;
+        font-weight: 800;
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+    
+    <div id="landingMenu" class="menu-selection">
+      <div class="option-card" onclick="openWorkspace('createWorkspace')">
+        <h2>Create Slip</h2>
+        <p>Log a new receipt record seamlessly to the cloud database</p>
+      </div>
+      <div class="option-card" onclick="openWorkspace('viewWorkspace')">
+        <h2>View Slips</h2>
+        <p>Dynamic keyword search, real-time sync, and multi-copy printing layouts</p>
+      </div>
+    </div>
+
+    <div id="createWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Create New Slip</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+      </div>
+      
+      <form id="slipForm">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" required placeholder="Customer or company name">
+        </div>
+
+        <div class="form-group">
+          <label for="item">Item</label>
+          <input type="text" id="item" required placeholder="Product or item title">
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="Provide extra details..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount ($)</label>
+          <input type="number" id="amount" step="0.01" required placeholder="0.00">
+        </div>
+
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" required>
+        </div>
+
+        <button type="submit" class="btn-action">Save to Database</button>
+      </form>
+
+      <div class="section-title">Recent 5 Slips</div>
+      <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
+    </div>
+
+    <div id="viewWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Search & View Logs</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+      </div>
+
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="searchBar">Text Filter</label>
+          <input type="text" id="searchBar" placeholder="Search..." oninput="filterAllSlips()">
+        </div>
+        <div class="form-group">
+          <label for="filterDate">Date Filter</label>
+          <input type="date" id="filterDate" onchange="filterAllSlips()">
+          <button class="btn-print-small" style="margin-top: 5px; width: 100%; padding: 6px;" onclick="clearDateFilter()">Clear Date</button>
+        </div>
+      </div>
+      
+      <div class="section-title">All Registered Logs</div>
+      <div id="allSlipsContainer" class="slip-list">Awaiting connection sync...</div>
+    </div>
+
+  </div>
+
+  <div id="preview-modal">
+    <div class="modal-body">
+      <div id="mini-preview-card"></div>
+      
+      <div class="form-group" style="margin-top: 10px;">
+        <label for="modalUps">How many Ups? (e.g. 4 slips on A4)</label>
+        <input type="number" id="modalUps" min="1" max="12" value="4">
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Execute A6 Imposition Print</button>
+        <button class="modal-btn btn-share" onclick="shareSlipToWhatsApp()">Share PNG to WhatsApp</button>
+        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-area"></div>
+
+</body>
+</html>
