@@ -166,7 +166,6 @@
       if(!selectedActiveSlipForPrint) return;
       const printArea = document.getElementById('print-area');
       
-      // Directly output one clean minimal target text design container mapped into standard A6 layout canvas dimensions
       printArea.innerHTML = `
         <div class="a6-print-layout">
           <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
@@ -195,7 +194,7 @@
       generatorContainer.style.display = 'block';
 
       html2canvas(generatorContainer.querySelector('.a6-png-share-card'), {
-        scale: 3, // Crisp text graphics scaling matching formal aspect ratio definitions
+        scale: 3, 
         backgroundColor: '#ffffff'
       }).then(canvas => {
         generatorContainer.style.display = 'none'; 
@@ -319,14 +318,16 @@
       padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
     }
 
-    .slip-list { margin-top: 15px; }
+    .slip-list { display: block !important; margin-top: 15px; }
 
     .slip-item {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-color);
       padding: 15px; border-radius: var(--radius); margin-bottom: 12px;
+      display: block !important;
     }
 
+    .slip-info { display: block !important; }
     .slip-title-line { font-weight: 700; font-size: 15px; color: #ffffff; }
     .slip-item-name { color: var(--text-muted); font-size: 13px; }
     .slip-meta-line { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
@@ -340,7 +341,6 @@
     .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
     .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
 
-    /* Vertical Live Modal Preview Window matching A6 aspect ratios */
     .a6-preview-container-box {
       width: 100%;
       max-width: 200px;
@@ -356,7 +356,6 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    /* Shared Data Presentation Styles */
     .receipt-minimal-date {
       font-size: 11px;
       color: #666666;
@@ -422,7 +421,8 @@
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
-    #print-area { display: none; }
+    /* Fix: Ensure the browser print container strictly hides outside the system print engine */
+    #print-area { display: none !important; }
 
     #share-generator-buffer {
       position: absolute;
@@ -431,10 +431,9 @@
       display: none;
     }
 
-    /* Dedicated A6 aspect layout container for background file conversion processes */
     .a6-png-share-card {
-      width: 396px;   /* Exact proportional sizing match to standard 105mm widths */
-      height: 561px;  /* Exact proportional sizing match to standard 148.5mm heights */
+      width: 396px;   
+      height: 561px;  
       background: #ffffff !important;
       color: #000000 !important;
       padding: 35px;
@@ -451,7 +450,7 @@
 
     /* ================= SYSTEM A6 VERTICAL PORTRAIT PRINT ENGINE ================= */
     @page {
-      size: 105mm 148.5mm; /* Tells printer to use standalone A6 template sheets directly */
+      size: 105mm 148.5mm; 
       margin: 0;
     }
 
@@ -469,6 +468,7 @@
         background: #ffffff !important;
         padding: 0; margin: 0;
         box-sizing: border-box;
+        z-index: 99999;
       }
 
       .a6-print-layout {
@@ -519,4 +519,13 @@
         <div class="form-group"><label for="amount">Amount (₹)</label><input type="number" id="amount" step="0.01" required placeholder="0.00"></div>
         <div class="form-group"><label for="date">Date</label><input type="date" id="date" required></div>
         <button type="submit" class="btn-action">Save to Database</button>
-  
+      </form>
+
+      <div class="section-title">Recent 5 Slips</div>
+      <div id="recentSlipsContainer" class="slip-list">Syncing cloud records...</div>
+    </div>
+
+    <div id="viewWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Search & View Logs</h1>
+        <button class="btn-back" onclick="showLandingMenu()"
