@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -24,7 +26,7 @@
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
-    let gridSelection = [true, false, false, false]; // Box 1 selected by default
+    let gridSelection = [true, false, false, false];
 
     document.addEventListener("DOMContentLoaded", () => {
       const dateEl = document.getElementById('date');
@@ -56,7 +58,6 @@
         });
       }
 
-      // Close modal on outside click
       document.getElementById('preview-modal').addEventListener('click', function(e) {
         if (e.target === this) closePrintModal();
       });
@@ -107,7 +108,7 @@
           </div>
           <div style="display:flex; gap: 8px; margin-top: 10px;">
             <button class="btn-print-small" onclick='openPrintModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Preview & Print</button>
-            <button class="btn-share-small" onclick='shareToWhatsApp(${JSON.stringify(item).replace(/'/g, "&apos;")})'>WhatsApp Share</button>
+            <button class="btn-share-small" onclick='generatePngAndShare(${JSON.stringify(item).replace(/'/g, "&apos;")})'>WhatsApp Share</button>
           </div>
         </div>
       `;
@@ -147,7 +148,7 @@
     function renderGridOptions() {
       const container = document.getElementById('grid-selector-container');
       container.innerHTML = `
-        <div style="margin-bottom:10px; font-size:12px; color:var(--text-muted);">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
+        <div style="margin-bottom:10px; font-size:12px; color:var(--text-muted); font-weight: 600;">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
         <div class="a4-preview-grid">
           <div class="grid-box ${gridSelection[0] ? 'active' : ''}" onclick="toggleGridBox(0)">Box 1 (Top-Left)</div>
           <div class="grid-box ${gridSelection[1] ? 'active' : ''}" onclick="toggleGridBox(1)">Box 2 (Top-Right)</div>
@@ -172,7 +173,6 @@
       const printArea = document.getElementById('print-area');
       printArea.innerHTML = ''; 
 
-      // Render 4 grid spaces inside the single page view wrapper
       for(let i = 0; i < 4; i++) {
         if(gridSelection[i]) {
           printArea.innerHTML += `
@@ -197,10 +197,52 @@
       closePrintModal();
     }
 
-    // Direct Browser-to-WhatsApp Clean Text Share API
-    window.shareToWhatsApp = function(slipObj) {
-      const cleanMsg = `*RECEIPT SLIP*%0A------------------------%0A*Date:* ${slipObj.date}%0A*Name:* ${slipObj.name}%0A*Item:* ${slipObj.item}%0A*Desc:* ${slipObj.description || 'N/A'}%0A------------------------%0A*Total Amount:* $${parseFloat(slipObj.amount).toFixed(2)}`;
-      window.open(`https://api.whatsapp.com/send?text=${cleanMsg}`, '_blank');
+    // Dynamic PNG Image Generation and File Sharing API Engine
+    window.generatePngAndShare = function(slipObj) {
+      // 1. Temporarily populate a clean hidden container styled for the image receipt look
+      const generatorContainer = document.getElementById('share-generator-buffer');
+      generatorContainer.innerHTML = `
+        <div class="image-receipt-card">
+          <div class="receipt-header">RECEIPT INVOICE</div>
+          <div class="receipt-row"><span>Date:</span> <strong>${slipObj.date}</strong></div>
+          <div class="receipt-row"><span>Customer:</span> <strong>${slipObj.name}</strong></div>
+          <div class="receipt-row"><span>Item Name:</span> <strong>${slipObj.item}</strong></div>
+          <div class="receipt-row"><span>Details:</span> <strong>${slipObj.description || 'N/A'}</strong></div>
+          <div class="receipt-total">
+            <span>TOTAL DUE:</span>
+            <span>$${parseFloat(slipObj.amount).toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+      generatorContainer.style.display = 'block';
+
+      // 2. Render container structural layout into a raw blob canvas image object
+      html2canvas(generatorContainer.querySelector('.image-receipt-card'), {
+        scale: 2, // Enhanced high-density display pixel generation
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        generatorContainer.style.display = 'none'; // Clear buffer views away
+        
+        canvas.toBlob(blob => {
+          const imageFile = new File([blob], `slip-${slipObj.timestamp}.png`, { type: 'image/png' });
+          
+          // Check if system native navigator asset share protocols are available (Mobile phones / Modern tablets)
+          if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+            navigator.share({
+              files: [imageFile],
+              title: 'Receipt Slip Download',
+              text: `Slip invoice for ${slipObj.name}`
+            }).catch(err => console.log('Share canceled or failed', err));
+          } else {
+            // Desktop fallback: Instantly trigger an automated background file download link
+            const fallbackLink = document.createElement('a');
+            fallbackLink.download = `slip-${slipObj.timestamp}.png`;
+            fallbackLink.href = canvas.toDataURL('image/png');
+            fallbackLink.click();
+            alert('Image saved to device downloads! You can now send it to your chat contacts.');
+          }
+        }, 'image/png');
+      });
     }
   </script>
 
@@ -210,7 +252,6 @@
       --panel-bg: rgba(17, 24, 39, 0.95);
       --primary-cyan: #00f2fe;
       --accent-bloom: #00c6ff;
-      --accent-glow: rgba(0, 242, 254, 0.15);
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --border-color: rgba(255, 255, 255, 0.12);
@@ -324,7 +365,6 @@
     .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
     .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
 
-    /* Interactive UI A4 Grid Selection Layout */
     .a4-preview-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -379,9 +419,58 @@
 
     #print-area { display: none; }
 
-    /* ================= DYNAMIC 1/4 A4 PRINT ENGINE OVERRIDES ================= */
+    /* Hidden Image Rendering Target Styles */
+    #share-generator-buffer {
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      display: none;
+    }
+
+    .image-receipt-card {
+      width: 380px;
+      background: #ffffff !important;
+      color: #000000 !important;
+      padding: 25px;
+      font-family: 'Arial', sans-serif;
+      border: 4px double #000000;
+      box-sizing: border-box;
+    }
+
+    .receipt-header {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      border-bottom: 3px solid #000000;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed #dddddd;
+      padding-bottom: 4px;
+    }
+
+    .receipt-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 900;
+      border-top: 3px solid #000000;
+      padding-top: 10px;
+      margin-top: 20px;
+    }
+
+    /* ================= VERTICAL 1/4 A4 PRINT SYSTEM ENGINE ================= */
+    @page { size: portrait; margin: 0; }
+
     @media print {
-      body, html, .main-container, #preview-modal {
+      body, html, .main-container, #preview-modal, #share-generator-buffer {
         display: none !important;
         visibility: hidden !important;
       }
@@ -390,7 +479,7 @@
         display: grid !important;
         visibility: visible !important;
         position: absolute; left: 0; top: 0;
-        width: 210mm; height: 297mm; /* Absolute Fixed A4 dimensioning */
+        width: 210mm; height: 297mm;
         grid-template-columns: 105mm 105mm;
         grid-template-rows: 148.5mm 148.5mm;
         background: #ffffff !important;
@@ -401,15 +490,15 @@
       .print-slot {
         width: 105mm; height: 148.5mm;
         box-sizing: border-box;
-        border: 1px dashed #cccccc; /* Guidelines for easy cutting */
+        border: 1px dashed #dddddd; 
+        position: relative;
+        overflow: hidden;
       }
 
-      .empty-slot {
-        visibility: hidden;
-      }
+      .empty-slot { visibility: hidden !important; }
 
       .filled-slot {
-        padding: 20mm 15mm;
+        padding: 15mm;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -419,20 +508,22 @@
       }
       
       .print-header {
-        text-align: center; font-weight: 800; font-size: 20px;
-        border-bottom: 2px solid #000000; padding-bottom: 10px; margin-bottom: 25px;
+        text-align: center; font-weight: 800; font-size: 16px;
+        border-bottom: 2px solid #000000; padding-bottom: 6px; margin-bottom: 20px;
+        color: #000000 !important;
       }
 
       .print-row {
         display: flex !important; justify-content: space-between !important;
-        font-size: 15px; margin-bottom: 12px; color: #000000 !important;
+        font-size: 13px; margin-bottom: 10px; color: #000000 !important;
       }
 
       .print-label { font-weight: 700; }
 
       .filled-slot .total-row {
-        border-top: 2px dashed #000000; padding-top: 15px;
-        margin-top: auto; font-size: 18px; font-weight: 800;
+        border-top: 2px dashed #000000; padding-top: 12px;
+        margin-top: auto; font-size: 15px; font-weight: 800;
+        color: #000000 !important;
       }
     }
   </style>
@@ -448,7 +539,7 @@
       </div>
       <div class="option-card" onclick="openWorkspace('viewWorkspace')">
         <h2>View Slips</h2>
-        <p>Dynamic date range sorting, filter settings, and 1/4 A4 grid printing</p>
+        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 grid printing</p>
       </div>
     </div>
 
@@ -506,6 +597,7 @@
     </div>
   </div>
 
+  <div id="share-generator-buffer"></div>
   <div id="print-area"></div>
 
 </body>
