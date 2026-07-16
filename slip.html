@@ -7,7 +7,8 @@
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onValue, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    // Switched from Realtime Database to Cloud Firestore SDK modules
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // Your exact Firebase configuration
     const firebaseConfig = {
@@ -20,9 +21,9 @@
       measurementId: "G-05HW0KSN38"
     };
 
-    // Initialize Firebase Services with Explicit Database URL targeting
+    // Initialize Firebase and target Cloud Firestore directly
     const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app, "https://mg-manager-3ab66-default-rtdb.firebaseio.com");
+    const db = getFirestore(app);
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
@@ -44,17 +45,16 @@
           const targetSlip = {
             name: document.getElementById('name').value,
             item: document.getElementById('item').value,
-            description: document.getElementById('description').value,
+            description: document.getElementById('description').value || '',
             amount: document.getElementById('amount').value,
             date: document.getElementById('date').value,
             timestamp: Date.now()
           };
 
           try {
-            const slipsRef = ref(database, 'slips');
-            const newSlipRef = push(slipsRef);
-            
-            set(newSlipRef, targetSlip)
+            // Write data to Firestore 'slips' collection
+            const slipsCollection = collection(db, 'slips');
+            addDoc(slipsCollection, targetSlip)
               .then(() => {
                 // Reset inputs
                 document.getElementById('name').value = '';
@@ -63,19 +63,17 @@
                 document.getElementById('amount').value = '';
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
                 
-                alert('Saved successfully!');
+                alert('Saved successfully to Firestore!');
               })
               .catch(err => {
-                console.error("Firebase write error: ", err);
-                alert('Firebase Write Failed: ' + err.message);
+                console.error("Firestore write error: ", err);
+                alert('Firestore Write Failed: ' + err.message);
               });
           } catch (catchErr) {
-            console.error("Firebase setup error: ", catchErr);
+            console.error("Setup error: ", catchErr);
             alert('Execution Error: ' + catchErr.message);
           }
         });
-      } else {
-        console.error("Could not find element with ID 'slipForm'");
       }
 
       // 3. Close preview modal on background click
@@ -86,7 +84,7 @@
         });
       }
 
-      // 4. Kickoff Database Dynamic Stream Listener
+      // 4. Kickoff Firestore Dynamic Stream Listener
       initDatabaseListeners();
     });
 
@@ -104,25 +102,26 @@
       window.scrollTo(0, 0);
     }
 
-    // Real-time Database Stream
+    // Real-time Firestore Stream
     function initDatabaseListeners() {
       try {
-        const slipsRef = ref(database, 'slips');
-        const sortedQuery = query(slipsRef, orderByChild('timestamp'));
+        const slipsCollection = collection(db, 'slips');
+        const sortedQuery = query(slipsCollection, orderBy('timestamp', 'desc'));
 
-        onValue(sortedQuery, (snapshot) => {
+        // Listens to Firestore changes in real-time
+        onSnapshot(sortedQuery, (snapshot) => {
           const records = [];
-          snapshot.forEach((childSnapshot) => {
-            records.push({ id: childSnapshot.key, ...childSnapshot.val() });
+          snapshot.forEach((doc) => {
+            records.push({ id: doc.id, ...doc.data() });
           });
           
-          cachedSlipsArray = [...records].reverse();
+          cachedSlipsArray = records;
           
           renderRecentFeed(cachedSlipsArray.slice(0, 5));
           renderViewTabFeed(cachedSlipsArray);
         }, (error) => {
-          console.error("Listener dynamic sync failed: ", error);
-          alert("Database Read Error: " + error.message);
+          console.error("Firestore dynamic sync failed: ", error);
+          alert("Firestore Read Error: " + error.message);
         });
       } catch (err) {
         console.error("Listener registration failed: ", err);
@@ -501,11 +500,6 @@
     #print-area { display: none; }
 
     /* Print System Layout & Styling Setup */
-    @page {
-      size: A4 portrait;
-      margin: 1.5cm;
-    }
-
     @media print {
       body * { 
         visibility: hidden; 
@@ -591,7 +585,7 @@
     <div id="createWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Create New Slip</h1>
-        <button class="btn-back" onclick="showLandingMenu()">← Back</button>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
       </div>
       
       <form id="slipForm">
@@ -630,7 +624,7 @@
     <div id="viewWorkspace" class="workspace-panel">
       <div class="panel-header">
         <h1>Search & View Logs</h1>
-        <button class="btn-back" onclick="showLandingMenu()">← Back</button>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
       </div>
 
       <div class="form-group">
@@ -645,4 +639,7 @@
   </div>
 
   <div id="preview-modal">
- 
+    <div class="modal-body">
+      <div id="mini-preview-card"></div>
+      
+      <div cla
