@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    // Switched from Realtime Database to Cloud Firestore SDK modules
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Your exact Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -21,22 +21,18 @@
       measurementId: "G-05HW0KSN38"
     };
 
-    // Initialize Firebase and target Cloud Firestore directly
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
 
-    // SINGLE Unified App Startup Initializer
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Set Default Date
       const dateEl = document.getElementById('date');
       if (dateEl) {
         dateEl.value = new Date().toISOString().split('T')[0];
       }
 
-      // 2. Safely Bind Form Submission
       const form = document.getElementById('slipForm');
       if (form) {
         form.addEventListener('submit', function(e) {
@@ -52,17 +48,14 @@
           };
 
           try {
-            // Write data to Firestore 'slips' collection
             const slipsCollection = collection(db, 'slips');
             addDoc(slipsCollection, targetSlip)
               .then(() => {
-                // Reset inputs
                 document.getElementById('name').value = '';
                 document.getElementById('item').value = '';
                 document.getElementById('description').value = '';
                 document.getElementById('amount').value = '';
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
-                
                 alert('Saved successfully to Firestore!');
               })
               .catch(err => {
@@ -76,7 +69,6 @@
         });
       }
 
-      // 3. Close preview modal on background click
       const modal = document.getElementById('preview-modal');
       if (modal) {
         modal.addEventListener('click', function(e) {
@@ -84,11 +76,9 @@
         });
       }
 
-      // 4. Kickoff Firestore Dynamic Stream Listener
       initDatabaseListeners();
     });
 
-    // Make navigation functions globally accessible from modular script
     window.openWorkspace = function(workspaceId) {
       document.getElementById('landingMenu').style.display = 'none';
       document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
@@ -102,13 +92,11 @@
       window.scrollTo(0, 0);
     }
 
-    // Real-time Firestore Stream
     function initDatabaseListeners() {
       try {
         const slipsCollection = collection(db, 'slips');
         const sortedQuery = query(slipsCollection, orderBy('timestamp', 'desc'));
 
-        // Listens to Firestore changes in real-time
         onSnapshot(sortedQuery, (snapshot) => {
           const records = [];
           snapshot.forEach((doc) => {
@@ -156,22 +144,46 @@
             <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
             <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
-          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <button class="btn-print-small" style="flex: 4;" onclick="openPrintModal('${safeDataJson}')">Preview & Operations</button>
+            <button class="btn-delete-small" style="flex: 1;" onclick="deleteSlipRecord('${item.id}')">Delete</button>
+          </div>
         </div>
       `;
     }
 
+    window.deleteSlipRecord = function(docId) {
+      if(confirm("Are you sure you want to permanently delete this slip record?")) {
+        const docRef = doc(db, 'slips', docId);
+        deleteDoc(docRef)
+          .then(() => alert("Slip deleted successfully."))
+          .catch(err => alert("Error deleting slip: " + err.message));
+      }
+    }
+
     window.filterAllSlips = function() {
       const term = document.getElementById('searchBar').value.toLowerCase().trim();
-      if(!term) {
-        renderViewTabFeed(cachedSlipsArray);
-        return;
+      const filterDate = document.getElementById('filterDate').value;
+      
+      let filtered = cachedSlipsArray;
+
+      if(term) {
+        filtered = filtered.filter(x => 
+          x.name.toLowerCase().includes(term) || 
+          x.item.toLowerCase().includes(term)
+        );
       }
-      const filtered = cachedSlipsArray.filter(x => 
-        x.name.toLowerCase().includes(term) || 
-        x.item.toLowerCase().includes(term)
-      );
+
+      if(filterDate) {
+        filtered = filtered.filter(x => x.date === filterDate);
+      }
+
       renderViewTabFeed(filtered);
+    }
+
+    window.clearDateFilter = function() {
+      document.getElementById('filterDate').value = '';
+      filterAllSlips();
     }
 
     window.openPrintModal = function(serializedItemStr) {
@@ -180,18 +192,26 @@
 
       const previewCard = document.getElementById('mini-preview-card');
       previewCard.innerHTML = `
-        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP PREVIEW</div>
-        <div class="modal-preview-row"><strong>Date:</strong> <span>${slipObj.date}</span></div>
-        <div class="modal-preview-row"><strong>Name:</strong> <span>${slipObj.name}</span></div>
-        <div class="modal-preview-row"><strong>Item:</strong> <span>${slipObj.item}</span></div>
-        <div class="modal-preview-row"><strong>Desc:</strong> <span>${slipObj.description || 'N/A'}</span></div>
-        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed rgba(0, 242, 254, 0.2); font-weight:700; font-size: 16px; color: var(--accent-bloom); display: flex; justify-content: space-between;">
-          <span>Total Amount:</span>
-          <span class="glow-text">$${parseFloat(slipObj.amount).toFixed(2)}</span>
+        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP OPERATIONAL CONTROL</div>
+        
+        <div id="a6-share-target" class="vertical-a6-render-block">
+          <div class="a6-inner-wrap">
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${slipObj.name}</div>
+            <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">${slipObj.item}</div>
+            <div style="font-size: 12px; color: #666; font-style: italic; line-height:1.4;">${slipObj.description || ''}</div>
+            <div style="font-size: 11px; color: #888; margin-top: 6px;">${slipObj.date}</div>
+            
+            <div class="a6-spacer-gap"></div>
+            
+            <div style="border-top: 1px dashed #000; padding-top: 8px; font-size: 18px; font-weight: 800; display: flex; justify-content: space-between;">
+              <span>Total:</span>
+              <span>$${parseFloat(slipObj.amount).toFixed(2)}</span>
+            </div>
+          </div>
         </div>
       `;
 
-      document.getElementById('modalCopies').value = 1;
+      document.getElementById('modalUps').value = 4;
       document.getElementById('preview-modal').style.display = 'flex';
     }
 
@@ -200,25 +220,59 @@
       selectedActiveSlipForPrint = null;
     }
 
+    window.shareSlipToWhatsApp = function() {
+      const targetElement = document.getElementById('a6-share-target');
+      
+      // Temporary display style update to ensure pixel-perfect rendering dimensions
+      targetElement.style.boxShadow = "none";
+      
+      html2canvas(targetElement, {
+        scale: 3, // High DPI Resolution Scale
+        logging: false,
+        useCORS: true
+      }).then(canvas => {
+        targetElement.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        
+        canvas.toBlob(function(blob) {
+          // Direct Web Share Engine check (Ideal for mobile systems/modern browsers)
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], "slip.png", { type: "image/png" })] })) {
+            const file = new File([blob], "slip.png", { type: "image/png" });
+            navigator.share({
+              files: [file],
+              title: 'Receipt Slip Export',
+              text: 'Clean A6 PNG Export File'
+            }).catch(err => console.log("Share aborted or failed", err));
+          } else {
+            // Fallback: Generate Base64 Download link alternative & explain fallback routine
+            const imageBase64 = canvas.toDataURL("image/png");
+            const win = window.open();
+            win.document.write('<iframe src="' + imageBase64  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+            alert("Web Share API not supported on this device/browser context. Image payload opened in new tab. Long press or right-click to copy/save directly to WhatsApp chats!");
+          }
+        }, 'image/png');
+      });
+    }
+
     window.executeSystemPrint = function() {
       if(!selectedActiveSlipForPrint) return;
 
-      const copiesCount = parseInt(document.getElementById('modalCopies').value) || 1;
+      const upsCount = parseInt(document.getElementById('modalUps').value) || 4;
       const printArea = document.getElementById('print-area');
       printArea.innerHTML = ''; 
 
-      for (let i = 0; i < copiesCount; i++) {
+      // Build out imposition grid tracking structure counts across sheet boundaries
+      for (let i = 0; i < upsCount; i++) {
         printArea.innerHTML += `
-          <div class="print-slip">
-            <div>
-              <div class="print-header">RECEIPT SLIP</div>
-              <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
-              <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
-              <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
-              <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
-            </div>
-            <div class="print-row total-row">
-              <span class="print-label">Total Amount:</span>
+          <div class="print-slip-a6-vertical">
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${selectedActiveSlipForPrint.name}</div>
+            <div style="font-size: 14px; font-weight: 600; color: #000; margin-bottom: 2px;">${selectedActiveSlipForPrint.item}</div>
+            <div style="font-size: 12px; color: #333; font-style: italic; line-height: 1.4;">${selectedActiveSlipForPrint.description || ''}</div>
+            <div style="font-size: 11px; color: #555; margin-top: 6px;">${selectedActiveSlipForPrint.date}</div>
+            
+            <div class="a6-spacer-gap"></div>
+            
+            <div class="total-row-a6">
+              <span>Total:</span>
               <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
             </div>
           </div>
@@ -339,6 +393,13 @@
       margin-bottom: 20px;
       width: 100%;
     }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
     
     label {
       display: block;
@@ -433,8 +494,6 @@
     }
     
     .btn-print-small {
-      display: block;
-      width: 100%;
       background: rgba(0, 242, 254, 0.06);
       color: var(--primary-cyan);
       border: 1px solid rgba(0, 242, 254, 0.2);
@@ -443,8 +502,48 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 13px;
-      margin-top: 12px;
       text-align: center;
+    }
+
+    .btn-delete-small {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Screen Native Vertical A6 Render Mockup Canvas Component */
+    .vertical-a6-render-block {
+      width: 100%;
+      max-width: 260px;
+      height: 368px; /* Correct A6 aspect scaling constraints ratio */
+      background: #ffffff;
+      color: #000000;
+      margin: 15px auto;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .a6-inner-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+    }
+
+    .a6-spacer-gap {
+      flex-grow: 1; /* Pushes calculations cleanly down separate from details */
+      min-height: 40px; 
     }
 
     #preview-modal {
@@ -458,6 +557,7 @@
       align-items: center;
       padding: 15px;
       box-sizing: border-box;
+      overflow-y: auto;
     }
 
     .modal-body {
@@ -466,26 +566,21 @@
       padding: 20px;
       border-radius: var(--radius);
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       box-sizing: border-box;
-    }
-
-    .modal-preview-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      margin-bottom: 8px;
+      text-align: center;
     }
 
     .modal-buttons {
       display: flex;
-      gap: 10px;
-      margin-top: 20px;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 15px;
     }
 
     .modal-btn {
-      flex: 1;
+      width: 100%;
       padding: 12px;
       border: none;
       border-radius: 8px;
@@ -495,6 +590,7 @@
     }
 
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
+    .btn-share { background: #25D366; color: #ffffff; } /* Brand Color WhatsApp styling */
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
     #print-area { display: none; }
@@ -511,21 +607,23 @@
       
       #print-area {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: minmax(280px, auto);
-        gap: 20px;
+        grid-template-columns: repeat(2, 105mm); /* Standard A4 Matrix calculations matching width metrics */
+        grid-auto-rows: 148mm; /* Pure vertical A6 metrics bounds boundary height */
+        gap: 0px; 
         position: absolute;
         left: 0; 
         top: 0;
-        width: 100%; 
+        width: 210mm; 
+        height: 297mm;
         box-sizing: border-box;
         background: #ffffff !important;
       }
       
-      .print-slip {
-        border: 2px dashed #000000 !important;
-        border-radius: 8px;
-        padding: 20px;
+      .print-slip-a6-vertical {
+        width: 105mm;
+        height: 148mm;
+        border: 1px dashed #000000 !important;
+        padding: 20mm 15mm; /* Enhanced margin layouts for clean space representation */
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
@@ -533,36 +631,16 @@
         background: #ffffff !important;
         color: #000000 !important;
         font-family: 'Segoe UI', Arial, sans-serif;
-      }
-      
-      .print-header {
-        text-align: center;
-        font-weight: 800;
-        font-size: 16px;
-        letter-spacing: 1px;
-        border-bottom: 1.5px solid #000000;
-        padding-bottom: 8px;
-        margin-bottom: 15px;
+        page-break-inside: avoid;
       }
 
-      .print-row {
+      .total-row-a6 {
+        border-top: 1.5px solid #000000;
+        padding-top: 12px;
+        font-size: 18px;
+        font-weight: 800;
         display: flex;
         justify-content: space-between;
-        font-size: 13px;
-        margin-bottom: 8px;
-        color: #000000 !important;
-      }
-
-      .print-label {
-        font-weight: 700;
-      }
-
-      .print-slip .total-row {
-        border-top: 2px solid #000000;
-        padding-top: 10px;
-        margin-top: 15px;
-        font-size: 15px;
-        font-weight: 800;
       }
     }
   </style>
@@ -627,9 +705,16 @@
         <button class="btn-back" onclick="showLandingMenu()">Back</button>
       </div>
 
-      <div class="form-group">
-        <label for="searchBar">Dynamic Search Filter</label>
-        <input type="text" id="searchBar" placeholder="Type keyword to filter..." oninput="filterAllSlips()">
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="searchBar">Text Filter</label>
+          <input type="text" id="searchBar" placeholder="Search..." oninput="filterAllSlips()">
+        </div>
+        <div class="form-group">
+          <label for="filterDate">Date Filter</label>
+          <input type="date" id="filterDate" onchange="filterAllSlips()">
+          <button class="btn-print-small" style="margin-top: 5px; width: 100%; padding: 6px;" onclick="clearDateFilter()">Clear Date</button>
+        </div>
       </div>
       
       <div class="section-title">All Registered Logs</div>
@@ -642,4 +727,20 @@
     <div class="modal-body">
       <div id="mini-preview-card"></div>
       
-      <div cla
+      <div class="form-group" style="margin-top: 10px;">
+        <label for="modalUps">How many Ups? (e.g. 4 slips on A4)</label>
+        <input type="number" id="modalUps" min="1" max="12" value="4">
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Execute A6 Imposition Print</button>
+        <button class="modal-btn btn-share" onclick="shareSlipToWhatsApp()">Share PNG to WhatsApp</button>
+        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-area"></div>
+
+</body>
+</html>
