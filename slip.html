@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
-  <!-- Imported html2canvas library to convert layout blocks to PNG image files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="module">
@@ -37,14 +36,22 @@
       if (form) {
         form.addEventListener('submit', function(e) {
           e.preventDefault();
+          
+          const rawAmount = document.getElementById('amount').value;
           const targetSlip = {
-            name: document.getElementById('name').value,
-            item: document.getElementById('item').value,
-            description: document.getElementById('description').value || '',
-            amount: document.getElementById('amount').value,
+            name: document.getElementById('name').value.trim(),
+            item: document.getElementById('item').value.trim(),
+            description: document.getElementById('description').value.trim() || '',
+            amount: parseFloat(rawAmount) || 0,
             date: document.getElementById('date').value,
             timestamp: Date.now()
           };
+
+          // Frontend sanity enforcement check
+          if (!targetSlip.name || !targetSlip.item || targetSlip.amount <= 0) {
+            alert('Please fill out all fields with valid data rules.');
+            return;
+          }
 
           addDoc(collection(db, 'slips'), targetSlip)
             .then(() => {
@@ -55,7 +62,10 @@
               document.getElementById('date').value = new Date().toISOString().split('T')[0];
               alert('Saved successfully!');
             })
-            .catch(err => alert('Firestore Save Error: ' + err.message));
+            .catch(err => {
+              console.error(err);
+              alert('Firestore Sync Error: Verification failed. Please check your Firebase Console rules tab.');
+            });
         });
       }
 
@@ -79,12 +89,18 @@
 
     function initDatabaseListeners() {
       const sortedQuery = query(collection(db, 'slips'), orderBy('timestamp', 'desc'));
+      
       onSnapshot(sortedQuery, (snapshot) => {
         const records = [];
         snapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
         cachedSlipsArray = records;
         renderRecentFeed(cachedSlipsArray.slice(0, 5));
         renderViewTabFeed(cachedSlipsArray);
+      }, (error) => {
+        console.error("Listener error:", error);
+        const errorMsg = "<p class='empty-text' style='color:#ff4a4a;'>Database Sync Blocked: Update Cloud Security Rules to allow access.</p>";
+        document.getElementById('recentSlipsContainer').innerHTML = errorMsg;
+        document.getElementById('allSlipsContainer').innerHTML = errorMsg;
       });
     }
 
@@ -101,18 +117,33 @@
     }
 
     function generateSlipMarkupRow(item) {
+      const safeStringified = btoa(unescape(encodeURIComponent(JSON.stringify(item))));
       return `
         <div class="slip-item">
           <div class="slip-info">
-            <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
+            <div class="slip-title-line">${escapeHtml(item.name)} <span class="slip-item-name">— ${escapeHtml(item.item)}</span></div>
             <div class="slip-meta-line">Date: ${item.date} | Total: <strong class="glow-text">₹${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
           <div style="display:flex; gap: 8px; margin-top: 10px;">
-            <button class="btn-print-small" onclick='openPrintModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Preview & Print</button>
-            <button class="btn-share-small" onclick='generatePngAndShare(${JSON.stringify(item).replace(/'/g, "&apos;")})'>WhatsApp Share</button>
+            <button class="btn-print-small" onclick="handlePrintClick('${safeStringified}')">Preview & Print</button>
+            <button class="btn-share-small" onclick="handleShareClick('${safeStringified}')">WhatsApp Share</button>
           </div>
         </div>
       `;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    window.handlePrintClick = function(base64Data) {
+      const slipObj = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
+      openPrintModal(slipObj);
+    }
+
+    window.handleShareClick = function(base64Data) {
+      const slipObj = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
+      generatePngAndShare(slipObj);
     }
 
     window.filterAllSlips = function() {
@@ -179,9 +210,9 @@
           printArea.innerHTML += `
             <div class="print-slot filled-slot">
               <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
-              <div class="receipt-minimal-title">${selectedActiveSlipForPrint.name}</div>
-              <div class="receipt-minimal-item">${selectedActiveSlipForPrint.item}</div>
-              <div class="receipt-minimal-desc">${selectedActiveSlipForPrint.description || ''}</div>
+              <div class="receipt-minimal-title">${escapeHtml(selectedActiveSlipForPrint.name)}</div>
+              <div class="receipt-minimal-item">${escapeHtml(selectedActiveSlipForPrint.item)}</div>
+              <div class="receipt-minimal-desc">${escapeHtml(selectedActiveSlipForPrint.description || '')}</div>
               <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
             </div>
           `;
@@ -199,9 +230,9 @@
       generatorContainer.innerHTML = `
         <div class="image-receipt-card">
           <div class="receipt-minimal-date">${slipObj.date}</div>
-          <div class="receipt-minimal-title">${slipObj.name}</div>
-          <div class="receipt-minimal-item">${slipObj.item}</div>
-          <div class="receipt-minimal-desc">${slipObj.description || ''}</div>
+          <div class="receipt-minimal-title">${escapeHtml(slipObj.name)}</div>
+          <div class="receipt-minimal-item">${escapeHtml(slipObj.item)}</div>
+          <div class="receipt-minimal-desc">${escapeHtml(slipObj.description || '')}</div>
           <div class="receipt-minimal-total">₹${parseFloat(slipObj.amount).toFixed(2)}</div>
         </div>
       `;
@@ -227,7 +258,7 @@
             fallbackLink.download = `slip-${slipObj.timestamp}.png`;
             fallbackLink.href = canvas.toDataURL('image/png');
             fallbackLink.click();
-            alert('Image saved to device downloads! You can now send it to your chat contacts.');
+            alert('Image saved to device downloads! You can now send it to your contacts.');
           }
         }, 'image/png');
       });
@@ -353,7 +384,6 @@
     .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
     .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
 
-    /* Updated Dynamic Vertical Selector Grid Layout */
     .a4-preview-grid-vertical {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -420,7 +450,6 @@
       display: none;
     }
 
-    /* Shared Minimal Design Engine Styles (Clean Data Only) */
     .image-receipt-card {
       width: 320px;
       background: #ffffff !important;
@@ -471,7 +500,6 @@
       margin-top: auto;
     }
 
-    /* ================= VERTICAL 1/4 A4 PRINT SYSTEM ENGINE ================= */
     @page { size: portrait; margin: 0; }
 
     @media print {
@@ -525,24 +553,4 @@
       </div>
       <div class="option-card" onclick="openWorkspace('viewWorkspace')">
         <h2>View Slips</h2>
-        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 grid printing</p>
-      </div>
-    </div>
-
-    <div id="createWorkspace" class="workspace-panel">
-      <div class="panel-header">
-        <h1>Create New Slip</h1>
-        <button class="btn-back" onclick="showLandingMenu()">Back</button>
-      </div>
-      
-      <form id="slipForm">
-        <div class="form-group"><label for="name">Name</label><input type="text" id="name" required placeholder="Customer Name"></div>
-        <div class="form-group"><label for="item">Item</label><input type="text" id="item" required placeholder="Item Title"></div>
-        <div class="form-group"><label for="description">Description</label><textarea id="description" placeholder="Extra information..."></textarea></div>
-        <div class="form-group"><label for="amount">Amount (₹)</label><input type="number" id="amount" step="0.01" required placeholder="0.00"></div>
-        <div class="form-group"><label for="date">Date</label><input type="date" id="date" required></div>
-        <button type="submit" class="btn-action">Save to Database</button>
-      </form>
-
-      <div class="section-title">Recent 5 Slips</div>
-      <div id="recentSlipsContainer" class="slip-list">Synci
+        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 g
