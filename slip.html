@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
-  <!-- Imported html2canvas library to convert layout blocks to PNG image files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="module">
@@ -27,7 +26,6 @@
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
-    let gridSelection = [true, false, false, false];
 
     document.addEventListener("DOMContentLoaded", () => {
       const dateEl = document.getElementById('date');
@@ -141,27 +139,22 @@
 
     window.openPrintModal = function(slipObj) {
       selectedActiveSlipForPrint = slipObj;
-      gridSelection = [true, false, false, false]; 
-      renderGridOptions();
+      renderLivePreview();
       document.getElementById('preview-modal').style.display = 'flex';
     }
 
-    function renderGridOptions() {
+    function renderLivePreview() {
       const container = document.getElementById('grid-selector-container');
       container.innerHTML = `
-        <div style="margin-bottom:12px; font-size:12px; color:var(--text-muted); font-weight: 600; text-align: center;">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
-        <div class="a4-preview-grid-vertical">
-          <div class="grid-box ${gridSelection[0] ? 'active' : ''}" onclick="toggleGridBox(0)">Box 1 (Top-Left)</div>
-          <div class="grid-box ${gridSelection[1] ? 'active' : ''}" onclick="toggleGridBox(1)">Box 2 (Top-Right)</div>
-          <div class="grid-box ${gridSelection[2] ? 'active' : ''}" onclick="toggleGridBox(2)">Box 3 (Bottom-Left)</div>
-          <div class="grid-box ${gridSelection[3] ? 'active' : ''}" onclick="toggleGridBox(3)">Box 4 (Bottom-Right)</div>
+        <div style="margin-bottom:12px; font-size:12px; color:var(--text-muted); font-weight: 600; text-align: center;">LIVE A6 VERTICAL SLIP PREVIEW:</div>
+        <div class="a6-preview-container-box">
+          <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
+          <div class="receipt-minimal-title">${selectedActiveSlipForPrint.name}</div>
+          <div class="receipt-minimal-item">${selectedActiveSlipForPrint.item}</div>
+          <div class="receipt-minimal-desc">${selectedActiveSlipForPrint.description || ''}</div>
+          <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
         </div>
       `;
-    }
-
-    window.toggleGridBox = function(index) {
-      gridSelection[index] = !gridSelection[index];
-      renderGridOptions();
     }
 
     window.closePrintModal = function() {
@@ -172,23 +165,17 @@
     window.executeSystemPrint = function() {
       if(!selectedActiveSlipForPrint) return;
       const printArea = document.getElementById('print-area');
-      printArea.innerHTML = ''; 
-
-      for(let i = 0; i < 4; i++) {
-        if(gridSelection[i]) {
-          printArea.innerHTML += `
-            <div class="print-slot filled-slot">
-              <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
-              <div class="receipt-minimal-title">${selectedActiveSlipForPrint.name}</div>
-              <div class="receipt-minimal-item">${selectedActiveSlipForPrint.item}</div>
-              <div class="receipt-minimal-desc">${selectedActiveSlipForPrint.description || ''}</div>
-              <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
-            </div>
-          `;
-        } else {
-          printArea.innerHTML += `<div class="print-slot empty-slot"></div>`;
-        }
-      }
+      
+      // Directly output one clean minimal target text design container mapped into standard A6 layout canvas dimensions
+      printArea.innerHTML = `
+        <div class="a6-print-layout">
+          <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
+          <div class="receipt-minimal-title">${selectedActiveSlipForPrint.name}</div>
+          <div class="receipt-minimal-item">${selectedActiveSlipForPrint.item}</div>
+          <div class="receipt-minimal-desc">${selectedActiveSlipForPrint.description || ''}</div>
+          <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
+        </div>
+      `;
 
       window.print();
       closePrintModal();
@@ -197,7 +184,7 @@
     window.generatePngAndShare = function(slipObj) {
       const generatorContainer = document.getElementById('share-generator-buffer');
       generatorContainer.innerHTML = `
-        <div class="image-receipt-card">
+        <div class="a6-png-share-card">
           <div class="receipt-minimal-date">${slipObj.date}</div>
           <div class="receipt-minimal-title">${slipObj.name}</div>
           <div class="receipt-minimal-item">${slipObj.item}</div>
@@ -207,8 +194,8 @@
       `;
       generatorContainer.style.display = 'block';
 
-      html2canvas(generatorContainer.querySelector('.image-receipt-card'), {
-        scale: 2, 
+      html2canvas(generatorContainer.querySelector('.a6-png-share-card'), {
+        scale: 3, // Crisp text graphics scaling matching formal aspect ratio definitions
         backgroundColor: '#ffffff'
       }).then(canvas => {
         generatorContainer.style.display = 'none'; 
@@ -353,41 +340,65 @@
     .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
     .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
 
-    /* Updated Dynamic Vertical Selector Grid Layout */
-    .a4-preview-grid-vertical {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 130px 130px;
-      gap: 10px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: #1f2937;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      max-width: 220px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .grid-box {
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: bold;
-      color: var(--text-muted);
-      cursor: pointer;
+    /* Vertical Live Modal Preview Window matching A6 aspect ratios */
+    .a6-preview-container-box {
+      width: 100%;
+      max-width: 200px;
+      height: 283px; 
+      background: #ffffff;
+      color: #000000;
+      padding: 18px;
       border-radius: 6px;
-      transition: all 0.2s;
-      text-align: center;
-      padding: 4px;
+      margin: 0 auto 20px auto;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    .grid-box.active {
-      background: rgba(0, 242, 254, 0.15);
-      border-color: var(--primary-cyan);
-      color: var(--primary-cyan);
+    /* Shared Data Presentation Styles */
+    .receipt-minimal-date {
+      font-size: 11px;
+      color: #666666;
+      margin-bottom: 10px;
+      font-weight: 500;
+      font-family: Arial, sans-serif;
+    }
+
+    .receipt-minimal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #000000;
+      margin-bottom: 4px;
+      line-height: 1.2;
+      font-family: Arial, sans-serif;
+    }
+
+    .receipt-minimal-item {
+      font-size: 14px;
+      font-weight: 600;
+      color: #222222;
+      margin-bottom: 6px;
+      font-family: Arial, sans-serif;
+    }
+
+    .receipt-minimal-desc {
+      font-size: 12px;
+      color: #444444;
+      margin-bottom: 15px;
+      line-height: 1.3;
+      white-space: pre-line;
+      font-family: Arial, sans-serif;
+    }
+
+    .receipt-minimal-total {
+      font-size: 20px;
+      font-weight: 900;
+      color: #000000;
+      border-top: 2px solid #000000;
+      padding-top: 8px;
+      margin-top: auto;
+      font-family: Arial, sans-serif;
     }
 
     #preview-modal {
@@ -399,7 +410,7 @@
 
     .modal-body {
       background: #111827; border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 20px; border-radius: var(--radius); width: 100%; max-width: 320px;
+      padding: 20px; border-radius: var(--radius); width: 100%; max-width: 260px;
     }
 
     .modal-buttons { display: flex; gap: 10px; }
@@ -420,59 +431,29 @@
       display: none;
     }
 
-    /* Shared Minimal Design Engine Styles (Clean Data Only) */
-    .image-receipt-card {
-      width: 320px;
+    /* Dedicated A6 aspect layout container for background file conversion processes */
+    .a6-png-share-card {
+      width: 396px;   /* Exact proportional sizing match to standard 105mm widths */
+      height: 561px;  /* Exact proportional sizing match to standard 148.5mm heights */
       background: #ffffff !important;
       color: #000000 !important;
-      padding: 30px 25px;
-      font-family: 'Arial', sans-serif;
+      padding: 35px;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
     }
 
-    .receipt-minimal-date {
-      font-size: 13px;
-      color: #666666;
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
+    .a6-png-share-card .receipt-minimal-date { font-size: 14px; margin-bottom: 15px; }
+    .a6-png-share-card .receipt-minimal-title { font-size: 26px; margin-bottom: 6px; }
+    .a6-png-share-card .receipt-minimal-item { font-size: 18px; margin-bottom: 8px; }
+    .a6-png-share-card .receipt-minimal-desc { font-size: 15px; margin-bottom: 20px; }
+    .a6-png-share-card .receipt-minimal-total { font-size: 28px; padding-top: 12px; }
 
-    .receipt-minimal-title {
-      font-size: 24px;
-      font-weight: 800;
-      color: #000000;
-      margin-bottom: 6px;
-      line-height: 1.2;
+    /* ================= SYSTEM A6 VERTICAL PORTRAIT PRINT ENGINE ================= */
+    @page {
+      size: 105mm 148.5mm; /* Tells printer to use standalone A6 template sheets directly */
+      margin: 0;
     }
-
-    .receipt-minimal-item {
-      font-size: 16px;
-      font-weight: 600;
-      color: #222222;
-      margin-bottom: 8px;
-    }
-
-    .receipt-minimal-desc {
-      font-size: 14px;
-      color: #444444;
-      margin-bottom: 25px;
-      line-height: 1.4;
-      white-space: pre-line;
-    }
-
-    .receipt-minimal-total {
-      font-size: 26px;
-      font-weight: 900;
-      color: #000000;
-      border-top: 2px solid #000000;
-      padding-top: 12px;
-      margin-top: auto;
-    }
-
-    /* ================= VERTICAL 1/4 A4 PRINT SYSTEM ENGINE ================= */
-    @page { size: portrait; margin: 0; }
 
     @media print {
       body, html, .main-container, #preview-modal, #share-generator-buffer {
@@ -481,36 +462,32 @@
       }
       
       #print-area {
-        display: grid !important;
+        display: block !important;
         visibility: visible !important;
         position: absolute; left: 0; top: 0;
-        width: 210mm; height: 297mm;
-        grid-template-columns: 105mm 105mm;
-        grid-template-rows: 148.5mm 148.5mm;
+        width: 105mm; height: 148.5mm;
         background: #ffffff !important;
         padding: 0; margin: 0;
         box-sizing: border-box;
       }
-      
-      .print-slot {
-        width: 105mm; height: 148.5mm;
-        box-sizing: border-box;
-        border: 1px dashed #dddddd; 
-        position: relative;
-        overflow: hidden;
-      }
 
-      .empty-slot { visibility: hidden !important; }
-
-      .filled-slot {
-        padding: 20mm 15mm;
+      .a6-print-layout {
+        width: 105mm;
+        height: 148.5mm;
+        padding: 15mm 12mm;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         background: #ffffff !important;
         color: #000000 !important;
-        font-family: Arial, sans-serif;
+        box-sizing: border-box;
       }
+
+      .a6-print-layout .receipt-minimal-date { font-size: 12px; margin-bottom: 12px; }
+      .a6-print-layout .receipt-minimal-title { font-size: 20px; margin-bottom: 6px; }
+      .a6-print-layout .receipt-minimal-item { font-size: 15px; margin-bottom: 8px; }
+      .a6-print-layout .receipt-minimal-desc { font-size: 13px; margin-bottom: 20px; }
+      .a6-print-layout .receipt-minimal-total { font-size: 22px; padding-top: 10px; }
     }
   </style>
 </head>
@@ -525,7 +502,7 @@
       </div>
       <div class="option-card" onclick="openWorkspace('viewWorkspace')">
         <h2>View Slips</h2>
-        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 grid printing</p>
+        <p>Dynamic sorting filters, historical lookup engine, and single A6 vertical printing</p>
       </div>
     </div>
 
@@ -542,50 +519,4 @@
         <div class="form-group"><label for="amount">Amount (₹)</label><input type="number" id="amount" step="0.01" required placeholder="0.00"></div>
         <div class="form-group"><label for="date">Date</label><input type="date" id="date" required></div>
         <button type="submit" class="btn-action">Save to Database</button>
-      </form>
-
-      <div class="section-title">Recent 5 Slips</div>
-      <div id="recentSlipsContainer" class="slip-list">Syncing cloud records...</div>
-    </div>
-
-    <div id="viewWorkspace" class="workspace-panel">
-      <div class="panel-header">
-        <h1>Search & View Logs</h1>
-        <button class="btn-back" onclick="showLandingMenu()">Back</button>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color);">
-        <div>
-          <label for="searchBar">Text Filter (Name / Item)</label>
-          <input type="text" id="searchBar" placeholder="Type keyword..." oninput="filterAllSlips()">
-        </div>
-        <div>
-          <label for="filterDate">Target Date Filter</label>
-          <input type="date" id="filterDate" onchange="filterAllSlips()">
-        </div>
-        <button onclick="clearFilters()" style="background: rgba(255,255,255,0.05); color:#ffffff; border:1px solid var(--border-color); padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">Reset Filters</button>
-      </div>
-      
-      <div class="section-title">All Registered Logs</div>
-      <div id="allSlipsContainer" class="slip-list">Syncing cloud data stream...</div>
-    </div>
-
-  </div>
-
-  <div id="preview-modal">
-    <div class="modal-body">
-      <div id="grid-selector-container"></div>
-      
-      <div class="modal-buttons">
-        <button class="modal-btn btn-cancel" onclick="closePrintModal()">Cancel</button>
-        <button class="modal-btn btn-confirm" onclick="executeSystemPrint()">Execute Print</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Workspace background generation structures -->
-  <div id="share-generator-buffer"></div>
-  <div id="print-area"></div>
-
-</body>
-</html>
+  
