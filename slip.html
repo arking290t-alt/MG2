@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Management Hub</title>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    // Switched from Realtime Database to Cloud Firestore SDK modules
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Your exact Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC6BmLTjzOHwTa2VEYa9eYkClDtS__zvTM",
       authDomain: "mg-manager-3ab66.firebaseapp.com",
@@ -21,178 +21,178 @@
       measurementId: "G-05HW0KSN38"
     };
 
+    // Initialize Firebase and target Cloud Firestore directly
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let cachedSlipsArray = [];
     let selectedActiveSlipForPrint = null;
-    let gridSelection = [true, false, false, false];
 
+    // SINGLE Unified App Startup Initializer
     document.addEventListener("DOMContentLoaded", () => {
+      // 1. Set Default Date
       const dateEl = document.getElementById('date');
-      if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+      if (dateEl) {
+        dateEl.value = new Date().toISOString().split('T')[0];
+      }
 
+      // 2. Safely Bind Form Submission
       const form = document.getElementById('slipForm');
       if (form) {
         form.addEventListener('submit', function(e) {
           e.preventDefault();
           
-          const rawAmount = document.getElementById('amount').value;
           const targetSlip = {
-            name: document.getElementById('name').value.trim(),
-            item: document.getElementById('item').value.trim(),
-            description: document.getElementById('description').value.trim() || '',
-            amount: parseFloat(rawAmount) || 0,
+            name: document.getElementById('name').value,
+            item: document.getElementById('item').value,
+            description: document.getElementById('description').value || '',
+            amount: document.getElementById('amount').value,
             date: document.getElementById('date').value,
             timestamp: Date.now()
           };
 
-          // Frontend sanity enforcement check
-          if (!targetSlip.name || !targetSlip.item || targetSlip.amount <= 0) {
-            alert('Please fill out all fields with valid data rules.');
-            return;
+          try {
+            // Write data to Firestore 'slips' collection
+            const slipsCollection = collection(db, 'slips');
+            addDoc(slipsCollection, targetSlip)
+              .then(() => {
+                // Reset inputs
+                document.getElementById('name').value = '';
+                document.getElementById('item').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                
+                alert('Saved successfully to Firestore!');
+              })
+              .catch(err => {
+                console.error("Firestore write error: ", err);
+                alert('Firestore Write Failed: ' + err.message);
+              });
+          } catch (catchErr) {
+            console.error("Setup error: ", catchErr);
+            alert('Execution Error: ' + catchErr.message);
           }
-
-          addDoc(collection(db, 'slips'), targetSlip)
-            .then(() => {
-              document.getElementById('name').value = '';
-              document.getElementById('item').value = '';
-              document.getElementById('description').value = '';
-              document.getElementById('amount').value = '';
-              document.getElementById('date').value = new Date().toISOString().split('T')[0];
-              alert('Saved successfully!');
-            })
-            .catch(err => {
-              console.error(err);
-              alert('Firestore Sync Error: Verification failed. Please check your Firebase Console rules tab.');
-            });
         });
       }
 
-      document.getElementById('preview-modal').addEventListener('click', function(e) {
-        if (e.target === this) closePrintModal();
-      });
+      // 3. Close preview modal on background click
+      const modal = document.getElementById('preview-modal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) closePrintModal();
+        });
+      }
 
+      // 4. Kickoff Firestore Dynamic Stream Listener
       initDatabaseListeners();
     });
 
+    // Make navigation functions globally accessible from modular script
     window.openWorkspace = function(workspaceId) {
       document.getElementById('landingMenu').style.display = 'none';
       document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
       document.getElementById(workspaceId).style.display = 'block';
+      window.scrollTo(0, 0); 
     }
 
     window.showLandingMenu = function() {
       document.querySelectorAll('.workspace-panel').forEach(el => el.style.display = 'none');
       document.getElementById('landingMenu').style.display = 'block';
+      window.scrollTo(0, 0);
     }
 
+    // Real-time Firestore Stream
     function initDatabaseListeners() {
-      const sortedQuery = query(collection(db, 'slips'), orderBy('timestamp', 'desc'));
-      
-      onSnapshot(sortedQuery, (snapshot) => {
-        const records = [];
-        snapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
-        cachedSlipsArray = records;
-        renderRecentFeed(cachedSlipsArray.slice(0, 5));
-        renderViewTabFeed(cachedSlipsArray);
-      }, (error) => {
-        console.error("Listener error:", error);
-        const errorMsg = "<p class='empty-text' style='color:#ff4a4a;'>Database Sync Blocked: Update Cloud Security Rules to allow access.</p>";
-        document.getElementById('recentSlipsContainer').innerHTML = errorMsg;
-        document.getElementById('allSlipsContainer').innerHTML = errorMsg;
-      });
+      try {
+        const slipsCollection = collection(db, 'slips');
+        const sortedQuery = query(slipsCollection, orderBy('timestamp', 'desc'));
+
+        // Listens to Firestore changes in real-time
+        onSnapshot(sortedQuery, (snapshot) => {
+          const records = [];
+          snapshot.forEach((doc) => {
+            records.push({ id: doc.id, ...doc.data() });
+          });
+          
+          cachedSlipsArray = records;
+          
+          renderRecentFeed(cachedSlipsArray.slice(0, 5));
+          renderViewTabFeed(cachedSlipsArray);
+        }, (error) => {
+          console.error("Firestore dynamic sync failed: ", error);
+          alert("Firestore Read Error: " + error.message);
+        });
+      } catch (err) {
+        console.error("Listener registration failed: ", err);
+      }
     }
 
     function renderRecentFeed(items) {
       const target = document.getElementById('recentSlipsContainer');
       if (!target) return;
-      target.innerHTML = items.length === 0 ? "<p class='empty-text'>No records found.</p>" : items.map(x => generateSlipMarkupRow(x)).join('');
+      if (items.length === 0) { 
+        target.innerHTML = "<p style='color:var(--text-muted); font-size:14px; text-align:center;'>No slips generated yet.</p>"; 
+        return; 
+      }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
     }
 
     function renderViewTabFeed(items) {
       const target = document.getElementById('allSlipsContainer');
       if (!target) return;
-      target.innerHTML = items.length === 0 ? "<p class='empty-text'>No records found.</p>" : items.map(x => generateSlipMarkupRow(x)).join('');
+      if (items.length === 0) { 
+        target.innerHTML = "<p style='color:var(--text-muted); font-size:14px; text-align:center;'>No records found.</p>"; 
+        return; 
+      }
+      target.innerHTML = items.map(x => generateSlipMarkupRow(x)).join('');
     }
 
     function generateSlipMarkupRow(item) {
-      const safeStringified = btoa(unescape(encodeURIComponent(JSON.stringify(item))));
+      const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
       return `
         <div class="slip-item">
           <div class="slip-info">
-            <div class="slip-title-line">${escapeHtml(item.name)} <span class="slip-item-name">— ${escapeHtml(item.item)}</span></div>
-            <div class="slip-meta-line">Date: ${item.date} | Total: <strong class="glow-text">₹${parseFloat(item.amount).toFixed(2)}</strong></div>
+            <div class="slip-title-line">${item.name} <span class="slip-item-name">— ${item.item}</span></div>
+            <div class="slip-meta-line">Logged: ${item.date} | Total Net: <strong class="glow-text">$${parseFloat(item.amount).toFixed(2)}</strong></div>
           </div>
-          <div style="display:flex; gap: 8px; margin-top: 10px;">
-            <button class="btn-print-small" onclick="handlePrintClick('${safeStringified}')">Preview & Print</button>
-            <button class="btn-share-small" onclick="handleShareClick('${safeStringified}')">WhatsApp Share</button>
-          </div>
+          <button class="btn-print-small" onclick="openPrintModal('${safeDataJson}')">Preview & Print</button>
         </div>
       `;
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    window.handlePrintClick = function(base64Data) {
-      const slipObj = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
-      openPrintModal(slipObj);
-    }
-
-    window.handleShareClick = function(base64Data) {
-      const slipObj = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
-      generatePngAndShare(slipObj);
     }
 
     window.filterAllSlips = function() {
-      const textTerm = document.getElementById('searchBar').value.toLowerCase().trim();
-      const filterDate = document.getElementById('filterDate').value;
-      
-      let filtered = cachedSlipsArray;
-
-      if (filterDate) {
-        filtered = filtered.filter(x => x.date === filterDate);
+      const term = document.getElementById('searchBar').value.toLowerCase().trim();
+      if(!term) {
+        renderViewTabFeed(cachedSlipsArray);
+        return;
       }
-      if (textTerm) {
-        filtered = filtered.filter(x => 
-          x.name.toLowerCase().includes(textTerm) || 
-          x.item.toLowerCase().includes(textTerm)
-        );
-      }
+      const filtered = cachedSlipsArray.filter(x => 
+        x.name.toLowerCase().includes(term) || 
+        x.item.toLowerCase().includes(term)
+      );
       renderViewTabFeed(filtered);
     }
 
-    window.clearFilters = function() {
-      document.getElementById('searchBar').value = '';
-      document.getElementById('filterDate').value = '';
-      renderViewTabFeed(cachedSlipsArray);
-    }
-
-    window.openPrintModal = function(slipObj) {
+    window.openPrintModal = function(serializedItemStr) {
+      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
       selectedActiveSlipForPrint = slipObj;
-      gridSelection = [true, false, false, false]; 
-      renderGridOptions();
-      document.getElementById('preview-modal').style.display = 'flex';
-    }
 
-    function renderGridOptions() {
-      const container = document.getElementById('grid-selector-container');
-      container.innerHTML = `
-        <div style="margin-bottom:12px; font-size:12px; color:var(--text-muted); font-weight: 600; text-align: center;">SELECT QUARTER BOX POSITIONS TO PRINT:</div>
-        <div class="a4-preview-grid-vertical">
-          <div class="grid-box ${gridSelection[0] ? 'active' : ''}" onclick="toggleGridBox(0)">Box 1 (Top-Left)</div>
-          <div class="grid-box ${gridSelection[1] ? 'active' : ''}" onclick="toggleGridBox(1)">Box 2 (Top-Right)</div>
-          <div class="grid-box ${gridSelection[2] ? 'active' : ''}" onclick="toggleGridBox(2)">Box 3 (Bottom-Left)</div>
-          <div class="grid-box ${gridSelection[3] ? 'active' : ''}" onclick="toggleGridBox(3)">Box 4 (Bottom-Right)</div>
+      const previewCard = document.getElementById('mini-preview-card');
+      previewCard.innerHTML = `
+        <div style="text-align:center; font-weight:700; font-size: 14px; color: var(--accent-bloom); border-bottom:1px solid rgba(0, 242, 254, 0.2); padding-bottom:10px; margin-bottom:15px; letter-spacing:1px;">SLIP PREVIEW</div>
+        <div class="modal-preview-row"><strong>Date:</strong> <span>${slipObj.date}</span></div>
+        <div class="modal-preview-row"><strong>Name:</strong> <span>${slipObj.name}</span></div>
+        <div class="modal-preview-row"><strong>Item:</strong> <span>${slipObj.item}</span></div>
+        <div class="modal-preview-row"><strong>Desc:</strong> <span>${slipObj.description || 'N/A'}</span></div>
+        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed rgba(0, 242, 254, 0.2); font-weight:700; font-size: 16px; color: var(--accent-bloom); display: flex; justify-content: space-between;">
+          <span>Total Amount:</span>
+          <span class="glow-text">$${parseFloat(slipObj.amount).toFixed(2)}</span>
         </div>
       `;
-    }
 
-    window.toggleGridBox = function(index) {
-      gridSelection[index] = !gridSelection[index];
-      renderGridOptions();
+      document.getElementById('modalCopies').value = 1;
+      document.getElementById('preview-modal').style.display = 'flex';
     }
 
     window.closePrintModal = function() {
@@ -202,66 +202,31 @@
 
     window.executeSystemPrint = function() {
       if(!selectedActiveSlipForPrint) return;
+
+      const copiesCount = parseInt(document.getElementById('modalCopies').value) || 1;
       const printArea = document.getElementById('print-area');
       printArea.innerHTML = ''; 
 
-      for(let i = 0; i < 4; i++) {
-        if(gridSelection[i]) {
-          printArea.innerHTML += `
-            <div class="print-slot filled-slot">
-              <div class="receipt-minimal-date">${selectedActiveSlipForPrint.date}</div>
-              <div class="receipt-minimal-title">${escapeHtml(selectedActiveSlipForPrint.name)}</div>
-              <div class="receipt-minimal-item">${escapeHtml(selectedActiveSlipForPrint.item)}</div>
-              <div class="receipt-minimal-desc">${escapeHtml(selectedActiveSlipForPrint.description || '')}</div>
-              <div class="receipt-minimal-total">₹${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</div>
+      for (let i = 0; i < copiesCount; i++) {
+        printArea.innerHTML += `
+          <div class="print-slip">
+            <div>
+              <div class="print-header">RECEIPT SLIP</div>
+              <div class="print-row"><span class="print-label">Date:</span> <span>${selectedActiveSlipForPrint.date}</span></div>
+              <div class="print-row"><span class="print-label">Name:</span> <span>${selectedActiveSlipForPrint.name}</span></div>
+              <div class="print-row"><span class="print-label">Item:</span> <span>${selectedActiveSlipForPrint.item}</span></div>
+              <div class="print-row"><span class="print-label">Description:</span> <span>${selectedActiveSlipForPrint.description || 'N/A'}</span></div>
             </div>
-          `;
-        } else {
-          printArea.innerHTML += `<div class="print-slot empty-slot"></div>`;
-        }
+            <div class="print-row total-row">
+              <span class="print-label">Total Amount:</span>
+              <span>$${parseFloat(selectedActiveSlipForPrint.amount).toFixed(2)}</span>
+            </div>
+          </div>
+        `;
       }
 
       window.print();
       closePrintModal();
-    }
-
-    window.generatePngAndShare = function(slipObj) {
-      const generatorContainer = document.getElementById('share-generator-buffer');
-      generatorContainer.innerHTML = `
-        <div class="image-receipt-card">
-          <div class="receipt-minimal-date">${slipObj.date}</div>
-          <div class="receipt-minimal-title">${escapeHtml(slipObj.name)}</div>
-          <div class="receipt-minimal-item">${escapeHtml(slipObj.item)}</div>
-          <div class="receipt-minimal-desc">${escapeHtml(slipObj.description || '')}</div>
-          <div class="receipt-minimal-total">₹${parseFloat(slipObj.amount).toFixed(2)}</div>
-        </div>
-      `;
-      generatorContainer.style.display = 'block';
-
-      html2canvas(generatorContainer.querySelector('.image-receipt-card'), {
-        scale: 2, 
-        backgroundColor: '#ffffff'
-      }).then(canvas => {
-        generatorContainer.style.display = 'none'; 
-        
-        canvas.toBlob(blob => {
-          const imageFile = new File([blob], `slip-${slipObj.timestamp}.png`, { type: 'image/png' });
-          
-          if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-            navigator.share({
-              files: [imageFile],
-              title: 'Receipt Slip',
-              text: `Receipt for ${slipObj.name}`
-            }).catch(err => console.log('Share canceled or failed', err));
-          } else {
-            const fallbackLink = document.createElement('a');
-            fallbackLink.download = `slip-${slipObj.timestamp}.png`;
-            fallbackLink.href = canvas.toDataURL('image/png');
-            fallbackLink.click();
-            alert('Image saved to device downloads! You can now send it to your contacts.');
-          }
-        }, 'image/png');
-      });
     }
   </script>
 
@@ -271,24 +236,36 @@
       --panel-bg: rgba(17, 24, 39, 0.95);
       --primary-cyan: #00f2fe;
       --accent-bloom: #00c6ff;
+      --accent-glow: rgba(0, 242, 254, 0.15);
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --border-color: rgba(255, 255, 255, 0.12);
       --radius: 16px;
       --shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      --transition: all 0.2s ease-in-out;
     }
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg-gradient);
-      margin: 0; padding: 15px;
+      margin: 0;
+      padding: 15px;
       color: var(--text-main);
       min-height: 100vh;
       box-sizing: border-box;
     }
 
-    .main-container { max-width: 600px; width: 100%; margin: 0 auto; padding-bottom: 80px; }
-    .menu-selection { display: block; margin-top: 20px; }
+    .main-container {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    .menu-selection {
+      display: block;
+      margin-top: 20px;
+    }
     
     .option-card {
       background: var(--panel-bg);
@@ -299,11 +276,27 @@
       cursor: pointer;
       border: 1px solid var(--border-color);
       margin-bottom: 20px;
+      transition: var(--transition);
     }
 
-    .option-card:hover { border-color: var(--primary-cyan); }
-    .option-card h2 { color: #ffffff; font-size: 22px; margin: 0 0 10px 0; }
-    .option-card p { color: var(--text-muted); font-size: 13px; margin: 0; }
+    .option-card:hover {
+      border-color: var(--primary-cyan);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+    }
+
+    .option-card h2 {
+      color: #ffffff;
+      font-size: 22px;
+      margin: 0 0 10px 0;
+      font-weight: 700;
+    }
+
+    .option-card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.5;
+    }
 
     .workspace-panel {
       display: none;
@@ -323,7 +316,12 @@
       padding-bottom: 15px;
     }
 
-    .panel-header h1 { margin: 0; font-size: 22px; color: #ffffff; }
+    .panel-header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+    }
 
     .btn-back {
       background: rgba(255, 255, 255, 0.05);
@@ -332,212 +330,239 @@
       padding: 8px 16px;
       border-radius: 8px;
       cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
     }
 
-    .form-group { display: block; margin-bottom: 15px; width: 100%; }
+    .form-group {
+      display: block;
+      margin-bottom: 20px;
+      width: 100%;
+    }
     
     label {
-      display: block; margin-bottom: 6px; font-weight: 600; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
     }
     
     input, textarea {
-      display: block; width: 100%; padding: 12px;
-      border: 1px solid var(--border-color); border-radius: 10px;
-      box-sizing: border-box; font-size: 15px;
-      background: rgba(255, 255, 255, 0.03); color: #ffffff;
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      color: #ffffff;
     }
 
-    textarea { height: 75px; resize: none; }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-cyan);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    textarea { 
+      height: 90px; 
+      resize: none; 
+    }
     
     button.btn-action {
-      display: block; background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--accent-bloom) 100%);
-      color: #0b0f19; padding: 14px; font-size: 16px; border: none;
-      border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%;
-      margin-top: 20px;
+      display: block;
+      background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--accent-bloom) 100%);
+      color: #0b0f19;
+      padding: 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25);
+      margin-top: 25px;
     }
 
     .section-title {
-      margin-top: 30px; font-size: 13px; font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase; color: var(--primary-cyan);
-      padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
+      margin-top: 35px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--primary-cyan);
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .slip-list { margin-top: 15px; }
+    .slip-list {
+      margin-top: 15px;
+    }
 
     .slip-item {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-color);
-      padding: 15px; border-radius: var(--radius); margin-bottom: 12px;
+      padding: 15px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
     }
 
-    .slip-title-line { font-weight: 700; font-size: 15px; color: #ffffff; }
-    .slip-item-name { color: var(--text-muted); font-size: 13px; }
-    .slip-meta-line { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
-    .glow-text { color: var(--primary-cyan); }
-    .empty-text { color: var(--text-muted); text-align: center; font-size: 14px; }
+    .slip-title-line { 
+      font-weight: 700; 
+      font-size: 15px; 
+      color: #ffffff;
+    }
+
+    .slip-item-name {
+      color: var(--text-muted); 
+      font-size: 13px;
+    }
+
+    .slip-meta-line { 
+      color: var(--text-muted); 
+      font-size: 12px; 
+      margin-top: 5px; 
+    }
+
+    .glow-text {
+      color: var(--primary-cyan);
+    }
     
-    .btn-print-small, .btn-share-small {
-      flex: 1; padding: 10px; border-radius: 8px; cursor: pointer;
-      font-weight: 600; font-size: 13px; text-align: center;
-    }
-    .btn-print-small { background: rgba(0, 242, 254, 0.06); color: var(--primary-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
-    .btn-share-small { background: rgba(37, 211, 102, 0.08); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
-
-    .a4-preview-grid-vertical {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 130px 130px;
-      gap: 10px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: #1f2937;
+    .btn-print-small {
+      display: block;
+      width: 100%;
+      background: rgba(0, 242, 254, 0.06);
+      color: var(--primary-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.2);
       padding: 10px;
       border-radius: 8px;
-      margin-bottom: 20px;
-      max-width: 220px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .grid-box {
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: bold;
-      color: var(--text-muted);
       cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.2s;
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 12px;
       text-align: center;
-      padding: 4px;
-    }
-
-    .grid-box.active {
-      background: rgba(0, 242, 254, 0.15);
-      border-color: var(--primary-cyan);
-      color: var(--primary-cyan);
     }
 
     #preview-modal {
-      display: none; position: fixed;
+      display: none;
+      position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(11, 15, 25, 0.9); backdrop-filter: blur(8px);
-      z-index: 1000; justify-content: center; align-items: center; padding: 15px;
+      background: rgba(11, 15, 25, 0.9);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      box-sizing: border-box;
     }
 
     .modal-body {
-      background: #111827; border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 20px; border-radius: var(--radius); width: 100%; max-width: 320px;
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 20px;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
     }
 
-    .modal-buttons { display: flex; gap: 10px; }
-    
-    .modal-btn {
-      flex: 1; padding: 12px; border: none;
-      border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px;
+    .modal-preview-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 8px;
     }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
     .btn-confirm { background: var(--primary-cyan); color: #0b0f19; }
     .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
 
     #print-area { display: none; }
 
-    #share-generator-buffer {
-      position: absolute;
-      left: -9999px;
-      top: -9999px;
-      display: none;
-    }
-
-    .image-receipt-card {
-      width: 320px;
-      background: #ffffff !important;
-      color: #000000 !important;
-      padding: 30px 25px;
-      font-family: 'Arial', sans-serif;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .receipt-minimal-date {
-      font-size: 13px;
-      color: #666666;
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-
-    .receipt-minimal-title {
-      font-size: 24px;
-      font-weight: 800;
-      color: #000000;
-      margin-bottom: 6px;
-      line-height: 1.2;
-    }
-
-    .receipt-minimal-item {
-      font-size: 16px;
-      font-weight: 600;
-      color: #222222;
-      margin-bottom: 8px;
-    }
-
-    .receipt-minimal-desc {
-      font-size: 14px;
-      color: #444444;
-      margin-bottom: 25px;
-      line-height: 1.4;
-      white-space: pre-line;
-    }
-
-    .receipt-minimal-total {
-      font-size: 26px;
-      font-weight: 900;
-      color: #000000;
-      border-top: 2px solid #000000;
-      padding-top: 12px;
-      margin-top: auto;
-    }
-
-    @page { size: portrait; margin: 0; }
-
+    /* Print System Layout & Styling Setup */
     @media print {
-      body, html, .main-container, #preview-modal, #share-generator-buffer {
-        display: none !important;
-        visibility: hidden !important;
+      body * { 
+        visibility: hidden; 
+      }
+      
+      #print-area, #print-area * { 
+        visibility: visible; 
       }
       
       #print-area {
-        display: grid !important;
-        visibility: visible !important;
-        position: absolute; left: 0; top: 0;
-        width: 210mm; height: 297mm;
-        grid-template-columns: 105mm 105mm;
-        grid-template-rows: 148.5mm 148.5mm;
-        background: #ffffff !important;
-        padding: 0; margin: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: minmax(280px, auto);
+        gap: 20px;
+        position: absolute;
+        left: 0; 
+        top: 0;
+        width: 100%; 
         box-sizing: border-box;
+        background: #ffffff !important;
       }
       
-      .print-slot {
-        width: 105mm; height: 148.5mm;
+      .print-slip {
+        border: 2px dashed #000000 !important;
+        border-radius: 8px;
+        padding: 20px;
         box-sizing: border-box;
-        border: 1px dashed #dddddd; 
-        position: relative;
-        overflow: hidden;
-      }
-
-      .empty-slot { visibility: hidden !important; }
-
-      .filled-slot {
-        padding: 20mm 15mm;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
+        justify-content: space-between;
         background: #ffffff !important;
         color: #000000 !important;
-        font-family: Arial, sans-serif;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+      
+      .print-header {
+        text-align: center;
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: 1px;
+        border-bottom: 1.5px solid #000000;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+      }
+
+      .print-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        margin-bottom: 8px;
+        color: #000000 !important;
+      }
+
+      .print-label {
+        font-weight: 700;
+      }
+
+      .print-slip .total-row {
+        border-top: 2px solid #000000;
+        padding-top: 10px;
+        margin-top: 15px;
+        font-size: 15px;
+        font-weight: 800;
       }
     }
   </style>
@@ -553,4 +578,68 @@
       </div>
       <div class="option-card" onclick="openWorkspace('viewWorkspace')">
         <h2>View Slips</h2>
-        <p>Dynamic date filtering, keyword logs, and vertical A4 1/4 g
+        <p>Dynamic keyword search, real-time sync, and multi-copy printing layouts</p>
+      </div>
+    </div>
+
+    <div id="createWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Create New Slip</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+      </div>
+      
+      <form id="slipForm">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" required placeholder="Customer or company name">
+        </div>
+
+        <div class="form-group">
+          <label for="item">Item</label>
+          <input type="text" id="item" required placeholder="Product or item title">
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="Provide extra details..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount ($)</label>
+          <input type="number" id="amount" step="0.01" required placeholder="0.00">
+        </div>
+
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" required>
+        </div>
+
+        <button type="submit" class="btn-action">Save to Database</button>
+      </form>
+
+      <div class="section-title">Recent 5 Slips</div>
+      <div id="recentSlipsContainer" class="slip-list">Loading real-time records...</div>
+    </div>
+
+    <div id="viewWorkspace" class="workspace-panel">
+      <div class="panel-header">
+        <h1>Search & View Logs</h1>
+        <button class="btn-back" onclick="showLandingMenu()">Back</button>
+      </div>
+
+      <div class="form-group">
+        <label for="searchBar">Dynamic Search Filter</label>
+        <input type="text" id="searchBar" placeholder="Type keyword to filter..." oninput="filterAllSlips()">
+      </div>
+      
+      <div class="section-title">All Registered Logs</div>
+      <div id="allSlipsContainer" class="slip-list">Awaiting connection sync...</div>
+    </div>
+
+  </div>
+
+  <div id="preview-modal">
+    <div class="modal-body">
+      <div id="mini-preview-card"></div>
+      
+      <div cla
