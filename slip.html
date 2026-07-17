@@ -195,7 +195,8 @@
     }
 
     function generateSlipMarkupRow(item) {
-      const safeDataJson = JSON.stringify(item).replace(/"/g, '&quot;');
+      // FIX: Safely encode the JSON to prevent single quotes or newlines from breaking the button HTML
+      const safeDataJson = encodeURIComponent(JSON.stringify(item));
       // Handle legacy single-item structures safely as fallbacks
       const itemsList = item.items ? item.items : [{ name: item.item, description: item.description || '', price: item.amount }];
       const summaryText = itemsList.map(i => i.name).join(', ');
@@ -258,17 +259,18 @@
     function compileItemsHtml(itemsList) {
       return itemsList.map((itm, idx) => `
         <div style="margin-bottom: 8px; border-bottom: ${idx === itemsList.length - 1 ? 'none' : '1px dotted rgba(0,0,0,0.1)'}; padding-bottom: 6px;">
-          <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #000000;">
-            <span>${itm.name}</span>
-            <span>₹${parseFloat(itm.price || 0).toFixed(2)}</span>
+          <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #000000; word-break: break-word;">
+            <span style="padding-right: 10px;">${itm.name}</span>
+            <span style="white-space: nowrap;">₹${parseFloat(itm.price || 0).toFixed(2)}</span>
           </div>
-          ${itm.description ? `<div style="font-size: 13px; font-weight: 500; color: #000000; line-height: 1.3; margin-top: 2px;">${itm.description}</div>` : ''}
+          ${itm.description ? `<div style="font-size: 13px; font-weight: 500; color: #000000; line-height: 1.3; margin-top: 2px; white-space: pre-wrap; word-break: break-word;">${itm.description}</div>` : ''}
         </div>
       `).join('');
     }
 
     window.openPrintModal = function(serializedItemStr) {
-      const slipObj = JSON.parse(serializedItemStr.replace(/&quot;/g, '"'));
+      // FIX: Decode the payload properly to reconstruct the object
+      const slipObj = JSON.parse(decodeURIComponent(serializedItemStr));
       selectedActiveSlipForPrint = slipObj;
 
       const itemsList = slipObj.items ? slipObj.items : [{ name: slipObj.item, description: slipObj.description || '', price: slipObj.amount }];
